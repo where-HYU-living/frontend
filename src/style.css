@@ -1,0 +1,63 @@
+:root {
+  --ink: #f6f1e7;
+  --ink-dim: rgba(246, 241, 231, 0.72);
+  --glass: rgba(28, 26, 22, 0.52);
+  --glass-strong: rgba(28, 26, 22, 0.72);
+  --line: rgba(255, 255, 255, 0.14);
+  --accent: #e8a24a;
+  --hy-blue: #0e4a84;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #24251f; }
+body { font-family: 'Pretendard', system-ui, -apple-system, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+#app { position: fixed; inset: 0; }
+#vignette { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(40,24,10,.38) 100%); }
+#app canvas { display: block; touch-action: none; }
+
+/* 로딩 */
+#loading { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #3a3326, #1b1a16); z-index: 20; transition: opacity .8s ease; }
+#loading.done { opacity: 0; pointer-events: none; }
+.loading-card { text-align: center; }
+.loading-title { font-size: 44px; font-weight: 800; letter-spacing: -0.02em; }
+.loading-sub { margin-top: 6px; color: var(--ink-dim); font-size: 14px; }
+.loading-bar { margin: 18px auto 0; width: 220px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+#loading-fill { height: 100%; width: 0%; background: var(--accent); transition: width .3s ease; }
+
+/* HUD */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+#hud > * { pointer-events: auto; }
+.pill { background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 999px; }
+.panel { background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 16px; }
+
+.title-pill { position: absolute; top: 14px; left: 14px; display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 12px; font-size: 14px; font-weight: 600; }
+.title-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.title-pill .badge { font-size: 11px; font-weight: 600; color: #1d1b16; background: var(--accent); padding: 2px 7px; border-radius: 999px; }
+
+#landmarks { position: absolute; top: 64px; left: 14px; width: 168px; padding: 10px; }
+.panel-head { font-size: 11px; font-weight: 700; color: var(--ink-dim); letter-spacing: .08em; padding: 2px 6px 8px; }
+#landmark-list button { display: flex; width: 100%; align-items: center; gap: 8px; text-align: left; font: inherit; font-size: 14px; color: var(--ink); background: transparent; border: 0; border-radius: 10px; padding: 8px 8px; cursor: pointer; }
+#landmark-list button:hover { background: rgba(255,255,255,.08); }
+#landmark-list button .n { width: 20px; height: 20px; flex: none; display: grid; place-items: center; font-size: 11px; font-weight: 700; border-radius: 6px; background: rgba(232,162,74,.22); color: #ffd29a; }
+
+#minimap { position: absolute; top: 14px; right: 14px; width: 220px; height: 174px; border-radius: 14px; border: 1px solid var(--line); background: var(--glass-strong); cursor: crosshair; }
+
+#help { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); padding: 9px 16px; font-size: 13px; color: var(--ink-dim); white-space: nowrap; }
+#attrib { position: absolute; bottom: 6px; right: 10px; font-size: 10px; color: rgba(255,255,255,.55); pointer-events: none; }
+
+/* 랜드마크 라벨 (CSS2D) */
+.lm-label { pointer-events: none; transform: translateY(-6px); font-family: 'Pretendard', system-ui, sans-serif; font-size: 13px; font-weight: 700; color: #fff8ec; background: rgba(28,26,22,.6); border: 1px solid rgba(255,255,255,.18); padding: 5px 10px; border-radius: 999px; white-space: nowrap; backdrop-filter: blur(6px); transition: opacity .25s ease; }
+.lm-label small { font-weight: 500; color: #ffd29a; margin-left: 4px; }
+
+/* 모바일 조이스틱 */
+#joystick { position: absolute; left: 22px; bottom: 70px; width: 120px; height: 120px; border-radius: 50%; background: rgba(28,26,22,.35); border: 1px solid var(--line); display: none; touch-action: none; }
+#joystick-knob { position: absolute; left: 38px; top: 38px; width: 44px; height: 44px; border-radius: 50%; background: rgba(246,241,231,.75); }
+@media (pointer: coarse) {
+  #joystick { display: block; }
+  #help { display: none; }
+}
+@media (max-width: 640px) {
+  #landmarks { top: auto; bottom: 14px; left: auto; right: 14px; width: 150px; }
+  #landmark-list button { padding: 6px; font-size: 13px; }
+  #minimap { width: 150px; height: 119px; }
+  .title-pill .title { font-size: 13px; }
+}

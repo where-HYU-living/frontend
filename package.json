@@ -1,0 +1,19 @@
+{
+  "name": "where-hyu-living-frontend",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5180 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview",
+    "world": "npm --prefix ../campus-data run world",
+    "assets": "node scripts/fetch-assets.mjs"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}

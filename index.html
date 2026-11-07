@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>찾았다 · 한양대 (초안)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="vignette"></div>
+
+    <div id="loading">
+      <div class="loading-card">
+        <div class="loading-title">찾았다</div>
+        <div class="loading-sub">한양대 서울캠퍼스를 불러오는 중…</div>
+        <div class="loading-bar"><div id="loading-fill"></div></div>
+      </div>
+    </div>
+
+    <div id="hud">
+      <div class="pill title-pill">
+        <span class="dot"></span>
+        <span class="title">찾았다 · 한양대 서울캠퍼스</span>
+        <span class="badge">초안</span>
+      </div>
+
+      <nav id="landmarks" class="panel">
+        <div class="panel-head">랜드마크</div>
+        <div id="landmark-list"></div>
+      </nav>
+
+      <canvas id="minimap" width="220" height="174" title="미니맵을 누르면 그 위치로 이동해요"></canvas>
+
+      <div id="help" class="pill">WASD·방향키 이동 · Shift 달리기 · 드래그로 시점 · 휠로 확대</div>
+      <div id="attrib"></div>
+      <div id="joystick"><div id="joystick-knob"></div></div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
