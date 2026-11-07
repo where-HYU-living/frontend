@@ -5,6 +5,9 @@ const browser = await chromium.launch({ channel: 'chrome', headless: true, args:
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 let requests = 0; const external = [];
 page.on('response', (r) => { requests++; if (!r.url().startsWith(`http://localhost:${port}`)) external.push(r.url()); });
+page.on('response', (r) => { if (r.status() === 404) console.error('[404]', r.url()); });
+page.on('pageerror', (e) => console.error('[pageerror]', e.message));
+page.on('console', (m) => { if (m.type() === 'error') console.error('[console]', m.text().slice(0, 200)); });
 const t0 = Date.now();
 await page.goto(`http://localhost:${port}/?${q}`);
 await page.waitForFunction(() => window.__ready, null, { timeout: 180000 });

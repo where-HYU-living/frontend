@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { loadTex, rng, pointInPoly, bbox } from './util.js';
+import { lodFor } from './treeLod.ts';
 
 // ───────── 수종 (봄, 4월 초) ─────────
 //  broad   : 숲·건물 둘레 활엽수(참나무·단풍 섞임) — 새잎 연두
@@ -225,6 +226,7 @@ class Builder {
   }
 }
 
+let DENSITY = 1; // 잎 카드 밀도 (LOD1 은 0.5)
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 // 가지: 시작점·방향·길이 → 살짝 위로 휘는 3점 경로
 function branch(B, from, yaw, tilt, len, r0, color, bendUp = 0.25) {
@@ -238,6 +240,7 @@ function branch(B, from, yaw, tilt, len, r0, color, bendUp = 0.25) {
 
 // 퍼프(잎 덩어리) 하나에 카드 n장: 바깥쪽을 보도록 방향을 치우치고, 안쪽 카드는 어둡게(그늘)
 function puff(B, R, center, rad, n, opt) {
+  n = Math.ceil(n * DENSITY);
   const { pal, rect, crown, size = [1.5, 2.1], flat = 0.8, ao = 0.55, squash = 1 } = opt;
   const p = new THREE.Vector3(), nrm = new THREE.Vector3(), col = new THREE.Color();
   for (let k = 0; k < n; k++) {
@@ -260,7 +263,8 @@ function puff(B, R, center, rad, n, opt) {
 const crownOf = (cx, cy, cz, rx, ry, lo, hi) => ({ c: V(cx, cy, cz), inv: V(1 / rx, 1 / ry, 1 / rx), lo, hi });
 
 // ───────── 수종별 나무 한 그루 ─────────
-function buildSpecies(kind, seed) {
+function buildSpecies(kind, seed, density = 1) {
+  DENSITY = density;
   const R = rng(seed);
   const B = new Builder();
   const bark = BARK[kind];
@@ -328,7 +332,7 @@ function buildSpecies(kind, seed) {
     const pr = 1.7 - t * 0.6;
     // 판: 카드를 거의 수평으로 (위아래에서 보면 솔잎 덩어리, 옆에서 보면 얇은 층)
     const nrm = new THREE.Vector3(), col = new THREE.Color(), p = new THREE.Vector3();
-    for (let k = 0; k < 9; k++) {
+    for (let k = 0, kn = Math.ceil(9 * DENSITY); k < kn; k++) {
       const a = R() * Math.PI * 2, r = Math.sqrt(R()) * pr;
       p.set(tip.x + Math.cos(a) * r, tip.y + (R() - 0.5) * 0.5, tip.z + Math.sin(a) * r);
       nrm.set((R() - 0.5) * 0.7 + Math.cos(a) * 0.3, 1, (R() - 0.5) * 0.7 + Math.sin(a) * 0.3).normalize();
@@ -354,7 +358,7 @@ const SPECIES = ['broad', 'broad2', 'zelkova', 'ginkgo', 'cherry', 'pine'];
 // 실제 크기 배율 [최소, 폭]
 const SCALE = { broad: [0.9, 0.4], broad2: [0.9, 0.4], zelkova: [0.95, 0.3], ginkgo: [0.9, 0.35], cherry: [0.9, 0.3], pine: [0.85, 0.45] };
 
-export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene, quality = { treeShadows: true }) {
+export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene, quality = { treeShadows: true, msaa: 0 }) {
   const R = rng(20261107);
   const { minX, maxX, minZ, maxZ } = world.bounds;
   const inside = (x, z) => x > minX + 4 && x < maxX - 4 && z > minZ + 4 && z < maxZ - 4;
@@ -455,12 +459,19 @@ export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene
   // ── 재질 하나 (아틀라스) + 수종 지오메트리
   const barkTex = await loadTex('/tex/bark_diff.jpg').catch(() => null);
   const atlas = makeAtlas(barkTex && barkTex.image);
-  const mat = new THREE.MeshStandardMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8 });
+  const mat = new THREE.MeshStandardMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5, alphaToCoverage: quality.msaa > 0, side: THREE.DoubleSide, roughness: 0.8 });
   const geos = {
     broad: buildSpecies('broad', 101), broad2: buildSpecies('broad', 211),
     zelkova: buildSpecies('zelkova', 303), ginkgo: buildSpecies('ginkgo', 404),
     cherry: buildSpecies('cherry', 505), pine: buildSpecies('pine', 606),
   };
+  // 중거리용: 잎 카드 절반 (줄기는 그대로)
+  const geosLow = {
+    broad: buildSpecies('broad', 101, 0.5), broad2: buildSpecies('broad', 211, 0.5),
+    zelkova: buildSpecies('zelkova', 303, 0.5), ginkgo: buildSpecies('ginkgo', 404, 0.5),
+    cherry: buildSpecies('cherry', 505, 0.5), pine: buildSpecies('pine', 606, 0.5),
+  };
+  const cells = []; // { center:[x,z], hi, lo, lod }
   const uTime = { value: 0 }; // (바람 흔들림은 뺐음 — main.js 호환용으로만 남김)
 
   // 공간 칸(260m)·수종별 InstancedMesh → 화면·그림자 범위 밖 칸은 통째로 건너뜀
@@ -495,14 +506,27 @@ export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene
     mesh.computeBoundingSphere();
     mesh.castShadow = quality.treeShadows;
     mesh.receiveShadow = true;
-    group.add(mesh);
+    const low = new THREE.InstancedMesh(geosLow[kind], mat, list.length);
+    low.instanceMatrix = mesh.instanceMatrix; // 같은 위치·크기
+    low.computeBoundingSphere();
+    low.castShadow = false; low.receiveShadow = true; low.visible = false;
+    group.add(mesh, low);
+    cells.push({ c: [list.reduce((a, p) => a + p[0], 0) / list.length, list.reduce((a, p) => a + p[1], 0) / list.length], hi: mesh, lo: low, lod: 0 });
   }
+  // 카메라 거리에 따라 칸마다 원본/절반/숨김 (경계에서 깜빡이지 않게 lodFor 가 여유를 둠)
+  const update = (cam) => {
+    for (const cell of cells) {
+      const lod = lodFor(Math.hypot(cell.c[0] - cam.x, cell.c[1] - cam.z), cell.lod);
+      if (lod === cell.lod) continue;
+      cell.lod = lod; cell.hi.visible = lod === 0; cell.lo.visible = lod === 1;
+    }
+  };
 
   // 벚나무 아래 떨어진 꽃잎
   group.add(makePetals(treeSpots, heightAt, buildingIndex, R));
 
   scene.add(group);
-  return { group, uTime, count: spots.length, treeSpots };
+  return { group, uTime, count: spots.length, treeSpots, update };
 }
 
 function makePetals(spots, heightAt, buildingIndex, R) {

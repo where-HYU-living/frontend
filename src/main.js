@@ -296,7 +296,11 @@ async function bootScene({ Q, renderer, labelRenderer, scene, camera, sun, sunDi
   progress(1, 'labels+player');
 
   // ---- 후처리: 주변광 차폐(GTAO) — 건물 모서리·처마·계단 틈에 자연스러운 그늘
-  const composer = new EffectComposer(renderer);
+  // 멀티샘플 렌더 타깃: 잎 카드(alphaTest) 가장자리 반짝임 완화 (high 만)
+  const pr = renderer.getPixelRatio();
+  const composer = Q.msaa > 0
+    ? new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth * pr, innerHeight * pr, { samples: Q.msaa, type: THREE.HalfFloatType }))
+    : new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   const aoScale = Q.ao === 'half' ? 0.5 : 1;
   const ao = new GTAOPass(scene, camera, innerWidth * aoScale, innerHeight * aoScale);
@@ -312,7 +316,7 @@ async function bootScene({ Q, renderer, labelRenderer, scene, camera, sun, sunDi
 
   // ---- 루프
   const clock = new THREE.Clock();
-  let mmTick = 0;
+  let mmTick = 0, lodTick = 1;
   renderer.setAnimationLoop(() => {
     const dt = Math.min(0.05, clock.getDelta());
     player.update(dt);
@@ -322,6 +326,7 @@ async function bootScene({ Q, renderer, labelRenderer, scene, camera, sun, sunDi
       const d = l.position.distanceTo(camera.position);
       l.element.style.opacity = d < 320 ? 1 : 0;
     }
+    if ((lodTick += dt) > 0.25) { lodTick = 0; trees.update(camera.position); }
     if ((mmTick += dt) > 0.1) { mmTick = 0; drawMinimap(); }
     if (useAO) composer.render(); else renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
