@@ -1,3 +1,4 @@
+import { BackButton } from './icons';
 import { useState } from 'react';
 import { GRADE_META } from '../lib/grade';
 import { depositRent, manwon } from '../lib/money';
@@ -57,11 +58,11 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   const go = useGoTo();
   const token = useSession((s) => s.token);
   if (q.isLoading) return <p className="empty">불러오는 중…</p>;
-  if (!q.data) return <div><button type="button" className="ui-back" onClick={onBack}>← 목록</button><p className="empty">양도 글을 불러오지 못했어요.</p></div>;
+  if (!q.data) return <div><BackButton onClick={onBack} /><p className="empty">양도 글을 불러오지 못했어요.</p></div>;
   const t = q.data;
   return (
     <div className="ui-detail">
-      <button type="button" className="ui-back" onClick={onBack}>← 목록</button>
+      <BackButton onClick={onBack} />
       <div className="ui-detail-head"><h3>{t.title}</h3><HeartButton type="TRANSFER" id={t.id} favorited={t.favorited} /></div>
       <p className="ui-card-sub">{t.address} · {t.authorNickname}{t.status === 'DONE' ? ' · 양도 완료' : ''}</p>
       <VerdictCard pc={t.priceCheck} fallbackGrade={t.grade} loggedIn={!!token} />
@@ -85,7 +86,7 @@ export function TransferPanel() {
   const go = useGoTo();
   const [sel, setSel] = useState<number | null>(null);
   const [writing, setWriting] = useState(false);
-  if (writing) return <div><button type="button" className="ui-back" onClick={() => setWriting(false)}>← 목록</button><Form onDone={() => setWriting(false)} /></div>;
+  if (writing) return <div><BackButton onClick={() => setWriting(false)} /><Form onDone={() => setWriting(false)} /></div>;
   if (sel != null) return <Detail id={sel} onBack={() => setSel(null)} />;
   return (
     <div>

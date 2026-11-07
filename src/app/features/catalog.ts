@@ -59,6 +59,3 @@ export function dday(date: string, today: Date = new Date()): string {
   return d === 0 ? 'D-day' : d > 0 ? `D-${d}` : `D+${-d}`;
 }
 
-export const NEARBY_ICON: Record<Nearby['category'], { icon: string; label: string }> = {
-  CONVENIENCE: { icon: '🏪', label: '편의점' }, LAUNDRY: { icon: '🧺', label: '세탁방' }, BUS_STOP: { icon: '🚌', label: '버스정류장' }, SUBWAY: { icon: '🚇', label: '지하철역' },
-};

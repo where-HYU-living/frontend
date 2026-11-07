@@ -221,6 +221,16 @@
 .ui-check { flex-direction: row !important; align-items: center; gap: 6px; }
 .ui-filter select { height: 32px; border-radius: 8px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: inherit; font: inherit; }
 
-.tod { display: flex; gap: 2px; padding: 3px; border-radius: 999px; }
-.tod button { width: 30px; height: 30px; border: 0; border-radius: 50%; background: transparent; font-size: 15px; cursor: pointer; }
-.tod button[aria-pressed='true'] { background: rgba(14, 74, 132, .18); }
+.ui-back { display: inline-flex; align-items: center; gap: 2px; }
+.ui-stars button { display: inline-flex; }
+.ui-stars-inline { display: inline-flex; gap: 1px; color: #f2c94c; vertical-align: -2px; }
+.ui-card-sub svg { vertical-align: -2px; }
+.iconbtn, .fold { display: inline-flex; align-items: center; justify-content: center; }
+
+/* 시간대 슬라이더: 왼쪽 낮 ~ 오른쪽 밤 */
+.tod { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; color: var(--ui-ink-2); }
+.tod input[type='range'] { -webkit-appearance: none; appearance: none; width: 120px; height: 6px; border-radius: 3px; outline: none; cursor: pointer; background: linear-gradient(90deg, #8ec5ff 0%, #ffb067 50%, #1a2236 100%); }
+.tod input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; background: #0e4a84; box-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
+.tod input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; background: #0e4a84; }
+.tod-clock { min-width: 64px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-ink); }
+@media (max-width: 760px) { .tod input[type='range'] { width: 80px; } .tod-clock { min-width: 0; } }

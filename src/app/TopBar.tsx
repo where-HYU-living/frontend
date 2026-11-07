@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Bell, Heart, Moon, Search, Sun } from 'lucide-react';
+import { clockLabel } from '../world/timeOfDay';
 import { TABS, useUi } from './state/ui';
 import { useWorld } from './state/world';
 import { useSession } from './state/session';
@@ -31,7 +33,7 @@ export function TopBar() {
     <header className="topbar">
       <div className="search-wrap">
         <label className="search glass">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <Search size={16} aria-hidden="true" />
           <input
             value={q}
             onChange={(e) => { setQ(e.target.value); setFocused(true); }}
@@ -69,20 +71,21 @@ export function TopBar() {
       </nav>
 
       <div className="grow" />
-      <div className="tod glass" role="group" aria-label="시간대">
-        {([['day', '☀️', '낮'], ['evening', '🌇', '저녁'], ['night', '🌙', '밤']] as const).map(([k, icon, name]) => (
-          <button key={k} type="button" aria-label={name} aria-pressed={timeOfDay === k} title={name} onClick={() => setTimeOfDay(k)}>{icon}</button>
-        ))}
+      <div className="tod glass">
+        <Sun size={15} aria-hidden="true" />
+        <input type="range" min={0} max={1000} step={1} value={Math.round(timeOfDay * 1000)} onChange={(e) => setTimeOfDay(Number(e.target.value) / 1000)} aria-label="시간대 (왼쪽 낮, 오른쪽 밤)" aria-valuetext={clockLabel(timeOfDay)} />
+        <Moon size={15} aria-hidden="true" />
+        <span className="tod-clock" aria-live="off">{clockLabel(timeOfDay)}</span>
       </div>
       <button className="textbtn glass" type="button" onClick={() => setMapMode(mapMode === '3d' ? '2d' : '3d')}>
         {mapMode === '3d' ? '지도로 보기' : '3D로 보기'}
       </button>
       <button className="iconbtn glass" type="button" aria-label="찜 목록" onClick={() => selectTab('fav')}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.3-9.2C1.5 8.6 3.4 5 6.9 5c2 0 3.5 1.1 5.1 3 1.6-1.9 3.1-3 5.1-3 3.5 0 5.4 3.6 4.2 6.8C19.5 16.4 12 21 12 21z" /></svg>
+        <Heart size={18} aria-hidden="true" />
       </button>
       <button className="iconbtn glass ui-bell" type="button" aria-label={unread ? `알림 ${unread}개` : '알림'} onClick={() => selectTab('inbox')}>
         {unread > 0 && <span className="ui-badge-num">{unread}</span>}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg>
+        <Bell size={18} aria-hidden="true" />
       </button>
       {token
         ? <>

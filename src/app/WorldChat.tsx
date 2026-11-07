@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api/client';
 import { useNet, useMultiplayer } from '../net/useMultiplayer';
 import { useUi } from './state/ui';
+import { EMOTE } from './icons';
 
 /** 접속 상태·이모트·한 줄 채팅·초대 링크 (왼쪽 아래) */
 export function WorldChat() {
@@ -33,7 +34,7 @@ export function WorldChat() {
       </div>
       {status === 'open' && (
         <div className="ui-chat-row">
-          {(['wave', 'heart', 'clap'] as const).map((e) => <button key={e} type="button" aria-label={e} onClick={() => conn?.sendEmote(e)}>{{ wave: '👋', heart: '❤️', clap: '👏' }[e]}</button>)}
+          {(Object.keys(EMOTE) as (keyof typeof EMOTE)[]).map((e) => { const { Icon, label } = EMOTE[e]; return <button key={e} type="button" aria-label={label} title={label} onClick={() => conn?.sendEmote(e)}><Icon size={16} aria-hidden="true" /></button>; })}
           <input value={text} maxLength={40} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') send(); }} placeholder="한마디 (40자)" aria-label="채팅" />
           <button type="button" onClick={invite}>초대</button>
         </div>

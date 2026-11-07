@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
 import { toLocal } from './map/geo';
-import { useCampusBuildings, useHousingList, useNearby, useProfile, NEARBY_ICON } from './features/catalog';
+import { useCampusBuildings, useHousingList, useNearby, useProfile } from './features/catalog';
+import { CAMPUS_SVG, NEARBY_ICON } from './icons';
 import { useListingDetail, useListingsUi } from './features/listings';
 
 /** 3D 에 올리는 부가 표시: 시간대 조명·내 과 건물·선택한 집 주변 시설·모집 중 단지 빛 기둥 (화면 요소 없음) */
@@ -25,7 +26,7 @@ export function WorldEffects() {
     const mine = (buildings ?? []).filter((b) => profile?.buildingIds?.includes(b.id));
     api.setMarkers(mine.map((b) => {
       const [x, z] = toLocal(b.lat, b.lng);
-      return { id: `b${b.id}`, x, z, color: '#0e4a84', text: `내 과 건물 · ${b.name}`, label: `내 과 건물 ${b.name}`, onClick: () => api.goToPlace(x, z) };
+      return { id: `b${b.id}`, x, z, color: '#0e4a84', text: `내 과 건물 · ${b.name}`, icon: CAMPUS_SVG, label: `내 과 건물 ${b.name}`, onClick: () => api.goToPlace(x, z) };
     }), 'mybuilding');
     return () => api.setMarkers([], 'mybuilding');
   }, [api, buildings, profile]);
@@ -36,7 +37,7 @@ export function WorldEffects() {
     const items = selected && nearby ? nearby.map((n, i) => {
       const [x, z] = toLocal(n.lat, n.lng);
       const m = NEARBY_ICON[n.category];
-      return { id: `n${i}`, x, z, color: '#5b6673', text: `${m.icon} ${n.name}`, label: `${m.label} ${n.name} ${n.distanceM}m` };
+      return { id: `n${i}`, x, z, color: '#5b6673', text: n.name, icon: m.svg, label: `${m.label} ${n.name} ${n.distanceM}m` };
     }) : [];
     api.setMarkers(items, 'nearby');
     return () => api.setMarkers([], 'nearby');

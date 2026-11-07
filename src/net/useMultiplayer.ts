@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
+import { EMOTE_SVG } from '../app/icons';
 import { useWorld } from '../app/state/world';
 import { useSession } from '../app/state/session';
 import { connectWorld, type WorldConnection } from './worldSocket';
@@ -54,7 +55,7 @@ export function useMultiplayer() {
       const now = performance.now();
       api.setRemotePlayers(Object.entries(model.current.players).map(([id, pl]) => {
         const { p, r } = interpolate(pl.samples, now - INTERP_DELAY);
-        return { id, nickname: pl.nickname, x: p[0], z: p[2], r, chat: pl.chat && pl.chat.until > now ? pl.chat.m : undefined, emote: pl.emote && pl.emote.until > now ? EMOTE_TEXT[pl.emote.e] : undefined };
+        return { id, nickname: pl.nickname, x: p[0], z: p[2], r, chat: pl.chat && pl.chat.until > now ? pl.chat.m : undefined, emote: pl.emote && pl.emote.until > now ? EMOTE_SVG[pl.emote.e] : undefined };
       }));
       raf = requestAnimationFrame(loop);
     };
@@ -63,5 +64,4 @@ export function useMultiplayer() {
   }, [api, enabled, nickname]);
 }
 
-const EMOTE_TEXT: Record<string, string> = { wave: '👋', heart: '❤️', clap: '👏' };
 export { CHAT_MS, EMOTE_MS };

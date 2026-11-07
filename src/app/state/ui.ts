@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import type { TimeOfDay } from '../../world/timeOfDay';
 
 export type Tab = 'home' | 'tour' | 'dorm' | 'housing' | 'transfer' | 'myhome' | 'fav' | 'inbox';
 
@@ -22,8 +21,9 @@ type UiState = {
   selectTab: (tab: Tab) => void;
   setPanelOpen: (open: boolean) => void;
   /** 실내 3D 보는 중이면 평면도 id. 나가면 null (동네 3D 는 그 자리 그대로 남아 있다) */
-  timeOfDay: TimeOfDay;
-  setTimeOfDay: (t: TimeOfDay) => void;
+  /** 시간대 슬라이더 위치: 0 = 낮(왼쪽) ~ 1 = 밤(오른쪽) */
+  timeOfDay: number;
+  setTimeOfDay: (t: number) => void;
   /** 3D·지도에 청년안심주택 단지를 보일지 (C3 '청년안심주택 여부' 필터) */
   showHousing: boolean;
   setShowHousing: (v: boolean) => void;
@@ -43,7 +43,7 @@ export const useUi = create<UiState>((set, get) => ({
     set(s.panelOpen && s.tab === tab ? { panelOpen: false } : { tab, panelOpen: true });
   },
   setPanelOpen: (panelOpen) => set({ panelOpen }),
-  timeOfDay: 'day',
+  timeOfDay: 0,
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   showHousing: true,
   setShowHousing: (showHousing) => set({ showHousing }),

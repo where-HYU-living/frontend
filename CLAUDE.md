@@ -28,7 +28,7 @@
 ## 기능 위치
 - 탭 패널: `ListingsPanel`(집 찾기·상세·판결), `DormPanel`, `HousingPanel`(단지·공고 캘린더), `FavoritesPanel`, `CampusTourPanel`. 3D 말풍선은 `ListingMarkers`·`PlaceMarkers` 가 `api.setMarkers(items, group)` 로 올린다.
 - 후기 `ReviewSection`, 내 집 기록·월간 리포트·만료 알림 `MyHomePanel`, 양도 `TransferPanel`(+`AddressPicker`, `TransferMarkers`), 알림함 `InboxPanel`(상단 종 아이콘+안 읽은 개수). 판결 카드는 `VerdictCard` 하나를 매물·양도가 같이 쓴다. 서버 훅은 `features/more.ts`(후기·내 집·알림·양도), `features/catalog.ts`(기숙사·단지·프로필).
-- 3D 부가 표시는 `WorldEffects` 한 곳(시간대 조명 `api.setTimeOfDay`·내 과 건물·선택한 집 주변 시설·모집 중 단지 빛 기둥 `api.setBeacons`). 조명 프리셋은 `src/world/timeOfDay.ts`.
+- 3D 부가 표시는 `WorldEffects` 한 곳(시간대 조명 `api.setTimeOfDay`·내 과 건물·선택한 집 주변 시설·모집 중 단지 빛 기둥 `api.setBeacons`). 시간대는 상단바 슬라이더(왼쪽 낮 ~ 오른쪽 밤, `useUi.timeOfDay` 0~1)이고 `src/world/timeOfDay.ts` 의 `lightAt`(보간)·`starsAt`(별)·`clockLabel`(시각)을 쓴다. 아이콘은 모두 `lucide-react`, 3D 말풍선처럼 DOM 에 직접 넣는 곳은 `src/app/icons.tsx` 의 SVG 문자열을 쓴다.
 - 실내 3D: `src/interior/` — `buildInterior`(평면도→벽 조각, 순수 함수)·`InteriorScene`(별도 Canvas). 들어가면 동네 Canvas 는 멈추고(`frameloop never`) 나오면 그 자리 그대로.
 - 멀티플레이: `src/net/` — `worldReducer`·`interpolate`(순수)·`worldSocket`(재접속·10Hz)·`useMultiplayer`(3D 에 `api.setRemotePlayers`). `?solo` 를 붙이면 접속 안 함, `?invite=` 는 접속 후 주소에서 지운다.
 

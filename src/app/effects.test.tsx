@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderWithClient } from '../test/wrap';
-import { LIGHT_PRESETS } from '../world/timeOfDay';
+import { clockLabel, lightAt, LIGHT_PRESETS, starsAt } from '../world/timeOfDay';
 import { buildListingParams, cheaperListings, NO_FILTERS, useListingsUi } from './features/listings';
 import { WorldEffects } from './WorldEffects';
 import { ListingMarkers } from './ListingMarkers';
@@ -21,7 +21,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   Object.values(api).forEach((f) => typeof f === 'function' && 'mockClear' in f && (f as ReturnType<typeof vi.fn>).mockClear());
   useWorld.setState({ status: 'ready', progress: 1, error: null, api: api as never });
-  useUi.setState({ timeOfDay: 'day', showHousing: true });
+  useUi.setState({ timeOfDay: 0, showHousing: true });
   useListingsUi.setState({ filters: NO_FILTERS, selectedId: null });
   useSession.setState({ token: null });
 });
@@ -33,6 +33,33 @@ test('night is darker than day, evening in between', () => {
   expect(P.evening.sun).toBeLessThan(P.day.sun);
   expect(P.night.env).toBeLessThan(P.day.env);
   expect(P.night.bg).toBeLessThan(P.day.bg);
+});
+
+test('lightAt blends smoothly: endpoints are the presets, sun only ever dims as t grows', () => {
+  const same = (a: ReturnType<typeof lightAt>, b: ReturnType<typeof lightAt>) => {
+    expect(a.sun).toBeCloseTo(b.sun, 6); expect(a.sunColor).toBe(b.sunColor); expect(a.fog).toBe(b.fog);
+    expect(a.env).toBeCloseTo(b.env, 6); expect(a.bg).toBeCloseTo(b.bg, 6); expect(a.exposure).toBeCloseTo(b.exposure, 6);
+    a.sunDir.forEach((v, i) => expect(v).toBeCloseTo(b.sunDir[i], 6));
+  };
+  same(lightAt(0), LIGHT_PRESETS.day);
+  same(lightAt(0.5), LIGHT_PRESETS.evening);
+  same(lightAt(1), LIGHT_PRESETS.night);
+  same(lightAt(-3), LIGHT_PRESETS.day); // 범위 밖은 끝값
+  let prev = Infinity;
+  for (let i = 0; i <= 100; i++) { const sun = lightAt(i / 100).sun; expect(sun).toBeLessThanOrEqual(prev); prev = sun; }
+  expect(lightAt(0.25).fog).not.toBe(LIGHT_PRESETS.day.fog); // 색도 중간값
+});
+
+test('stars appear only toward night, clock shows 12:00 pm → 12:00 am', () => {
+  expect(starsAt(0)).toBe(0);
+  expect(starsAt(0.5)).toBe(0);
+  expect(starsAt(1)).toBe(1);
+  expect(starsAt(0.8)).toBeGreaterThan(0);
+  expect(starsAt(0.8)).toBeLessThan(1);
+  expect(clockLabel(0)).toBe('오후 12:00');
+  expect(clockLabel(0.5)).toBe('오후 6:00');
+  expect(clockLabel(1)).toBe('오전 12:00');
+  expect(clockLabel(0.25)).toBe('오후 3:00');
 });
 
 test('cheaperListings picks lower converted rent, skips pending and itself, cheapest first, max 3', () => {
@@ -68,16 +95,21 @@ test('filter panel sends walk, room type; housing toggle updates ui state', asyn
 test('favorited listings get a heart on the 3D marker', async () => {
   fetchMock.mockResolvedValue(json({ items: [L({ id: 1, favorited: true }), L({ id: 2, favorited: false })], page: 0, size: 100, total: 2 }));
   renderWithClient(<ListingMarkers />);
-  await waitFor(() => expect(api.setMarkers).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ text: '♥ 1,000/55' })]), 'listing'));
-  const texts = (api.setMarkers.mock.calls.at(-1)![0] as { text: string }[]).map((m) => m.text);
-  expect(texts).toEqual(['♥ 1,000/55', '1,000/55']);
+  await waitFor(() => expect(api.setMarkers).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ text: '1,000/55', icon: expect.stringContaining('<svg') })]), 'listing'));
+  const items = api.setMarkers.mock.calls.at(-1)![0] as { text: string; icon?: string }[];
+  expect(items.map((m) => !!m.icon)).toEqual([true, false]); // 찜한 것만 하트 아이콘
 });
 
-test('time of day buttons drive the 3D lighting', async () => {
+test('dragging the time slider moves the 3D lighting and shows the clock', async () => {
   renderWithClient(<><TopBar /><WorldEffects /></>);
-  await waitFor(() => expect(api.setTimeOfDay).toHaveBeenCalledWith('day'));
-  fireEvent.click(screen.getByLabelText('밤'));
-  await waitFor(() => expect(api.setTimeOfDay).toHaveBeenLastCalledWith('night'));
+  await waitFor(() => expect(api.setTimeOfDay).toHaveBeenCalledWith(0));
+  expect(screen.getByText('오후 12:00')).toBeTruthy();
+  fireEvent.change(screen.getByLabelText(/시간대/), { target: { value: '1000' } });
+  await waitFor(() => expect(api.setTimeOfDay).toHaveBeenLastCalledWith(1));
+  expect(screen.getByText('오전 12:00')).toBeTruthy();
+  fireEvent.change(screen.getByLabelText(/시간대/), { target: { value: '500' } });
+  await waitFor(() => expect(api.setTimeOfDay).toHaveBeenLastCalledWith(0.5));
+  expect(screen.getByText('오후 6:00')).toBeTruthy();
 });
 
 test('my department building, recruiting beacons and nearby icons are pushed to 3D', async () => {
@@ -94,7 +126,7 @@ test('my department building, recruiting beacons and nearby icons are pushed to 
   renderWithClient(<WorldEffects />);
   await waitFor(() => expect(api.setMarkers).toHaveBeenCalledWith([expect.objectContaining({ text: '내 과 건물 · 공업센터본관' })], 'mybuilding'));
   await waitFor(() => expect(api.setBeacons).toHaveBeenCalledWith([expect.objectContaining({ color: '#2f9e57' })])); // 모집 중 1곳만
-  await waitFor(() => expect(api.setMarkers).toHaveBeenCalledWith([expect.objectContaining({ text: '🏪 GS25' })], 'nearby'));
+  await waitFor(() => expect(api.setMarkers).toHaveBeenCalledWith([expect.objectContaining({ text: 'GS25', icon: expect.stringContaining('<svg') })], 'nearby'));
   await act(async () => { useUi.setState({ showHousing: false }); });
   await waitFor(() => expect(api.setBeacons).toHaveBeenLastCalledWith([]));
 });

@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { TrendingDown, TrendingUp } from 'lucide-react';
 import { manwon } from '../lib/money';
 import { GRADE_META } from '../lib/grade';
 import type { AddressResult, MyHome } from '../api/types';
@@ -42,8 +43,8 @@ export function ReportCard({ month }: { month: string }) {
   return (
     <section className="ui-verdict" aria-label="월간 리포트">
       <p className="ui-verdict-text">이번 달 {manwon(r.total)}</p>
-      {r.prevTotal != null && r.diff != null && <p className="ui-card-sub">지난달보다 {manwon(Math.abs(r.diff))} {r.diff >= 0 ? '↑' : '↓'}</p>}
-      {r.topIncrease && r.topIncrease.diff > 0 && <p className="ui-card-sub">{ITEM_LABEL[r.topIncrease.item] ?? r.topIncrease.item} {manwon(r.topIncrease.diff)} ↑</p>}
+      {r.prevTotal != null && r.diff != null && <p className="ui-card-sub">지난달보다 {manwon(Math.abs(r.diff))} {r.diff >= 0 ? <TrendingUp size={13} aria-label="올랐어요" /> : <TrendingDown size={13} aria-label="내렸어요" />}</p>}
+      {r.topIncrease && r.topIncrease.diff > 0 && <p className="ui-card-sub">{ITEM_LABEL[r.topIncrease.item] ?? r.topIncrease.item} {manwon(r.topIncrease.diff)} <TrendingUp size={13} aria-label="올랐어요" /></p>}
       <dl className="ui-kv">
         {(Object.entries(r.breakdown) as [string, number | null][]).map(([k, v]) => (<Fragment key={k}><dt>{ITEM_LABEL[k] ?? k}</dt><dd>{v == null ? '기록 없음' : manwon(v)}</dd></Fragment>))}
       </dl>

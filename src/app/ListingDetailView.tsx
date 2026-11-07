@@ -1,3 +1,4 @@
+import { BackButton } from './icons';
 import { manwon } from '../lib/money';
 import { ApiError } from '../api/client';
 import { cheaperListings, useAlternatives, useListingDetail, useListings, useListingsUi, usePriceCheck } from './features/listings';
@@ -22,7 +23,7 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
   if (d.isError || !d.data) {
     return (
       <div>
-        <button type="button" className="ui-back" onClick={onBack}>← 목록</button>
+        <BackButton onClick={onBack} />
         <p className="empty">{d.error instanceof ApiError && d.error.status === 404 ? '매물을 찾을 수 없어요.' : '매물을 불러오지 못했어요.'}</p>
       </div>
     );
@@ -32,7 +33,7 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
 
   return (
     <div className="ui-detail">
-      <button type="button" className="ui-back" onClick={onBack}>← 목록</button>
+      <BackButton onClick={onBack} />
       <div className="ui-detail-head"><h3>{l.title}</h3><HeartButton type="LISTING" id={l.id} favorited={l.favorited} /></div>
       <p className="ui-card-sub">{l.address}</p>
 

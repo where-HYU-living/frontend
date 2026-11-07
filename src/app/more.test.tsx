@@ -53,8 +53,9 @@ test('report card: totals, previous month diff, cumulative excess, pending', asy
   fetchMock.mockResolvedValueOnce(json(rep));
   renderWithClient(<ReportCard month="2026-10" />);
   expect(await screen.findByText('이번 달 74.2만')).toBeTruthy();
-  expect(screen.getByText('지난달보다 4.1만 ↑')).toBeTruthy();
-  expect(screen.getByText('가스비 2.1만 ↑')).toBeTruthy();
+  expect(screen.getByText('지난달보다 4.1만')).toBeTruthy();
+  expect(screen.getByText('가스비 2.1만')).toBeTruthy();
+  expect(screen.getAllByLabelText('올랐어요')).toHaveLength(2); // 아이콘으로 표시
   expect(screen.getByText(/지금까지 적정가보다 131.2만 원 더 냈어요/)).toBeTruthy();
   expect(screen.getByText('기록 없음')).toBeTruthy(); // 인터넷 null
   cleanup();

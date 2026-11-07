@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { HEART_SVG } from './icons';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
 import { toLocal } from './map/geo';
@@ -19,7 +20,8 @@ export function ListingMarkers() {
       const g = GRADE_META[l.grade];
       return {
         id: String(l.id), x, z, color: g.color,
-        text: `${l.favorited ? '♥ ' : ''}${depositRent(l.deposit, l.rent)}${l.grade === 'PENDING' ? ' ?' : ''}`,
+        text: `${depositRent(l.deposit, l.rent)}${l.grade === 'PENDING' ? ' ?' : ''}`,
+        icon: l.favorited ? HEART_SVG : undefined,
         label: `${l.title} ${g.label}`,
         onClick: () => { useListingsUi.getState().select(l.id); useUi.setState({ tab: 'home', panelOpen: true }); },
       };

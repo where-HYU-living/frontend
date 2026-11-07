@@ -11,7 +11,7 @@ import { makeSite } from '../site.js';
 import { makeAmphitheater, makeStationExits, makeLabel, makeProps } from '../landmarks.js';
 import { makeLion } from '../landmarks/lion.js';
 import { Player } from '../player.js';
-import { LIGHT_PRESETS } from './timeOfDay';
+import { lightAt, starsAt } from './timeOfDay';
 
 // 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: R3F WorldCanvas).
 // 반환값의 frame(dt) 를 매 프레임 부르면 플레이어·태양·LOD·미니맵이 갱신된다.
@@ -34,12 +34,29 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff1dc, 3.0);
   const sunDir = new THREE.Vector3(-0.62, 0.66, 0.42).normalize();
-  const setTimeOfDay = (key) => {
-    const L = LIGHT_PRESETS[key]; if (!L) return;
+  // 밤하늘 별 (카메라를 따라다니는 큰 구). 슬라이더가 밤 쪽일수록 또렷해진다
+  const starGeo = new THREE.BufferGeometry();
+  {
+    const N = 700, pos = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const u = Math.random(), v = Math.random() * 0.92 + 0.04; // 위쪽 반구
+      const th = u * Math.PI * 2, ph = Math.acos(v), r = 1500;
+      pos.set([r * Math.sin(ph) * Math.cos(th), r * Math.cos(ph), r * Math.sin(ph) * Math.sin(th)], i * 3);
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  }
+  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
+  const stars = new THREE.Points(starGeo, starMat);
+  stars.visible = false; stars.frustumCulled = false; stars.renderOrder = -1;
+  scene.add(stars);
+  // t: 0(낮) ~ 1(밤). 조명·안개·하늘 밝기·별이 같이 부드럽게 바뀐다
+  const setTimeOfDay = (t) => {
+    const L = lightAt(t);
     sun.intensity = L.sun; sun.color.setHex(L.sunColor); sunDir.set(...L.sunDir).normalize();
     hemi.intensity = L.hemi; scene.environmentIntensity = L.env; scene.backgroundIntensity = L.bg;
     scene.fog.color.setHex(L.fog); scene.fog.density = L.fogDensity;
     renderer.toneMappingExposure = L.exposure;
+    starMat.opacity = starsAt(t); stars.visible = starMat.opacity > 0.01;
   };
   sun.castShadow = true;
   sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
@@ -185,7 +202,8 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       el.type = 'button';
       el.className = 'w3d-marker';
       el.style.setProperty('--mk', it.color);
-      el.textContent = it.text;
+      if (it.icon) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = it.icon; el.appendChild(ic); }
+      el.appendChild(document.createTextNode(it.text));
       if (it.label) el.setAttribute('aria-label', it.label);
       el.addEventListener('click', (e) => { e.stopPropagation(); it.onClick?.(); });
       const obj = new CSS2DObject(el);
@@ -215,7 +233,11 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
         m = { g, el };
         remotes.set(r.id, m);
       }
-      if (m.el.dataset.n !== r.nickname + (r.chat || '')) { m.el.dataset.n = r.nickname + (r.chat || ''); m.el.textContent = r.chat ? `${r.nickname}: ${r.chat}` : r.emote ? `${r.nickname} ${r.emote}` : r.nickname; }
+      const sig = `${r.nickname}|${r.chat || ''}|${r.emote ? 1 : 0}`;
+      if (m.el.dataset.n !== sig) {
+        m.el.dataset.n = sig; m.el.textContent = r.chat ? `${r.nickname}: ${r.chat}` : r.nickname;
+        if (r.emote && !r.chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = r.emote; m.el.appendChild(ic); }
+      }
       m.g.position.set(r.x, heightAt(r.x, r.z), r.z);
       m.g.rotation.y = r.r;
     }
@@ -339,6 +361,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   let mmTick = 0, lodTick = 1;
   const frame = (dt) => {
     player.update(dt);
+    stars.position.copy(camera.position);
     sun.position.copy(player.pos).addScaledVector(sunDir, 160);
     sun.target.position.copy(player.pos);
     for (const l of labels) {

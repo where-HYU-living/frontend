@@ -1,3 +1,4 @@
+import { BackButton } from './icons';
 import { useState } from 'react';
 import { ApiError } from '../api/client';
 import { manwon } from '../lib/money';
@@ -14,11 +15,11 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   const enter = useUi((s) => s.enterIndoor);
   const requireLogin = useSession((s) => s.requireLogin);
   if (q.isLoading) return <p className="empty">불러오는 중…</p>;
-  if (!q.data) return <div><button type="button" className="ui-back" onClick={onBack}>← 목록</button><p className="empty">단지 정보를 불러오지 못했어요.</p></div>;
+  if (!q.data) return <div><BackButton onClick={onBack} /><p className="empty">단지 정보를 불러오지 못했어요.</p></div>;
   const h = q.data;
   return (
     <div className="ui-detail">
-      <button type="button" className="ui-back" onClick={onBack}>← 목록</button>
+      <BackButton onClick={onBack} />
       <div className="ui-detail-head"><h3>{h.name}</h3><HeartButton type="HOUSING" id={h.id} favorited={false} /></div>
       <p className="ui-card-sub">{h.address}</p>
       <p className="ui-card-sub">{h.walkMin == null ? '과 건물까지 도보 시간 정보 없음' : `과 건물까지 도보 ${h.walkMin}분`}{h.contact ? ` · 입주지원센터 ${h.contact}` : ''}</p>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Star } from 'lucide-react';
 import type { ReviewScores, ReviewTargetType } from '../api/types';
 import { useAddReview, useReviews, validateReview } from './features/more';
 import { useSession } from './state/session';
@@ -9,7 +10,7 @@ function Stars({ value, onChange, label }: { value: number; onChange: (n: number
   return (
     <span className="ui-stars" role="radiogroup" aria-label={label}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <button key={n} type="button" role="radio" aria-checked={value === n} aria-label={`${label} ${n}점`} className={n <= value ? 'on' : ''} onClick={() => onChange(n)}>★</button>
+        <button key={n} type="button" role="radio" aria-checked={value === n} aria-label={`${label} ${n}점`} className={n <= value ? 'on' : ''} onClick={() => onChange(n)}><Star size={18} fill={n <= value ? 'currentColor' : 'none'} aria-hidden="true" /></button>
       ))}
     </span>
   );
@@ -40,7 +41,7 @@ export function ReviewSection({ targetType, targetId }: { targetType: ReviewTarg
         : <p className="ui-card-sub">평균 {q.data.average == null ? '-' : q.data.average.toFixed(1)}점 · 후기 {q.data.count}개</p>)}
       <ul className="ui-rows ui-review-list">
         {q.data?.items.map((r) => (
-          <li key={r.id}><span><strong>{'★'.repeat(r.rating)}</strong> <span className="ui-card-sub">{r.authorNickname}</span>{r.text && <span>{r.text}</span>}</span></li>
+          <li key={r.id}><span><strong className="ui-stars-inline" aria-label={`후기 별점 ${r.rating}점`}>{Array.from({ length: r.rating }, (_, i) => <Star key={i} size={13} fill="currentColor" aria-hidden="true" />)}</strong> <span className="ui-card-sub">{r.authorNickname}</span>{r.text && <span>{r.text}</span>}</span></li>
         ))}
       </ul>
       {!open
