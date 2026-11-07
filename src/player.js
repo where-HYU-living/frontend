@@ -55,22 +55,26 @@ export class Player {
     this.camPos = new THREE.Vector3();
     this.ray = new THREE.Raycaster();
     this.occluders = null;
+    this.offs = [];
     this.#bind(dom);
   }
+  // 모든 입력 리스너를 지운다 (R3F 재마운트·HMR 에서 입력이 중복되지 않게)
+  dispose() { for (const off of this.offs) off(); this.offs = []; this.keys.clear(); }
   #bind(dom) {
-    addEventListener('keydown', (e) => { if (e.target.tagName === 'INPUT') return; this.keys.add(e.code); });
-    addEventListener('keyup', (e) => this.keys.delete(e.code));
-    addEventListener('blur', () => this.keys.clear());
+    const on = (t, type, fn, opts) => { t.addEventListener(type, fn, opts); this.offs.push(() => t.removeEventListener(type, fn, opts)); };
+    on(window, 'keydown', (e) => { if (e.target.tagName === 'INPUT') return; this.keys.add(e.code); });
+    on(window, 'keyup', (e) => this.keys.delete(e.code));
+    on(window, 'blur', () => this.keys.clear());
     let drag = null;
-    dom.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' && e.clientX < 180 && e.clientY > innerHeight - 220) return; drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; dom.setPointerCapture(e.pointerId); });
-    dom.addEventListener('pointermove', (e) => {
+    on(dom, 'pointerdown', (e) => { if (e.pointerType === 'touch' && e.clientX < 180 && e.clientY > innerHeight - 220) return; drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; dom.setPointerCapture(e.pointerId); });
+    on(dom, 'pointermove', (e) => {
       if (!drag || e.pointerId !== drag.id) return;
       this.yaw -= (e.clientX - drag.x) * 0.006;
       this.pitch = Math.max(0.05, Math.min(1.25, this.pitch + (e.clientY - drag.y) * 0.004));
       drag.x = e.clientX; drag.y = e.clientY;
     });
-    dom.addEventListener('pointerup', () => (drag = null));
-    dom.addEventListener('wheel', (e) => { this.dist = Math.max(3.5, Math.min(60, this.dist * (1 + e.deltaY * 0.001))); e.preventDefault(); }, { passive: false });
+    on(dom, 'pointerup', () => (drag = null));
+    on(dom, 'wheel', (e) => { this.dist = Math.max(3.5, Math.min(60, this.dist * (1 + e.deltaY * 0.001))); e.preventDefault(); }, { passive: false });
 
     // 터치 조이스틱
     const base = document.getElementById('joystick'), knob = document.getElementById('joystick-knob');
@@ -84,10 +88,10 @@ export class Player {
         knob.style.transform = `translate(${dx}px, ${dy}px)`;
         this.joy = { x: dx / M, y: -dy / M };
       };
-      base.addEventListener('pointerdown', (e) => { id = e.pointerId; base.setPointerCapture(id); move(e); });
-      base.addEventListener('pointermove', (e) => e.pointerId === id && move(e));
+      on(base, 'pointerdown', (e) => { id = e.pointerId; base.setPointerCapture(id); move(e); });
+      on(base, 'pointermove', (e) => e.pointerId === id && move(e));
       const end = () => { id = null; knob.style.transform = ''; this.joy = { x: 0, y: 0 }; };
-      base.addEventListener('pointerup', end); base.addEventListener('pointercancel', end);
+      on(base, 'pointerup', end); on(base, 'pointercancel', end);
     }
   }
   teleport(x, z, faceX, faceZ) {
