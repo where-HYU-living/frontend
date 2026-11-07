@@ -1,0 +1,20 @@
+{
+ "query": "",
+ "loadMs": 1213,
+ "callsPerFrame": 769,
+ "trisPerFrame": 2964291,
+ "p50": 16.7,
+ "p95": 17.4,
+ "fps": 59.9,
+ "textures": 142,
+ "geometries": 256,
+ "meshes": 376,
+ "requests": 88,
+ "external": [
+  "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css",
+  "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Regular.woff2",
+  "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Medium.woff2",
+  "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-ExtraBold.woff2",
+  "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Bold.woff2"
+ ]
+}
