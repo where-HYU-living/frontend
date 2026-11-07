@@ -18,3 +18,9 @@ test('map switch button and clock have fixed widths so the top bar does not shif
   expect(css).toMatch(/\.mapswitch \{ width: \d+px;/);
   expect(css).toMatch(/\.tod-clock \{[^}]*width: \d+px/);
 });
+
+test('glass surfaces and inputs set a dark text color (outside .ui-layer the body color is light cream)', () => {
+  const css = readFileSync('src/app/app.css', 'utf8');
+  expect(css).toMatch(/\.glass \{[^}]*color: var\(--ui-ink\)/);
+  expect(css).toMatch(/\.ui-modal input[^{]*\{ color: var\(--ui-ink\)/);
+});

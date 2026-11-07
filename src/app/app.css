@@ -27,6 +27,8 @@
 .ui-layer :focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
 
 .glass {
+  /* 3D 쪽 body 글자색은 밝은 크림색이라, .ui-layer 밖(모달·채팅·실내 바)의 유리 요소는 어두운 글자색을 직접 지정해야 보인다 */
+  color: var(--ui-ink);
   background: var(--ui-glass);
   backdrop-filter: var(--ui-blur);
   -webkit-backdrop-filter: var(--ui-blur);
@@ -239,3 +241,11 @@
 
 /* 3D↔지도 전환 버튼: 글자가 바뀌어도 너비가 같아야 오른쪽 정렬된 슬라이더가 밀리지 않는다 */
 .mapswitch { width: 110px; padding: 0; text-align: center; }
+
+/* 입력칸은 어디에 놓여도 글자색·안내 문구 색을 직접 지정 (바깥 body 색을 물려받지 않게) */
+.ui-modal input, .ui-modal select, .ui-modal textarea, .ui-chat input, .ui-form input, .ui-form select, .ui-form textarea,
+.ui-review-form textarea, .ui-addr input, .ui-filter input, .ui-filter select, .ui-narrow { color: var(--ui-ink); caret-color: var(--ui-ink); }
+.ui-modal input::placeholder, .ui-modal textarea::placeholder, .ui-chat input::placeholder, .ui-form input::placeholder, .ui-form textarea::placeholder,
+.ui-review-form textarea::placeholder, .ui-addr input::placeholder, .ui-filter input::placeholder { color: var(--ui-ink-3); }
+.ui-modal select option, .ui-form select option, .ui-filter select option { color: #16202e; background: #fff; }
+.ui-chat-row button, .ui-interior-bar { color: var(--ui-ink); }
