@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api/client';
+import bundledDepartments from '../data/departments.json';
+import campusPlaces from '../data/campusPlaces.json';
 import type { Nearby, CampusBuilding, Announcement, AnnouncementStatus, Department, Dorm, EventType, FavoriteItem, FloorPlan, Housing, HousingDetail, Profile } from '../../api/types';
 import { useSession } from '../state/session';
 
@@ -10,7 +12,23 @@ export const useHousingList = () => useQuery({ queryKey: ['housing'], queryFn: g
 export const useHousingDetail = (id: number | null) => useQuery({ queryKey: ['housing', id], enabled: id != null, queryFn: get<HousingDetail>(`/housing/${id}`) });
 export const useAnnouncements = (status?: AnnouncementStatus) => useQuery({ queryKey: ['announcements', status], queryFn: get<Announcement[]>('/housing/announcements', { status }) });
 export const useFloorPlan = (id: number | null) => useQuery({ queryKey: ['floorplan', id], enabled: id != null, staleTime: Infinity, queryFn: get<FloorPlan>(`/floorplans/${id}`) });
-export const useDepartments = () => useQuery({ queryKey: ['departments'], queryFn: get<Department[]>('/departments'), staleTime: Infinity });
+/** 서버 목록을 쓰되, 서버가 없거나 비어 있으면 앱에 들어 있는 한양대 서울캠퍼스 목록(src/app/data/departments.json)으로 대신한다 */
+export const useDepartments = () => useQuery({
+  queryKey: ['departments'], staleTime: Infinity, retry: false,
+  queryFn: async ({ signal }): Promise<Department[]> => {
+    try {
+      const list = await api<Department[]>('/departments', { signal });
+      return list.length ? list : (bundledDepartments as Department[]);
+    } catch { return bundledDepartments as Department[]; }
+  },
+});
+/** 건물 id → 이름 (서버 /buildings, 없으면 앱에 들어 있는 건물 목록) */
+export const useBuildingNames = () => {
+  const q = useCampusBuildings();
+  const names = new Map<number, string>(campusPlaces.map((p) => [p.id, p.name]));
+  for (const b of q.data ?? []) names.set(b.id, b.name);
+  return names;
+};
 export const useCampusBuildings = () => useQuery({ queryKey: ['buildings'], queryFn: get<CampusBuilding[]>('/buildings'), staleTime: Infinity, retry: false });
 /** F5: 집 주변 300m 시설. 서버에 없거나 실패하면 빈 목록 취급 */
 export const useNearby = (listingId: number | null) => useQuery({ queryKey: ['nearby', listingId], enabled: listingId != null, retry: false, staleTime: 300_000, queryFn: get<Nearby[]>(`/listings/${listingId}/nearby`, { radius: 300 }) });

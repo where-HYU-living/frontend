@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useDepartments, useProfile, useSaveProfile } from './features/catalog';
+import { useBuildingNames, useDepartments, useProfile, useSaveProfile } from './features/catalog';
+import { DepartmentPicker } from './DepartmentPicker';
 import { useSession } from './state/session';
 import { useUi } from './state/ui';
 
@@ -13,6 +14,7 @@ export function ProfileModal() {
   const profile = useProfile();
   const deps = useDepartments();
   const save = useSaveProfile();
+  const buildingNames = useBuildingNames();
   const [dep, setDep] = useState('');
   const [rent, setRent] = useState('');
   const [deposit, setDeposit] = useState('');
@@ -42,10 +44,7 @@ export function ProfileModal() {
       <div className="ui-modal glass" role="dialog" aria-label="내 정보" onMouseDown={(e) => e.stopPropagation()}>
         <h2>내 정보</h2>
         <p className="ui-modal-sub">학과를 고르면 과 건물까지 도보 시간을 보여주고, 예산을 넣으면 초과 여부를 알려줘요. 건너뛰어도 돼요.</p>
-        <select value={dep} onChange={(e) => setDep(e.target.value)} aria-label="학과">
-          <option value="">학과 선택 안 함</option>
-          {(deps.data ?? []).map((d) => <option key={d.id} value={d.id}>{d.college} · {d.name}</option>)}
-        </select>
+        <DepartmentPicker departments={deps.data ?? []} value={dep === '' ? null : Number(dep)} buildingNames={buildingNames} onChange={(id) => setDep(id == null ? '' : String(id))} />
         <label className="ui-modal-row">월세 상한 <input inputMode="numeric" value={rent} onChange={(e) => setRent(e.target.value)} aria-label="월세 상한(만원)" /> 만원</label>
         <label className="ui-modal-row">보증금 상한 <input inputMode="numeric" value={deposit} onChange={(e) => setDeposit(e.target.value)} aria-label="보증금 상한(만원)" /> 만원</label>
         {save.isError && <p className="ui-modal-error" role="alert">저장하지 못했어요. 잠시 뒤 다시 해 보세요.</p>}

@@ -249,3 +249,18 @@
 .ui-review-form textarea::placeholder, .ui-addr input::placeholder, .ui-filter input::placeholder { color: var(--ui-ink-3); }
 .ui-modal select option, .ui-form select option, .ui-filter select option { color: #16202e; background: #fff; }
 .ui-chat-row button, .ui-interior-bar { color: var(--ui-ink); }
+
+/* 학과 검색 선택창 */
+.ui-dept { position: relative; display: flex; flex-direction: column; gap: 6px; }
+.ui-dept-chosen { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(14, 74, 132, .09); font-size: 13px; }
+.ui-dept-clear { border: 0; background: none; padding: 2px; color: var(--ui-ink-2); cursor: pointer; display: inline-flex; }
+.ui-dept-input { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: var(--ui-ink-2); }
+.ui-dept-input input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: none; color: var(--ui-ink); font: inherit; }
+.ui-dept-input:focus-within { border-color: #0e4a84; box-shadow: 0 0 0 2px rgba(14, 74, 132, .25); }
+.ui-dept-list { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 4px 0; max-height: 260px; overflow-y: auto; list-style: none; border-radius: 10px; background: #fff; border: 1px solid var(--ui-hair); box-shadow: 0 10px 30px rgba(22, 32, 46, .18); color: #16202e; }
+.ui-dept-list ul { list-style: none; margin: 0; padding: 0; }
+.ui-dept-college { position: sticky; top: 0; padding: 6px 12px 4px; background: #fff; font-size: 11px; font-weight: 700; color: var(--ui-ink-2); letter-spacing: .02em; }
+.ui-dept-list [role='option'] { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; font-size: 14px; cursor: pointer; }
+.ui-dept-list [role='option'].is-active { background: rgba(14, 74, 132, .1); }
+.ui-dept-list [aria-selected='true'] { font-weight: 700; color: #0e4a84; }
+.ui-dept-empty { padding: 10px 12px; font-size: 13px; color: var(--ui-ink-2); }

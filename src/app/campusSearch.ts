@@ -1,4 +1,4 @@
-export type Place = { no: string; name: string; en: string; group: 'dorm' | 'etc'; center: [number, number] | null };
+export type Place = { id: number; no: string; name: string; en: string; group: 'dorm' | 'etc'; center: [number, number] | null };
 
 /** 띄어쓰기·대소문자를 무시해서 비교하려고 정리한다 */
 export const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
