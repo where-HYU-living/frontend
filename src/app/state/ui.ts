@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Tab = 'home' | 'tour' | 'dorm' | 'housing' | 'transfer' | 'myhome';
+export type Tab = 'home' | 'tour' | 'dorm' | 'housing' | 'transfer' | 'myhome' | 'fav' | 'inbox';
 
 export const TABS: { id: Tab; label: string }[] = [
   { id: 'home', label: '집 찾기' },
@@ -20,6 +20,11 @@ type UiState = {
   /** 탭을 누르면 그 탭 패널을 연다. 이미 열린 같은 탭을 다시 누르면 접는다 */
   selectTab: (tab: Tab) => void;
   setPanelOpen: (open: boolean) => void;
+  /** 실내 3D 보는 중이면 평면도 id. 나가면 null (동네 3D 는 그 자리 그대로 남아 있다) */
+  profileOpen: boolean;
+  indoor: { floorplanId: number; title: string } | null;
+  enterIndoor: (floorplanId: number, title: string) => void;
+  exitIndoor: () => void;
 };
 
 export const useUi = create<UiState>((set, get) => ({
@@ -32,4 +37,8 @@ export const useUi = create<UiState>((set, get) => ({
     set(s.panelOpen && s.tab === tab ? { panelOpen: false } : { tab, panelOpen: true });
   },
   setPanelOpen: (panelOpen) => set({ panelOpen }),
+  profileOpen: false,
+  indoor: null,
+  enterIndoor: (floorplanId, title) => set({ indoor: { floorplanId, title } }),
+  exitIndoor: () => set({ indoor: null }),
 }));

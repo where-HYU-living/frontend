@@ -14,10 +14,21 @@
 - 지금 `style.css` 에 남아 있는 옛 HUD 규칙(`.panel`, `.panel-head`, `.pill`, `.title-pill`, `#landmarks`, `#help`, `#loading*`)은 메뉴 층에서 그 이름을 쓰지 않는 한 영향 없다. 메뉴 쪽에서 이 이름들을 다시 쓰지 말 것.
 
 ## 3D ↔ 메뉴 연결
-- 3D 쪽이 메뉴에 주는 기능은 `useWorld().api`(`landmarks`, `goToLandmark`, `teleport`, `getPose`, `dispose`)뿐이다. `WorldCanvas` 가 장면이 준비되면 채운다. 기능을 늘리면 `src/main.d.ts` 도 같이 고친다.
+- 3D 쪽이 메뉴에 주는 기능은 `useWorld().api`(`landmarks`, `goToLandmark`, `goToPlace`, `setMarkers`, `teleport`, `getPose`, `dispose`)뿐이다. `WorldCanvas` 가 장면이 준비되면 채운다. 기능을 늘리면 `src/main.d.ts` 도 같이 고친다.
 - React `StrictMode` 는 쓰지 않는다 (3D가 두 번 생김). `Player` 는 `dispose()` 로 입력 리스너를 모두 지운다 — 새 입력 리스너는 `Player` 의 `on()` 도우미로 달 것.
 - 구역 파일(`src/zones/*.js`)은 `buildWorld.js` 가 `import.meta.glob('../zones/*.js')` 로 불러온다.
 - 3D 좌표: 원점 = 사자상, x = 동, z = 남 (m). 계약 문서의 ORIGIN(정문 임시값)과 아직 다르다 → 매물 위경도를 붙일 때 맞출 것.
+
+## 서버 연결
+- `VITE_API_BASE`(기본 `http://localhost:8080`)로 실서버에 바로 붙는다. 목 서버 없음 — 아직 없는 API(검색·찜·비교 등)는 실패해도 화면이 깨지지 않게 빈 상태/오류 문구로 처리한다.
+- 계약 타입은 `src/api/types.ts` 한 곳, 호출은 `src/api/client.ts`(`api<T>()`), 서버 상태는 TanStack Query(`src/app/features/*.ts`), 로그인은 `src/app/state/session.ts`.
+- 금액은 서버가 원, 화면은 만원(`src/lib/money.ts`). `null` 은 "정보 없음"으로 보여주고 0으로 바꾸지 않는다.
+
+## 기능 위치
+- 탭 패널: `ListingsPanel`(집 찾기·상세·판결), `DormPanel`, `HousingPanel`(단지·공고 캘린더), `FavoritesPanel`, `CampusTourPanel`. 3D 말풍선은 `ListingMarkers`·`PlaceMarkers` 가 `api.setMarkers(items, group)` 로 올린다.
+- 후기 `ReviewSection`, 내 집 기록·월간 리포트·만료 알림 `MyHomePanel`, 양도 `TransferPanel`(+`AddressPicker`, `TransferMarkers`), 알림함 `InboxPanel`(상단 종 아이콘+안 읽은 개수). 판결 카드는 `VerdictCard` 하나를 매물·양도가 같이 쓴다. 서버 훅은 `features/more.ts`(후기·내 집·알림·양도), `features/catalog.ts`(기숙사·단지·프로필).
+- 실내 3D: `src/interior/` — `buildInterior`(평면도→벽 조각, 순수 함수)·`InteriorScene`(별도 Canvas). 들어가면 동네 Canvas 는 멈추고(`frameloop never`) 나오면 그 자리 그대로.
+- 멀티플레이: `src/net/` — `worldReducer`·`interpolate`(순수)·`worldSocket`(재접속·10Hz)·`useMultiplayer`(3D 에 `api.setRemotePlayers`). `?solo` 를 붙이면 접속 안 함, `?invite=` 는 접속 후 주소에서 지운다.
 
 ## 성능 측정 (캡처 없이 숫자만)
 - `node scripts/perf.mjs "q=med"` — draw call/삼각형/프레임/외부 요청. dev 서버(5173)가 떠 있어야 한다. 기준값은 `scripts/perf-baseline.json`.

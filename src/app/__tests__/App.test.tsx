@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 
 const fakeApi = {
   landmarks: [{ key: 'hero', name: '사자상 정면' }, { key: 'main', name: '본관' }],
   goToLandmark: vi.fn(() => true),
   goToPlace: vi.fn(() => true),
+  setMarkers: vi.fn(),
+  setRemotePlayers: vi.fn(),
   teleport: vi.fn(() => true),
   getPose: () => ({ p: [0, 0, 0] as [number, number, number], heading: 0 }),
   dispose: vi.fn(),
@@ -12,6 +14,7 @@ const fakeApi = {
 vi.mock('../../world/WorldCanvas', () => ({ WorldCanvas: () => null }));
 
 import { App } from '../App';
+import { renderWithClient } from '../../test/wrap';
 import { useUi } from '../state/ui';
 import { useWorld } from '../state/world';
 
@@ -22,7 +25,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const renderReady = async () => {
-  render(<App />);
+  renderWithClient(<App />);
   await act(async () => { useWorld.setState({ status: 'ready', progress: 1, api: fakeApi as never }); });
 };
 
