@@ -19,6 +19,10 @@
 - 구역 파일(`src/zones/*.js`)은 `buildWorld.js` 가 `import.meta.glob('../zones/*.js')` 로 불러온다.
 - 3D 좌표: 원점 = 사자상, x = 동, z = 남 (m). 계약 문서의 ORIGIN(정문 임시값)과 아직 다르다 → 매물 위경도를 붙일 때 맞출 것.
 
+## 환경변수 (.env 관리)
+- 로컬 `npm run dev` 는 `.env.development`(공개 값만: 카카오 JS 키·구글 클라이언트 ID·`VITE_API_BASE=http://localhost:8080`)를 읽는다. 배포(Vercel)는 프로젝트 환경변수만 쓴다. `.env`·`.env.local` 은 git 에 안 올라간다 — 개인 설정은 `.env.local`.
+- 비밀 값(구글 클라이언트 보안 비밀번호·토큰·DB 비밀번호)은 어떤 `.env*` 에도 넣지 않는다. `VITE_` 로 시작하는 값은 번들에 들어가 누구나 볼 수 있다.
+
 ## 서버 연결
 - `VITE_API_BASE`(기본 `http://localhost:8080`)로 실서버에 바로 붙는다. 목 서버 없음 — 아직 없는 API(검색·찜·비교 등)는 실패해도 화면이 깨지지 않게 빈 상태/오류 문구로 처리한다.
 - 계약 타입은 `src/api/types.ts` 한 곳, 호출은 `src/api/client.ts`(`api<T>()`), 서버 상태는 TanStack Query(`src/app/features/*.ts`), 로그인은 `src/app/state/session.ts`.
