@@ -1,22 +1,93 @@
-/* 실내 3D 전용 (ui-in- 접두사). 공용 .ui-interior* 는 app.css */
+/* 실내 투어 (접두사 ui-in-, ui-tour-). 공용 .ui-interior 는 app.css */
+.ui-interior { color: var(--ui-ink); font-size: 14px; line-height: 1.5; }
 .ui-interior canvas { touch-action: none; user-select: none; -webkit-user-select: none; }
-.ui-interior-bar.ui-in-bar { gap: 10px; flex-wrap: wrap; justify-content: center; }
-.ui-in-minimap { flex: none; border-radius: 8px; background: rgba(20, 32, 48, 0.12); }
-.ui-in-toggle { flex: none; height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--ui-hair, rgba(0,0,0,.2)); background: transparent; color: inherit; font: 600 12px inherit; font-family: inherit; cursor: pointer; }
-.ui-in-toggle[aria-pressed="true"] { background: #0e4a84; color: #fff; border-color: #0e4a84; }
-.ui-in-help { max-width: 360px; }
-.ui-in-chip { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); margin: 0; padding: 4px 12px; border-radius: 999px; font-size: 12px; background: rgba(20, 32, 48, 0.62); color: #fff; pointer-events: none; white-space: nowrap; }
+/* 이 층은 .ui-layer 밖이라 버튼 초기화를 직접 한다 */
+:where(.ui-interior) button { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; } /* :where = 우선순위 0, 클래스가 정한 색(흰 글자)을 덮지 않게 */
+.ui-interior button:disabled { cursor: default; opacity: .55; }
+.ui-interior :focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
+.ui-interior h1, .ui-interior h2 { margin: 0; }
+
+/* ── 위쪽: 나가기 / 이름·면적 / 보기 설정 ── */
+.ui-tour-top { position: absolute; z-index: 3; top: 16px; left: 16px; right: 16px; display: flex; align-items: stretch; gap: 10px; pointer-events: none; }
+.ui-tour-top > * { pointer-events: auto; }
+.ui-tour-back { flex: none; height: 48px; padding: 0 18px 0 13px; border-radius: 14px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
+.ui-tour-back:hover { background: var(--ui-glass-strong); }
+.ui-tour-back--solo { position: absolute; z-index: 3; top: 16px; left: 16px; }
+.ui-tour-id { flex: 1 1 auto; min-width: 0; height: 48px; padding: 0 16px; border-radius: 14px; display: flex; flex-direction: column; justify-content: center; }
+.ui-tour-id h1 { font-size: 15px; font-weight: 700; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-tour-id p { margin: 0; display: flex; gap: 12px; font-size: 12px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+.ui-tour-tools { flex: none; height: 48px; padding: 0 6px; border-radius: 14px; display: flex; align-items: center; gap: 2px; }
+.ui-tour-tool { height: 36px; padding: 0 11px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ui-ink-2); white-space: nowrap; }
+.ui-tour-tool:hover { background: var(--ui-glass-strong); color: var(--ui-ink); }
+.ui-tour-tool[aria-pressed='true'] { background: rgba(14, 74, 132, .12); color: #0e4a84; }
+.ui-tour-tool.is-icon { width: 36px; padding: 0; justify-content: center; }
+.ui-tour-tool.has-text { font-size: 12px; padding: 0 12px 0 10px; }
+.ui-tour-tool.has-text span { display: inline !important; }
+.ui-tour-tod { padding: 0 8px; background: none; }
+.ui-tour-tod input[type='range'] { width: 96px; }
+
+.ui-tour-toast { position: absolute; z-index: 3; top: 76px; left: 50%; transform: translateX(-50%); margin: 0; max-width: calc(100vw - 32px); padding: 8px 16px 8px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: #0e4a84; pointer-events: none; }
+.ui-tour-invite { color: #0e4a84; }
+
+/* ── 처음 한 번 뜨는 조작법 ── */
+.ui-tour-coach { position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(400px, calc(100vw - 32px)); box-sizing: border-box; padding: 22px; border-radius: 20px; background: rgba(255, 255, 255, .9); }
+.ui-tour-coach h2 { font-size: 18px; font-weight: 800; margin-bottom: 14px; }
+.ui-tour-coach ul { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ui-tour-coach li { display: flex; align-items: flex-start; gap: 12px; }
+.ui-tour-coach-icon { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(14, 74, 132, .1); color: #0e4a84; }
+.ui-tour-coach li strong { display: block; font-size: 14px; }
+.ui-tour-coach li small { display: block; font-size: 12.5px; line-height: 1.45; color: var(--ui-ink-2); }
+.ui-tour-coach-ok { width: 100%; height: 44px; border-radius: 12px; background: #0e4a84; color: #fff; font-size: 15px; font-weight: 700; }
+.ui-tour-coach-ok:hover { background: #0b3c6b; }
+
+/* ── 아래쪽: 방 바로가기 띠 ── */
+.ui-tour-rail { position: absolute; z-index: 3; left: 50%; bottom: 20px; transform: translateX(-50%); max-width: calc(100vw - 440px); box-sizing: border-box; padding: 8px; border-radius: 18px; display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.ui-tour-rail::-webkit-scrollbar { display: none; }
+/* 칩은 하나씩 윤곽선과 흰 바탕을 가져서 붙어 보이지 않는다. 지금 있는 방만 파랗게 채운다 */
+.ui-tour-chip { flex: none; min-width: 76px; height: 48px; padding: 0 14px; border-radius: 12px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; line-height: 1.2; background: rgba(255, 255, 255, .82); border: 1px solid var(--ui-hair); box-shadow: 0 1px 2px rgba(22, 32, 46, .06); white-space: nowrap; }
+.ui-tour-chip .name { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 650; }
+.ui-tour-chip .area { font-size: 11.5px; font-weight: 500; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+.ui-tour-chip:hover:not(.is-here) { background: #fff; border-color: rgba(14, 74, 132, .45); }
+.ui-tour-chip.is-here { background: #0e4a84; border-color: #0e4a84; color: #fff; box-shadow: 0 2px 6px rgba(14, 74, 132, .35); }
+.ui-tour-chip.is-here .area { color: rgba(255, 255, 255, .8); }
+.ui-tour-sep { flex: none; width: 1px; height: 28px; background: var(--ui-hair); }
+
+/* ── 오른쪽 아래: 평면도 ── */
+.ui-tour-map { position: absolute; z-index: 3; right: 16px; bottom: 20px; width: 172px; box-sizing: border-box; padding: 10px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ui-in-minimap { display: block; max-width: 100%; height: auto; border-radius: 10px; background: rgba(22, 32, 46, .06); }
+.ui-in-minimap.is-clickable { cursor: pointer; }
+.ui-tour-here { margin: 0; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 650; }
+
+/* ── 불러오는 중 / 도면 없음 / 오류 ── */
+.ui-tour-state { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100vw - 32px)); box-sizing: border-box; padding: 26px 24px; border-radius: 20px; text-align: center; }
+.ui-tour-state h1 { font-size: 17px; font-weight: 800; }
+.ui-tour-state p { margin: 8px 0 0; color: var(--ui-ink-2); }
+.ui-tour-state-btn { margin-top: 16px; height: 42px; padding: 0 20px; border-radius: 12px; background: #0e4a84; color: #fff; font-weight: 700; }
+
+/* ── 조준점·조이스틱·핀 시트·방 이름표 ── */
 .ui-in-cross { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 0 1px rgba(0,0,0,.35); pointer-events: none; }
 .ui-in-joy { position: absolute; left: 20px; bottom: 28px; width: 116px; height: 116px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2px solid rgba(255,255,255,.55); display: grid; place-items: center; touch-action: none; user-select: none; -webkit-user-select: none; }
 .ui-in-joy-knob { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.8); box-shadow: 0 2px 8px rgba(0,0,0,.3); pointer-events: none; }
-.ui-in-sheet { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(420px, calc(100vw - 24px)); max-height: 60vh; overflow: auto; padding: 12px 14px; border-radius: 16px; color: var(--ui-ink); z-index: 2; }
+.ui-in-sheet { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(420px, calc(100vw - 24px)); max-height: 60vh; overflow: auto; padding: 12px 14px; border-radius: 16px; color: var(--ui-ink); z-index: 4; }
 .ui-in-sheet-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .ui-in-sheet-head .ui-in-x { margin-left: auto; }
 .ui-in-x { border: 0; background: none; color: inherit; cursor: pointer; display: inline-flex; padding: 4px; }
 .ui-in-text { margin: 0; white-space: pre-wrap; word-break: break-word; }
-@media (max-width: 640px) {
-  .ui-in-help { display: none; }
-  .ui-interior-bar.ui-in-bar { top: 8px; padding: 6px 10px; }
-  .ui-in-chip { bottom: 150px; }
+.ui-in-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ui-in-label { position: absolute; left: 0; top: 0; display: none; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(20, 32, 48, 0.5); color: #fff; white-space: nowrap; will-change: transform; }
+
+/* ── 좁은 화면 ── */
+@media (max-width: 1100px) { .ui-tour-tool:not(.has-text) span { display: none; } .ui-tour-tool:not(.has-text) { padding: 0; width: 36px; justify-content: center; } }
+@media (max-width: 760px) {
+  .ui-tour-top { top: 10px; left: 10px; right: 10px; gap: 8px; }
+  .ui-tour-back { padding: 0; width: 44px; height: 44px; justify-content: center; }
+  .ui-tour-back span { display: none; }
+  .ui-tour-id { height: 44px; padding: 0 12px; }
+  .ui-tour-tools { height: 44px; }
+  .ui-tour-tod { display: none; }
+    .ui-tour-rail { left: 10px; right: 10px; bottom: 160px; transform: none; max-width: none; }
+  .ui-tour-map { display: none; }
   .ui-in-sheet { bottom: 8px; }
 }
+/* 마우스·키보드만 있는 기기에는 조이스틱이 필요 없다 (Joystick 은 터치 기기에서만 그려지지만 이중으로 막는다) */
+@media (hover: hover) and (pointer: fine) { .ui-in-joy { display: none; } }

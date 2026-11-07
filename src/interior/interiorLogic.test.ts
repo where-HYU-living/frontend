@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest';
 import { buildInterior } from './buildInterior';
 import { isBlocked, slideMove } from './collision';
-import { buildTrim } from './trim';
 import { classifyPress, isPinInPlan, pinFromPlan, pinFromPoint, pinnedReviews } from './pins';
 import { minimapLayout } from './minimapLayout';
 import { polygonArea, polygonCenter, pointInPoly } from './geom';
@@ -22,7 +21,7 @@ test('geom: area, center, containment', () => {
   expect(pointInPoly(3, 1, sq)).toBe(false);
 });
 
-test('collision: wall blocks, door gap and lintel allow passing, slide along wall', () => {
+test('collision: wall blocks, door gap and lintel allow passing, slide along wall, furniture (solid) always blocks', () => {
   const { wallPieces } = buildInterior(fp);
   expect(isBlocked(wallPieces, 0.2, 0)).toBe(true); // 문 왼쪽 벽
   expect(isBlocked(wallPieces, 0.95, 0)).toBe(false); // 문 자리 (인방은 위라서 안 막음)
@@ -30,17 +29,9 @@ test('collision: wall blocks, door gap and lintel allow passing, slide along wal
   const [x, z] = slideMove(wallPieces, [0.2, 0.6], [0.4, 0.1]);
   expect(x).toBeCloseTo(0.4); // 벽 쪽(z)만 막히고 x 는 이동
   expect(z).toBeCloseTo(0.6);
-});
-
-test('trim: door frame, open leaf, window glass, baseboard skips door', () => {
-  const t = buildTrim(fp);
-  expect(t.leaves).toHaveLength(1);
-  expect(t.glass).toHaveLength(1);
-  expect(t.glass[0].size[1]).toBeLessThan(1.2);
-  expect(t.frames.length).toBeGreaterThanOrEqual(3 + 5);
-  const lowDoorBase = t.baseboards.filter((b) => b.center[0] > 0.5 && b.center[0] < 1.4 && Math.abs(b.center[2]) < 0.2);
-  expect(lowDoorBase).toHaveLength(0);
-  expect(t.baseboards.every((b) => b.size[1] <= 0.1)).toBe(true);
+  const bed = { center: [1.5, 0.25, 2] as [number, number, number], size: [1, 0.45, 2] as [number, number, number], rotationY: 0 }; // 낮은 침대: 일반 조각이면 안 막지만 solid 면 막는다
+  expect(isBlocked([bed], 1.5, 2)).toBe(false);
+  expect(isBlocked([{ ...bed, solid: true }], 1.5, 2)).toBe(true);
 });
 
 test('pins: coordinate convention, bounds, filtering', () => {

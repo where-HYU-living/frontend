@@ -18,9 +18,13 @@ test('dorm card shows monthly cost with meal note and indoor button only with fl
     { id: 2, name: '4인실', capacity: 4, semesterFee: 1200000, semesterMonths: 6, mealIncluded: false, monthlyCost: 200000, floorplanId: null },
   ] }]));
   renderWithClient(<DormPanel />);
-  expect(await screen.findByText(/월 30만 원 \(식비 포함\)/)).toBeTruthy();
-  expect(screen.getByText(/월 20만 원 \(식비 별도\)/)).toBeTruthy();
-  expect(screen.getAllByText('실내 들어가기')).toHaveLength(1);
+  // 가격은 큰 글씨, 식비 포함 여부는 세부 칸으로 나뉜다
+  expect(await screen.findByText('30만')).toBeTruthy();
+  expect(screen.getByText('20만')).toBeTruthy();
+  expect(screen.getByText('포함')).toBeTruthy();
+  expect(screen.getByText('별도')).toBeTruthy();
+  expect(screen.getAllByText('실내 보기')).toHaveLength(1); // 도면이 있는 호실만 버튼
+  expect(screen.getByText('실내 도면 준비 중')).toBeTruthy(); // 없는 호실은 이유를 보여 준다
 });
 
 test('housing list shows recruiting badge and empty state', async () => {

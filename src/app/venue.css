@@ -1,0 +1,107 @@
+/* 청년안심주택·기숙사 패널 (접두사 ui-v-). 상태 색은 배지·글자색으로만 쓰고 카드 가장자리에 색 막대를 두르지 않는다 */
+
+/* 주택형·호실 카드 */
+.ui-v-unit { list-style: none; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, .8); border: 1px solid var(--ui-hair); box-shadow: 0 1px 2px rgba(22, 32, 46, .05); }
+.ui-v-unit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ui-v-unit-head h4 { margin: 0; font-size: 15px; font-weight: 700; }
+.ui-v-pill { flex: none; padding: 2px 10px; border-radius: 999px; background: rgba(22, 32, 46, .07); color: var(--ui-ink-2); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ui-v-price { margin: 0; display: flex; align-items: baseline; gap: 8px; }
+.ui-v-price span { font-size: 12.5px; color: var(--ui-ink-2); }
+.ui-v-price strong { font-size: 27px; line-height: 1.1; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+/* 세부 항목은 칸으로 나눠 한눈에 훑게 (칸 사이는 1px 선) */
+.ui-v-facts { margin: 0; display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 1px; border-radius: 12px; overflow: hidden; border: 1px solid var(--ui-hair); background: var(--ui-hair); }
+.ui-v-facts > div { min-width: 0; padding: 8px 10px; background: rgba(255, 255, 255, .92); }
+.ui-v-facts dt { font-size: 11.5px; color: var(--ui-ink-2); }
+.ui-v-facts dd { margin: 2px 0 0; font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ui-v-enter { height: 42px; border-radius: 12px; background: #0e4a84; color: #fff; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.ui-v-enter:hover { background: #0b3c6b; }
+.ui-v-noplan { margin: 0; height: 38px; display: grid; place-items: center; border-radius: 12px; border: 1px dashed rgba(22, 32, 46, .22); color: var(--ui-ink-2); font-size: 12.5px; }
+
+/* 단지 목록 카드 */
+.ui-v-places { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ui-v-place { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, .8); border: 1px solid var(--ui-hair); box-shadow: 0 1px 2px rgba(22, 32, 46, .05); text-align: left; }
+.ui-v-place:hover { background: #fff; border-color: rgba(14, 74, 132, .45); }
+.ui-v-place-top { width: 100%; min-height: 22px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ui-v-tag { padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+.ui-v-tag.is-go { background: #2e8049; color: #fff; }
+.ui-v-dday { margin-left: auto; display: inline-flex; align-items: baseline; gap: 5px; font-size: 12px; color: var(--ui-ink-2); }
+.ui-v-dday b { font-size: 16px; font-weight: 800; color: #0e4a84; font-variant-numeric: tabular-nums; }
+.ui-v-place-name { font-size: 17px; font-weight: 800; line-height: 1.3; }
+.ui-v-place-addr { font-size: 12.5px; color: var(--ui-ink-2); }
+.ui-v-place-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ui-ink-2); }
+.ui-v-place-meta b { font-size: 14px; font-weight: 700; color: var(--ui-ink); font-variant-numeric: tabular-nums; }
+
+/* 단지 상세 머리 */
+.ui-v-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ui-v-title h3 { margin: 0; font-size: 19px; font-weight: 800; line-height: 1.3; }
+.ui-v-addr { margin: 2px 0 10px; font-size: 13px; color: var(--ui-ink-2); }
+.ui-v-chips { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ui-v-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: rgba(22, 32, 46, .07); font-size: 12.5px; }
+.ui-v-chip.is-muted { color: var(--ui-ink-2); }
+.ui-v-notify { width: 100%; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 14px; font-weight: 700; }
+.ui-v-notify.is-off { background: #0e4a84; color: #fff; }
+.ui-v-notify.is-off:hover { background: #0b3c6b; }
+.ui-v-notify.is-on { background: rgba(14, 74, 132, .1); color: #0e4a84; }
+.ui-v-notify small { font-size: 12px; font-weight: 600; opacity: .8; }
+.ui-v-sec { display: flex; align-items: center; gap: 8px; margin: 22px 0 10px; font-size: 15px; font-weight: 800; }
+.ui-v-count { padding: 1px 9px; border-radius: 999px; background: rgba(22, 32, 46, .07); color: var(--ui-ink-2); font-size: 12px; font-weight: 700; }
+.ui-v-units { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+
+/* 기숙사 */
+.ui-v-dorms { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+.ui-v-dorm { display: flex; flex-direction: column; gap: 10px; }
+.ui-v-dorm + .ui-v-dorm { padding-top: 22px; border-top: 1px solid var(--ui-hair); }
+.ui-v-dorm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ui-v-dorm-head h3 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.3; }
+.ui-v-link { flex: none; height: 32px; padding: 0 12px 0 10px; border-radius: 999px; border: 1px solid rgba(14, 74, 132, .35); background: rgba(255, 255, 255, .7); color: #0e4a84; font-size: 12.5px; font-weight: 650; display: inline-flex; align-items: center; gap: 5px; }
+.ui-v-link:hover { background: #fff; }
+.ui-v-dorm-sub { margin: -4px 0 0; font-size: 12.5px; color: var(--ui-ink-2); }
+
+/* 자취방 필터: 조건은 접고, 가격 등급 칩만 항상 보인다 */
+.ui-v-filter { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.ui-v-filter-bar { display: flex; align-items: center; gap: 8px; }
+.ui-v-filterbtn { flex: none; height: 36px; padding: 0 10px 0 12px; border-radius: 999px; border: 1px solid var(--ui-hair); background: rgba(255, 255, 255, .85); font-size: 13px; font-weight: 650; display: inline-flex; align-items: center; gap: 6px; }
+.ui-v-filterbtn[aria-expanded='true'] { border-color: #0e4a84; color: #0e4a84; }
+.ui-v-filterbtn svg:last-child { transition: transform .15s; }
+.ui-v-filterbtn svg.is-open { transform: rotate(180deg); }
+.ui-v-filter-n { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: #0e4a84; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.ui-v-grades { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+.ui-v-grades::-webkit-scrollbar { display: none; }
+/* 등급 칩: 꺼져 있으면 색 점만, 켜면 등급 색으로 채운다 */
+.ui-v-grade { flex: none; height: 32px; padding: 0 12px 0 10px; border-radius: 999px; border: 1px solid var(--ui-hair); background: rgba(255, 255, 255, .85); font-size: 12.5px; font-weight: 650; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ui-v-grade i { width: 9px; height: 9px; border-radius: 50%; background: var(--g); }
+.ui-v-grade.is-on { background: var(--g); border-color: var(--g); color: var(--g-ink); }
+.ui-v-grade.is-on i { background: var(--g-ink); }
+.ui-v-filter-body { padding: 14px; border-radius: 14px; background: rgba(255, 255, 255, .7); border: 1px solid var(--ui-hair); display: flex; flex-direction: column; gap: 12px; }
+.ui-v-filter-foot { display: flex; justify-content: flex-end; }
+.ui-v-reset { height: 32px; padding: 0 12px; border-radius: 10px; font-size: 12.5px; font-weight: 650; color: var(--ui-ink-2); border: 1px solid var(--ui-hair); background: rgba(255, 255, 255, .8); }
+.ui-v-reset:disabled { opacity: .5; cursor: default; }
+.ui-v-summary { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 12.5px; color: var(--ui-ink-2); }
+.ui-v-summary b { font-size: 14px; color: var(--ui-ink); }
+
+/* 하트: 어디서든 같은 모양. 목록 카드 위에서는 오른쪽 위에 얹는다 (카드는 버튼이라 안에 넣을 수 없어 형제로 둔다) */
+.ui-heart-wrap { display: inline-flex; flex-direction: column; align-items: flex-end; }
+.ui-heart { width: 36px; height: 36px; padding: 0; border-radius: 50%; display: inline-grid; place-items: center; color: var(--ui-ink-3); transition: color .12s, background .12s; }
+.ui-heart:hover:not(:disabled) { background: rgba(235, 87, 87, .1); color: #eb5757; }
+.ui-heart.on { color: #eb5757; }
+.ui-heart-host { position: relative; list-style: none; }
+.ui-heart-host .ui-heart-abs { position: absolute; top: 8px; right: 8px; z-index: 1; }
+.ui-heart-host .ui-heart { background: rgba(255, 255, 255, .88); box-shadow: 0 1px 3px rgba(22, 32, 46, .12); }
+.ui-heart-host .ui-dc-top { padding-right: 40px; }
+.ui-heart-host .ui-v-place, .ui-heart-host .ui-card--heart { padding-right: 52px; }
+.ui-heart-host .ui-heart-err { position: absolute; right: 0; top: 46px; white-space: nowrap; }
+.ui-v-dorm-actions { display: inline-flex; align-items: center; gap: 4px; }
+.ui-v-dorm-actions .ui-heart { background: none; box-shadow: none; }
+
+/* 찜 목록 */
+.ui-fav { display: flex; flex-direction: column; gap: 12px; }
+.ui-fav-filter { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+.ui-fav-filter::-webkit-scrollbar { display: none; }
+.ui-fav-chip { flex: none; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--ui-hair); background: rgba(255, 255, 255, .85); font-size: 12.5px; font-weight: 650; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ui-fav-chip b { color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+.ui-fav-chip.is-on { background: #0e4a84; border-color: #0e4a84; color: #fff; }
+.ui-fav-chip.is-on b { color: rgba(255, 255, 255, .85); }
+.ui-fav-guest { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 18px 8px; color: var(--ui-ink-2); }
+.ui-fav-guest .empty { color: var(--ui-ink); font-weight: 650; }
+.ui-fav-guest .ui-card-sub { margin: 0 0 6px; }
+.ui-dc-kind { flex: none; padding: 1px 8px; border-radius: 999px; background: rgba(22, 32, 46, .08); color: var(--ui-ink-2); font-size: 11px; font-weight: 650; }

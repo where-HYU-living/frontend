@@ -1,4 +1,4 @@
-import { GRADE_META } from '../lib/grade';
+import { GRADE_META, inkFor } from '../lib/grade';
 import { manwon } from '../lib/money';
 import type { Grade, PriceCheck } from '../api/types';
 import { ExcessGauge } from './dossier/ExcessGauge';
@@ -20,7 +20,7 @@ export function VerdictCard({ pc, fallbackGrade, loggedIn, failed }: { pc: Price
         {judged ? (
           <div className="ui-verdict-rent"><small>환산 월세</small><strong>{manwon(pc.convertedRent)}</strong></div>
         ) : <span />}
-        <span className="ui-card-badge" style={{ background: g.color }}>{g.label}</span>
+        <span className="ui-card-badge" style={{ background: g.color, color: inkFor(g.color) }}>{g.label}</span>
       </div>
       <p className="ui-verdict-text">{g.verdict(pc?.totalExcess ?? null, months)}</p>
       {judged && <ExcessGauge pc={pc} />}

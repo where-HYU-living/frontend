@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { SendHorizontal } from 'lucide-react';
 import { useNet, useMultiplayer } from '../net/useMultiplayer';
+import { useRoomInvite } from '../net/useRoomInvite';
 import { useUi } from './state/ui';
 import { EMOTE } from './icons';
 
 /** 접속 인원·이모트·한 줄 채팅 (왼쪽 아래). 초대는 상단바 InviteButton */
 export function WorldChat() {
   useMultiplayer();
+  useRoomInvite();
   const { status, count, conn, invited } = useNet();
   const mapMode = useUi((s) => s.mapMode);
   const indoor = useUi((s) => s.indoor);

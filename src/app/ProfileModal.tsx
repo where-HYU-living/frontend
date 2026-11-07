@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useBuildingNames, useDepartments, useProfile, useSaveProfile } from './features/catalog';
 import { DepartmentPicker } from './DepartmentPicker';
 import { BuildingPicker } from './BuildingPicker';
-import campusPlaces from './data/campusPlaces.json';
+import { visiblePlaces } from './data/hiddenBuildings';
 import { useSession } from './state/session';
 import { useUi } from './state/ui';
 import { UnitInput } from './forms/Field';
@@ -22,7 +22,7 @@ export function ProfileModal() {
   const buildingNames = useBuildingNames();
   const [buildingIds, setBuildingIds] = useState<number[]>([]);
   // 건물 후보: 앱 건물 목록(서버 이름이 있으면 그걸로)
-  const options = campusPlaces.map((p) => ({ id: p.id, name: buildingNames.get(p.id) ?? p.name }));
+  const options = visiblePlaces.map((p) => ({ id: p.id, name: buildingNames.get(p.id) ?? p.name }));
   const [dep, setDep] = useState('');
   const [rent, setRent] = useState('');
   const [deposit, setDeposit] = useState('');

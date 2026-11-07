@@ -38,6 +38,7 @@ test('grade chip and rent filter go to the request in won', async () => {
   fetchMock.mockResolvedValue(json({ items: [], page: 0, size: 100, total: 0 }));
   renderWithClient(<ListingsPanel />);
   fireEvent.click(screen.getByText('범인'));
+  fireEvent.click(screen.getByRole('button', { name: /조건/ })); // 조건은 접혀 있다
   fireEvent.change(screen.getByLabelText('월세 상한(만원)'), { target: { value: '60' } });
   await waitFor(() => {
     const url = fetchMock.mock.calls.at(-1)![0] as string;

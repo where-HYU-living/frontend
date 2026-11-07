@@ -12,3 +12,16 @@ export const GRADE_META: Record<Grade, Meta> = {
   CULPRIT: { color: '#EB5757', label: '범인', verdict: (t, m) => `찾았다. ${span(m)}간 ${manwon(t)} 원을 써버릴 놈` },
   PENDING: { color: '#9E9E9E', label: '판정 보류', verdict: () => '비교할 거래가 부족해요' },
 };
+
+const lin = (v: number) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+/**
+ * 이 배경색 위에 올릴 글자색. 흰 글자의 대비가 3 이상이면 흰색, 아니면 짙은 갈색(노랑·주황·회색 배지에서 흰 글자가 안 보이는 것을 막는다).
+ * 입력은 #rrggbb.
+ */
+export function inkFor(bg: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(bg.trim());
+  if (!m) return '#fff';
+  const n = parseInt(m[1], 16);
+  const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return 1.05 / (L + 0.05) >= 3 ? '#fff' : '#2b2308';
+}

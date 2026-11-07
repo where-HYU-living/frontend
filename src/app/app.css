@@ -20,7 +20,8 @@
 /* 메뉴 층: 빈 곳은 클릭이 3D로 통과 */
 .ui-layer { position: fixed; inset: 0; z-index: 10; pointer-events: none; color: var(--ui-ink); font-size: 14px; line-height: 1.5; }
 .ui-layer > *, .topbar > * { pointer-events: auto; }
-.ui-layer button, .ui-layer input { font: inherit; color: inherit; }
+/* 글꼴·글자색 초기화도 :where 로 우선순위 0 — 안 그러면 .ui-mini·.ui-primary 같은 파란 버튼의 흰 글자가 이 규칙에 져서 검정으로 보인다 */
+:where(.ui-layer) button, :where(.ui-layer) input { font: inherit; color: inherit; }
 /* 버튼 초기화는 :where 로 우선순위 0 — .glass 같은 배경 클래스가 이기게 한다 (예전엔 이 규칙이 .glass 버튼의 배경을 지워서 밤에 안 보였음) */
 :where(.ui-layer) button { border: 0; background: none; cursor: pointer; }
 .ui-layer button:disabled { cursor: default; opacity: 0.55; }
@@ -190,8 +191,6 @@
 /* 실내 3D: 동네 위를 덮는다 */
 .ui-interior { position: fixed; inset: 0; z-index: 30; background: #dfe6ee; }
 .ui-interior canvas { display: block; cursor: grab; }
-.ui-interior-bar { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 14px; max-width: calc(100vw - 32px); }
-.ui-interior-note { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--ui-ink-2); pointer-events: none; }
 
 /* 같이 걷기 (멀티플레이) */
 .ui-chat { position: fixed; left: 16px; bottom: 16px; z-index: 6; padding: 8px 10px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; width: 300px; max-width: calc(100vw - 32px); }
@@ -260,8 +259,7 @@
 .ui-modal input::placeholder, .ui-modal textarea::placeholder, .ui-chat input::placeholder, .ui-form input::placeholder, .ui-form textarea::placeholder,
 .ui-review-form textarea::placeholder, .ui-addr input::placeholder, .ui-filter input::placeholder { color: var(--ui-ink-3); }
 .ui-modal select option, .ui-form select option, .ui-filter select option { color: #16202e; background: #fff; }
-.ui-chat-row button, .ui-interior-bar { color: var(--ui-ink); }
-
+.ui-chat-row button, 
 /* 학과 검색 선택창 */
 .ui-dept { position: relative; display: flex; flex-direction: column; gap: 6px; }
 .ui-dept-chosen { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(14, 74, 132, .09); font-size: 13px; }

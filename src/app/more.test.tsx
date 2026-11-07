@@ -93,6 +93,7 @@ test('transfer form: picking an address fills the form and money goes out in won
   });
   renderWithClient(<TransferPanel />);
   fireEvent.click(await screen.findByText('양도 글 올리기'));
+  fireEvent.change(screen.getByLabelText('글 제목'), { target: { value: '  행당동 분리형 8개월 양도  ' } });
   fireEvent.change(screen.getByLabelText('주소 검색'), { target: { value: '행당동' } });
   fireEvent.click(await screen.findByText('성동구 행당동 1-1'));
   fireEvent.change(screen.getByLabelText('보증금(만원)'), { target: { value: '500' } });
@@ -103,8 +104,43 @@ test('transfer form: picking an address fills the form and money goes out in won
   await waitFor(() => {
     const call = fetchMock.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === 'POST');
     const body = JSON.parse((call![1] as RequestInit).body as string);
-    expect(body).toMatchObject({ rent: 450000, deposit: 5000000, dong: '행당동', lat: 37.558, remainingMonths: 8 });
+    expect(body).toMatchObject({ title: '행당동 분리형 8개월 양도', rent: 450000, deposit: 5000000, dong: '행당동', lat: 37.558, remainingMonths: 8 }); // 제목은 공백을 지우고 그대로
   });
+});
+
+test('transfer form: title is required, can be suggested from the address, and shows its length', async () => {
+  useSession.setState({ token: 't' });
+  fetchMock.mockImplementation((url: string) => {
+    if (url.includes('/geo/address')) return Promise.resolve(json([{ address: '성동구 행당동 1-1', roadAddress: null, dong: '행당동', lat: 37.558, lng: 127.041 }]));
+    return Promise.resolve(json({ items: [], page: 0, size: 100, total: 0 }));
+  });
+  renderWithClient(<TransferPanel />);
+  fireEvent.click(await screen.findByText('양도 글 올리기'));
+  const title = screen.getByLabelText('글 제목') as HTMLInputElement;
+  expect(title.maxLength).toBe(40);
+  expect(screen.getByText(/0\/40자/)).toBeTruthy();
+  // 주소를 고르면 제목을 제안하고, 누르면 채워진다
+  fireEvent.change(screen.getByLabelText('주소 검색'), { target: { value: '행당동' } });
+  fireEvent.click(await screen.findByText('성동구 행당동 1-1'));
+  fireEvent.click(await screen.findByText(/이렇게 쓸까요/));
+  expect(title.value).toBe('행당동 오픈형 양도');
+  // 제목을 지우고 1글자만 적으면 올릴 수 없고 이유를 알려 준다
+  fireEvent.change(title, { target: { value: '가' } });
+  fireEvent.blur(title);
+  expect(screen.getByText('2자 이상 40자 이하로 적어 주세요')).toBeTruthy();
+  expect((screen.getByText('올리기') as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText(/제목/, { selector: '.ui-sticky-reason, [class*="reason"], p' })).toBeTruthy();
+});
+
+test('transfer list: the title comes first on the card, then price and remaining months', async () => {
+  fetchMock.mockResolvedValue(json({ items: [{ id: 5, title: '입대로 급하게 양도해요', address: 'a', dong: '행당동', lat: 37.558, lng: 127.041, deposit: 1000000, rent: 500000, mgmtFee: null, areaM2: 18, floor: 3, roomType: 'OPEN', convertedRent: 600000, grade: 'FAIR', walkMin: 7, thumbnailUrl: null, favorited: false, remainingMonths: 8, availableFrom: null, status: 'OPEN', authorNickname: 'a' }], page: 0, size: 100, total: 1 }));
+  renderWithClient(<TransferPanel />);
+  const title = await screen.findByText('입대로 급하게 양도해요');
+  const card = title.closest('button')!;
+  expect(title.className).toContain('ui-dc-title');
+  expect(card.textContent).toContain('남은 계약 8개월');
+  expect(card.textContent).toContain('100/50'); // 보증금/월세
+  expect(card.querySelector('.ui-dc-top')!.textContent).toContain('입대로 급하게 양도해요'); // 제목은 맨 윗줄
 });
 
 test('inbox: unread marked with dot, click marks read', async () => {

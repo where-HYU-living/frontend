@@ -10,5 +10,7 @@ export function minimapLayout(plan: FloorPlan, size = 110, pad = 6) {
   const width = w * scale + pad * 2, height = h * scale + pad * 2;
   /** 장면 좌표(x, z) → 미니맵 픽셀 */
   const toMap = (x: number, z: number): [number, number] => [pad + (x - b.minX) * scale, pad + (z - b.minY) * scale];
-  return { width, height, scale, toMap };
+  /** 미니맵 픽셀 → 장면 좌표 (x, z). toMap 의 역변환 */
+  const fromMap = (px: number, py: number): [number, number] => [(px - pad) / scale + b.minX, (py - pad) / scale + b.minY];
+  return { width, height, scale, toMap, fromMap };
 }

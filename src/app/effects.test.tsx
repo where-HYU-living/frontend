@@ -81,6 +81,7 @@ test('walk and room type filters reach the request, empty ones are omitted', () 
 test('filter panel sends walk, room type; housing toggle updates ui state', async () => {
   fetchMock.mockResolvedValue(json({ items: [], page: 0, size: 100, total: 0 }));
   renderWithClient(<ListingsPanel />);
+  fireEvent.click(screen.getByRole('button', { name: /조건/ })); // 조건은 접혀 있다
   fireEvent.change(screen.getByLabelText('도보 시간 상한(분)'), { target: { value: '10' } });
   fireEvent.change(screen.getByLabelText('방 구조'), { target: { value: 'SEPARATED' } });
   await waitFor(() => {

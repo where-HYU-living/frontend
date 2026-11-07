@@ -85,9 +85,14 @@ test('후기: 매물 5곳 각 2건, 작성하면 평균·건수 갱신, 잘못�
 
 test('양도: 3건, 작성 → 내 글(mine)·판정, 완료 처리하면 목록에서 빠진다', async () => {
   expect((await call('GET', '/transfers', undefined, false)).data.total).toBe(3);
-  const body = { address: '서울 성동구 행당동 1', dong: '행당동', lat: 37.557, lng: 127.04, deposit: 5000000, rent: 600000, mgmtFee: 50000, areaM2: 18, roomType: 'OPEN', floor: 2, remainingMonths: 10, availableFrom: null, description: 'x', photoUrls: [] };
-  const created = await call('POST', '/transfers', body);
+  const body = { title: '행당동 오픈형 10개월 양도', address: '서울 성동구 행당동 1', dong: '행당동', lat: 37.557, lng: 127.04, deposit: 5000000, rent: 600000, mgmtFee: 50000, areaM2: 18, roomType: 'OPEN', floor: 2, remainingMonths: 10, availableFrom: null, description: 'x', photoUrls: [] };
+  expect((await call('POST', '/transfers', { ...body, title: '' })).status).toBe(400); // 제목이 없으면 못 올린다
+  expect((await call('POST', '/transfers', { ...body, title: '가' })).status).toBe(400); // 너무 짧음
+  expect((await call('POST', '/transfers', { ...body, title: '가'.repeat(41) })).status).toBe(400); // 너무 김
+  const created = await call('POST', '/transfers', { ...body, title: '  행당동 오픈형 10개월 양도  ' });
   expect(created.status).toBe(201);
+  expect(created.data.title).toBe('행당동 오픈형 10개월 양도'); // 앞뒤 공백은 지우고 적은 제목 그대로
+  expect((await call('GET', '/transfers')).data.items.map((t: { title: string }) => t.title)).toContain('행당동 오픈형 10개월 양도');
   expect(created.data.mine).toBe(true);
   expect(created.data.priceCheck.contractMonths).toBe(10);
   expect((await call('GET', '/transfers')).data.total).toBe(4);

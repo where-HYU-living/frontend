@@ -28,8 +28,9 @@ type UiState = {
   showHousing: boolean;
   setShowHousing: (v: boolean) => void;
   profileOpen: boolean;
-  indoor: { floorplanId: number; title: string } | null;
-  enterIndoor: (floorplanId: number, title: string) => void;
+  /** start: 들어가서 설 자리(초대받은 경우 초대한 사람이 있던 자리). invited: 초대 링크로 들어옴 */
+  indoor: { floorplanId: number; title: string; start?: { x: number; z: number; yaw: number }; invited?: boolean } | null;
+  enterIndoor: (floorplanId: number, title: string, opts?: { start?: { x: number; z: number; yaw: number }; invited?: boolean }) => void;
   exitIndoor: () => void;
 };
 
@@ -49,6 +50,6 @@ export const useUi = create<UiState>((set, get) => ({
   setShowHousing: (showHousing) => set({ showHousing }),
   profileOpen: false,
   indoor: null,
-  enterIndoor: (floorplanId, title) => set({ indoor: { floorplanId, title } }),
+  enterIndoor: (floorplanId, title, opts) => set({ indoor: { floorplanId, title, ...opts } }),
   exitIndoor: () => set({ indoor: null }),
 }));

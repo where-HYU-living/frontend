@@ -1,7 +1,7 @@
 import type { FloorPlan } from '../api/types';
 
 /** 벽 조각 하나 = 직육면체. rotationY 는 벽 방향(x축 기준, 라디안) */
-export type Box = { center: [number, number, number]; size: [number, number, number]; rotationY: number };
+export type Box = { center: [number, number, number]; size: [number, number, number]; rotationY: number; /** true 면 높이와 상관없이 항상 막는다 (가구) */ solid?: boolean };
 
 /**
  * 평면도(m, x=오른쪽 y=아래) → three.js 좌표 (x, 높이, y) 의 벽 조각.

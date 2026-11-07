@@ -63,7 +63,7 @@ body { font-family: 'Pretendard', system-ui, -apple-system, sans-serif; color: v
 }
 
 /* 3D 매물 말풍선 (등급 색 --mk). CSS2D 레이어는 pointer-events:none 이라 자기만 켠다 */
-.w3d-marker { pointer-events: auto; transform: translateY(-4px); padding: 4px 9px; border: 2px solid #fff; border-radius: 999px; background: var(--mk, #888); color: #fff; font: 700 12px/1.2 'Pretendard', system-ui, sans-serif; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); text-shadow: 0 1px 1px rgba(0, 0, 0, .25); }
+.w3d-marker { pointer-events: auto; transform: translateY(-4px); padding: 4px 9px; border: 2px solid #fff; border-radius: 999px; background: var(--mk, #888); color: var(--mk-ink, #fff); font: 700 12px/1.2 'Pretendard', system-ui, sans-serif; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
 .w3d-marker:hover { transform: translateY(-4px) scale(1.08); }
 .w3d-nick { pointer-events: none; padding: 2px 8px; border-radius: 999px; background: rgba(28, 26, 22, .65); color: #fff; font: 600 11px 'Pretendard', system-ui, sans-serif; white-space: nowrap; }
 .w3d-ico { display: inline-flex; vertical-align: -2px; margin-right: 4px; }

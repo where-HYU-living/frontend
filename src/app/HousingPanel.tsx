@@ -1,14 +1,18 @@
+import { Bell, Footprints, Phone } from 'lucide-react';
 import { BackButton } from './icons';
+import { InfoChip, SectionTitle, UnitCard } from './venue';
 import { useState } from 'react';
 import { ApiError } from '../api/client';
 import { manwon } from '../lib/money';
 import { dday, EVENT_LABEL, groupEventsByMonth, STATUS_LABEL, useAnnouncements, useHousingDetail, useHousingList, useSubscribe } from './features/catalog';
 import { useGoTo } from './DormPanel';
+import { useDetailSel } from './state/detail';
 import { useUi } from './state/ui';
 import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
 import type { Housing } from '../api/types';
 import './dossier/dossier.css';
+import './venue.css';
 
 function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   const q = useHousingDetail(id);
@@ -21,21 +25,22 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   return (
     <div className="ui-detail">
       <BackButton onClick={onBack} />
-      <div className="ui-detail-head"><h3>{h.name}</h3><HeartButton type="HOUSING" id={h.id} favorited={false} /></div>
-      <p className="ui-card-sub">{h.address}</p>
-      <p className="ui-card-sub">{h.walkMin == null ? '과 건물까지 도보 시간 정보 없음' : `과 건물까지 도보 ${h.walkMin}분`}{h.contact ? ` · 입주지원센터 ${h.contact}` : ''}</p>
-      <button type="button" className="ui-primary" onClick={() => { if (requireLogin()) sub.mutate(!h.subscribed); }}>{h.subscribed ? '알림 받는 중 (끄기)' : 'D-day 알림 받기'}</button>
+      <div className="ui-v-title"><h3>{h.name}</h3><HeartButton type="HOUSING" id={h.id} name={h.name} /></div>
+      <p className="ui-v-addr">{h.address}</p>
+      <ul className="ui-v-chips">
+        <InfoChip icon={<Footprints size={14} aria-hidden="true" />} muted={h.walkMin == null}>{h.walkMin == null ? '과 건물까지 도보 정보 없음' : `과 건물까지 도보 ${h.walkMin}분`}</InfoChip>
+        {h.contact && <InfoChip icon={<Phone size={14} aria-hidden="true" />}>입주지원센터 {h.contact}</InfoChip>}
+      </ul>
+      <button type="button" className={`ui-v-notify ${h.subscribed ? 'is-on' : 'is-off'}`} onClick={() => { if (requireLogin()) sub.mutate(!h.subscribed); }}>
+        <Bell size={16} aria-hidden="true" />{h.subscribed ? <>알림 받는 중 <small>눌러서 끄기</small></> : 'D-day 알림 받기'}
+      </button>
       {sub.isError && <p className="ui-heart-err" role="alert">알림 설정을 저장하지 못했어요</p>}
-      <h4>주택형</h4>
-      <ul className="ui-rows">
+      <SectionTitle count={h.unitTypes.length}>주택형</SectionTitle>
+      <ul className="ui-v-units">
         {h.unitTypes.map((u) => (
-          <li key={u.id}>
-            <span>
-              <span>{u.name} · {u.exclusiveAreaM2}㎡ <strong className="ui-dorm-cost">{manwon(u.convertedRent)}</strong></span>
-              <span className="ui-card-sub">환산 월세 · 보증금 {manwon(u.deposit)} / 월 {manwon(u.rent)}{u.mgmtFee != null ? ` · 관리비 ${manwon(u.mgmtFee)}` : ''}</span>
-            </span>
-            {u.floorplanId != null && <button type="button" className="ui-mini" onClick={() => enter(u.floorplanId!, `${h.name} ${u.name}`)}>실내 들어가기</button>}
-          </li>
+          <UnitCard key={u.id} name={u.name} chip={`${u.exclusiveAreaM2}㎡`} priceLabel="환산 월세" price={manwon(u.convertedRent)}
+            facts={[{ label: '보증금', value: manwon(u.deposit) }, { label: '월세', value: manwon(u.rent) }, { label: '관리비', value: u.mgmtFee != null ? manwon(u.mgmtFee) : '-' }]}
+            floorplanId={u.floorplanId} onEnter={() => enter(u.floorplanId!, `${h.name} ${u.name}`)} />
         ))}
         {h.unitTypes.length === 0 && <li className="ui-card-sub">주택형 정보가 아직 없어요.</li>}
       </ul>
@@ -74,7 +79,7 @@ function Calendar({ names }: { names: Map<number, string> }) {
 export function HousingPanel() {
   const q = useHousingList();
   const go = useGoTo();
-  const [sel, setSel] = useState<number | null>(null);
+  const sel = useDetailSel((s) => s.housing), setSel = useDetailSel((s) => s.setHousing);
   const [view, setView] = useState<'list' | 'cal'>('list');
   if (sel != null) return <Detail id={sel} onBack={() => setSel(null)} />;
   if (q.isLoading) return <p className="empty">불러오는 중…</p>;
@@ -87,15 +92,26 @@ export function HousingPanel() {
         <button type="button" role="tab" aria-selected={view === 'cal'} onClick={() => setView('cal')}>공고 캘린더</button>
       </div>
       {view === 'cal' ? <Calendar names={names} /> : (q.data?.length ? (
-        <ul className="ui-cards">
+        <ul className="ui-v-places">
           {q.data.map((h: Housing) => (
-            <li key={h.id}>
-              <button type="button" className="ui-card" onClick={() => { setSel(h.id); go(h); }}>
-                {h.recruiting && <span className="ui-card-badge" style={{ background: '#3BA55C' }}>모집 중</span>}
-                <strong>{h.name}</strong>
-                {h.nextEvent && <span className="ui-dc-rent"><strong className="ui-dday">{dday(h.nextEvent.date)}</strong> <span className="ui-dc-rent-label">{EVENT_LABEL[h.nextEvent.type]}</span></span>}
-                <span className="ui-card-sub">{h.address}</span>
+            <li key={h.id} className="ui-heart-host">
+              <button type="button" className="ui-v-place" onClick={() => { setSel(h.id); go(h); }}>
+                {(h.recruiting || h.nextEvent) && (
+                  <span className="ui-v-place-top">
+                    {h.recruiting && <span className="ui-v-tag is-go">모집 중</span>}
+                    {h.nextEvent && <span className="ui-v-dday"><b>{dday(h.nextEvent.date)}</b>{EVENT_LABEL[h.nextEvent.type]}</span>}
+                  </span>
+                )}
+                <strong className="ui-v-place-name">{h.name}</strong>
+                <span className="ui-v-place-addr">{h.address}</span>
+                {(h.minConvertedRent != null || h.walkMin != null) && (
+                  <span className="ui-v-place-meta">
+                    {h.minConvertedRent != null && <span>환산 월세 <b>{manwon(h.minConvertedRent)}</b>부터</span>}
+                    {h.walkMin != null && <span>도보 <b>{h.walkMin}분</b></span>}
+                  </span>
+                )}
               </button>
+              <HeartButton type="HOUSING" id={h.id} name={h.name} className="ui-heart-abs" />
             </li>
           ))}
         </ul>

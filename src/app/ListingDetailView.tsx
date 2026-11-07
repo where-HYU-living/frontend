@@ -40,7 +40,7 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
     <div className="ui-detail">
       <BackButton onClick={onBack} />
       <div className="ui-case"><span>용의자 파일</span><span className="ui-case-tag">{caseNumber(l.id)}</span></div>
-      <div className="ui-detail-head"><h3>{l.title}</h3><HeartButton type="LISTING" id={l.id} favorited={l.favorited} /></div>
+      <div className="ui-detail-head"><h3>{l.title}</h3><HeartButton type="LISTING" id={l.id} favorited={l.favorited} name={l.title} /></div>
       <p className="ui-card-sub">{l.address}</p>
 
       <VerdictCard pc={pc} fallbackGrade={l.grade} loggedIn={!!token} failed={p.isError} />

@@ -1,32 +1,52 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type * as THREE from 'three';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { ApiError } from '../api/client';
 import { useFloorPlan } from '../app/features/catalog';
 import { useSession } from '../app/state/session';
 import { useUi } from '../app/state/ui';
+import { ArrowLeft } from 'lucide-react';
+import { detectQuality } from '../quality';
 import { buildInterior } from './buildInterior';
-import { furnishPlan } from './furnish';
 import { makeInput } from './input';
+import { InteriorPost, RoomLabels } from './InteriorPost';
 import { Joystick } from './Joystick';
-import { Minimap } from './Minimap';
+import { TourHud } from './TourHud';
+import { jumpTargets, landingSpot, nearestFree } from './tourNav';
 import { pinnedReviews, type Pin } from './pins';
 import { PinPanel } from './PinPanel';
 import { Room3D } from './Room3D';
+import { buildRoomScene } from './roomScene';
 import { useIndoorReviews, useIndoorTarget } from './useIndoorReviews';
 import { Walker } from './Walker';
 import type { FloorPlan } from '../api/types';
 import './interior.css';
 
-function Loaded({ plan, title, floorplanId, onExit }: { plan: FloorPlan; title: string; floorplanId: number; onExit: () => void }) {
+function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: FloorPlan; title: string; floorplanId: number; start?: { x: number; z: number; yaw: number }; invited?: boolean; onExit: () => void }) {
+  const Q = useMemo(detectQuality, []);
+  const time = useUi((s) => s.timeOfDay);
+  const setTime = useUi((s) => s.setTimeOfDay);
   const built = useMemo(() => buildInterior(plan), [plan]);
-  const furniture = useMemo(() => furnishPlan(plan), [plan]);
+  const room = useMemo(() => buildRoomScene(plan), [plan]);
   const input = useMemo(() => makeInput(), []);
-  const pickRef = useRef<THREE.Group>(null), pinRef = useRef<THREE.Group>(null);
+  const pickRef = useRef<THREE.Group>(null), pinRef = useRef<THREE.Group>(null), labelsRef = useRef<HTMLDivElement>(null);
   const [showFurniture, setShowFurniture] = useState(true);
   const [draft, setDraft] = useState<Pin | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const requireLogin = useSession((s) => s.requireLogin);
+  const colliders = useMemo(() => (showFurniture ? [...built.wallPieces, ...room.solids] : built.wallPieces), [built, room, showFurniture]);
+  // 방 바로가기: 가구가 있어도 안전한 자리(항상 가구 충돌 포함)로
+  const allSolid = useMemo(() => [...built.wallPieces, ...room.solids], [built, room]);
+  const jumps = useMemo(() => jumpTargets(plan, room.info.lamps, built.spawn, allSolid), [plan, room, built, allSolid]);
+  // 초대 링크로 들어왔으면 초대한 사람이 있던 방·자리 옆에 바로 선다 (서 있을 곳이 없으면 입구에서 시작)
+  useEffect(() => {
+    if (!start) return;
+    const spot = landingSpot(plan, allSolid, start);
+    if (spot) input.goto = { ...spot, snap: true };
+  }, [start, plan, allSolid, input]);
+  const goTo = useCallback((to: { x: number; z: number; yaw: number }) => { input.goto = to; }, [input]);
+  const pickPoint = useCallback((x: number, z: number) => { const spot = nearestFree(plan, allSolid, x, z); if (spot) input.goto = { x: spot[0], z: spot[1], yaw: input.pose.yaw }; }, [plan, allSolid, input]);
+  const anchors = useMemo(() => room.info.lamps.map((l) => ({ x: l.x, y: plan.ceilingHeight - 0.35, z: l.z })), [room, plan]);
 
   const target = useIndoorTarget(floorplanId);
   const reviews = useIndoorReviews(target);
@@ -39,25 +59,33 @@ function Loaded({ plan, title, floorplanId, onExit }: { plan: FloorPlan; title: 
     setDraft(pin);
   }, [requireLogin]);
   const onPickPin = useCallback((id: number) => { setDraft(null); setSelectedId(id); }, []);
+  const hasFurniture = room.placed.length > 0;
 
   return (
     <>
-      <Canvas camera={{ fov: 70, near: 0.05, far: 60 }} dpr={[1, 1.5]}>
-        <color attach="background" args={['#dfe6ee']} />
-        <Suspense fallback={null}>
-          <Room3D plan={plan} built={built} furniture={furniture} showFurniture={showFurniture} pins={pins} selectedPin={selectedId} draft={draft} pickRef={pickRef} pinRef={pinRef} />
-        </Suspense>
-        <Walker plan={plan} built={built} input={input} pickRef={pickRef} pinRef={pinRef} onLongPress={onLongPress} onPickPin={onPickPin} />
+      <Canvas
+        camera={{ fov: 70, near: 0.05, far: 120 }}
+        dpr={[1, Q.pixelRatio]}
+        shadows={Q.name === 'low' ? false : { type: THREE.PCFSoftShadowMap }}
+        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        onCreated={({ gl }) => { gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1; }}
+      >
+        <color attach="background" args={['#cfd8e3']} />
+        <Room3D plan={plan} room={room} showFurniture={showFurniture} pins={pins} selectedPin={selectedId} draft={draft} Q={Q} time={time} pickRef={pickRef} pinRef={pinRef} />
+        <Walker plan={plan} built={built} input={input} colliders={colliders} floorAt={room.floorAt} pickRef={pickRef} pinRef={pinRef} onLongPress={onLongPress} onPickPin={onPickPin} />
+        <RoomLabels anchors={anchors} containerRef={labelsRef} occluders={pickRef} />
+        <InteriorPost Q={Q} />
       </Canvas>
-      <div className="ui-in-cross" aria-hidden="true" />
-      <div className="ui-interior-bar ui-in-bar glass">
-        <strong>{title}</strong>
-        <Minimap plan={plan} input={input} pins={pins.map((p) => p.pin)} />
-        <span className="ui-card-sub ui-in-help">WASD 이동 · 드래그로 둘러보기 · 벽·바닥을 길게 눌러 후기 핀 · Esc 나가기</span>
-        {furniture.length > 0 && <button type="button" className="ui-in-toggle" aria-pressed={showFurniture} onClick={() => setShowFurniture((v) => !v)}>예시 가구 {showFurniture ? '끄기' : '켜기'}</button>}
-        <button type="button" className="ui-mini" onClick={onExit}>나가기</button>
+      <div ref={labelsRef} className="ui-in-labels" aria-hidden="true">
+        {room.info.lamps.map((l, i) => (<span key={i} className="ui-in-label">{l.name} · {l.area.toFixed(1)}㎡</span>))}
       </div>
-      {showFurniture && furniture.length > 0 && !draft && !selected && <p className="ui-in-chip">예시 배치 · 실제 가구 위치와 크기가 아니에요</p>}
+      <div className="ui-in-cross" aria-hidden="true" />
+      <TourHud
+        title={title} floorplanId={floorplanId} invited={invited} plan={plan} input={input} pins={pins.map((p) => p.pin)} jumps={jumps}
+        hasFurniture={hasFurniture} showFurniture={showFurniture} onFurniture={() => setShowFurniture((v) => !v)}
+        time={time} onTime={setTime}
+        onExit={onExit} onJump={goTo} onPickPoint={pickPoint} quiet={!!draft || !!selected}
+      />
       <Joystick input={input} />
       <PinPanel target={target} draft={draft} selected={selected} onClearDraft={() => setDraft(null)} onClearSelected={() => setSelectedId(null)} />
     </>
@@ -76,18 +104,23 @@ export function InteriorScene() {
   }, [exit]);
   if (!indoor) return null;
   const ready = q.data && !q.data.glbUrl;
+  const notFound = q.isError && q.error instanceof ApiError && q.error.status === 404;
   return (
     <div className="ui-interior" role="dialog" aria-label={`${indoor.title} 실내`}>
-      {ready && <Loaded key={indoor.floorplanId} plan={q.data} title={indoor.title} floorplanId={indoor.floorplanId} onExit={exit} />}
+      {ready && <Loaded key={indoor.floorplanId} plan={q.data} title={indoor.title} floorplanId={indoor.floorplanId} start={indoor.start} invited={indoor.invited} onExit={exit} />}
       {!ready && (
-        <div className="ui-interior-bar glass">
-          <strong>{indoor.title}</strong>
-          <button type="button" className="ui-mini" onClick={exit}>나가기</button>
-        </div>
+        <>
+          <button type="button" className="ui-tour-back glass ui-tour-back--solo" onClick={exit} aria-label="동네로 돌아가기"><ArrowLeft size={18} aria-hidden="true" /><span>나가기</span></button>
+          <section className="ui-tour-state glass" role={q.isError || q.data?.glbUrl ? 'alert' : 'status'}>
+            <h1>{indoor.title}</h1>
+            {q.isLoading && <p>실내를 불러오고 있어요</p>}
+            {notFound && <p>이 집은 아직 실내 도면이 없어요. 다른 주택형을 골라 보세요.</p>}
+            {q.isError && !notFound && <p>실내를 불러오지 못했어요. 잠시 뒤에 다시 들어와 주세요.</p>}
+            {q.data?.glbUrl && <p>3D 모델 보기는 준비 중이에요.</p>}
+            {!q.isLoading && <button type="button" className="ui-tour-state-btn" onClick={exit}>목록으로 돌아가기</button>}
+          </section>
+        </>
       )}
-      {q.isLoading && <p className="ui-interior-note" role="status">실내를 불러오는 중…</p>}
-      {q.isError && <p className="ui-interior-note" role="alert">{q.error instanceof ApiError && q.error.status === 404 ? '평면도가 아직 없어요.' : '실내를 불러오지 못했어요.'}</p>}
-      {q.data?.glbUrl && <p className="ui-interior-note">3D 모델(GLB) 보기는 준비 중이에요.</p>}
     </div>
   );
 }

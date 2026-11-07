@@ -104,7 +104,7 @@ function transferSummary(t: StoredTransfer, wb: CampusBuilding | undefined): Tra
   const conv = convertedRent(t.rent, t.mgmtFee, t.deposit);
   const pc = buildPriceCheck({ rent: t.rent, mgmtFee: t.mgmtFee, deposit: t.deposit, contractMonths: t.remainingMonths, market: marketFor(t.dong, t.areaM2) });
   return {
-    id: t.id, title: `${t.dong} ${t.areaM2}㎡ 양도`, address: t.address, dong: t.dong, lat: t.lat, lng: t.lng, deposit: t.deposit, rent: t.rent, mgmtFee: t.mgmtFee,
+    id: t.id, title: t.title, address: t.address, dong: t.dong, lat: t.lat, lng: t.lng, deposit: t.deposit, rent: t.rent, mgmtFee: t.mgmtFee,
     areaM2: t.areaM2, floor: t.floor, roomType: t.roomType, convertedRent: conv, grade: pc.grade, walkMin: walkTo(wb, t.lat, t.lng),
     thumbnailUrl: t.photos[0] ?? null, favorited: isFav('TRANSFER', t.id), remainingMonths: t.remainingMonths, availableFrom: t.availableFrom, status: t.status, authorNickname: t.authorNickname,
   };
@@ -157,6 +157,8 @@ const int15 = (v: unknown) => typeof v === 'number' && Number.isInteger(v) && v 
 
 function validateTransferBody(b: Partial<TransferBody>): TransferBody {
   const errs: Record<string, string> = {};
+  const title = typeof b.title === 'string' ? b.title.trim() : '';
+  if (title.length < 2 || title.length > 40) errs.title = '제목은 2자 이상 40자 이하로 적어 주세요.';
   if (!b.address) errs.address = '주소를 입력해 주세요.';
   if (typeof b.lat !== 'number' || typeof b.lng !== 'number') errs.lat = '위치를 골라 주세요.';
   if (typeof b.deposit !== 'number' || b.deposit < 0) errs.deposit = '보증금을 확인해 주세요.';
@@ -165,7 +167,7 @@ function validateTransferBody(b: Partial<TransferBody>): TransferBody {
   if (typeof b.remainingMonths !== 'number' || b.remainingMonths < 1) errs.remainingMonths = '남은 개월 수를 확인해 주세요.';
   if (!b.roomType) errs.roomType = '방 구조를 골라 주세요.';
   if (Object.keys(errs).length) throw bad(errs);
-  return { dong: '', mgmtFee: null, floor: null, availableFrom: null, description: '', photoUrls: [], ...b } as TransferBody;
+  return { dong: '', mgmtFee: null, floor: null, availableFrom: null, description: '', photoUrls: [], ...b, title } as TransferBody;
 }
 
 function nearbyFor(l: ListingDetail, radius: number): Nearby[] {

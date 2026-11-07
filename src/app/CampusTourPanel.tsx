@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import places from './data/campusPlaces.json';
+import { visiblePlaces } from './data/hiddenBuildings';
 import { filterPlaces, groupPlaces, type Place } from './campusSearch';
 import { useWorld } from './state/world';
 import './dossier/dossier.css';
 
-const ALL = places as Place[];
+const ALL = visiblePlaces;
 
 /** 캠퍼스 투어: 건물 이름(또는 번호)으로 찾아서 누르면 3D에서 그 건물 앞으로 이동 */
 export function CampusTourPanel() {

@@ -1,3 +1,4 @@
+import { inkFor } from '../lib/grade';
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
@@ -208,6 +209,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       el.type = 'button';
       el.className = 'w3d-marker';
       el.style.setProperty('--mk', it.color);
+      el.style.setProperty('--mk-ink', inkFor(it.color)); // 노랑·주황·회색 핀은 짙은 글자
       if (it.icon) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = it.icon; el.appendChild(ic); }
       el.appendChild(document.createTextNode(it.text));
       if (it.label) el.setAttribute('aria-label', it.label);

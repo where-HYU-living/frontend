@@ -41,19 +41,19 @@ export const ADDRESSES: AddressResult[] = [
   { address: '서울 성동구 송정동 73-1', roadAddress: '서울 성동구 송정길 9', dong: '송정동', ...at(720, -320) },
 ];
 
-const TR = (id: number, listingId: number, remainingMonths: number, authorNickname: string, description: string): StoredTransfer => {
+const TR = (id: number, listingId: number, remainingMonths: number, authorNickname: string, title: string, description: string): StoredTransfer => {
   const l = LISTINGS[listingId - 1];
   return {
-    id, address: l.address, dong: l.dong, lat: l.lat + 0.0004, lng: l.lng - 0.0004, deposit: l.deposit, rent: l.rent, mgmtFee: l.mgmtFee, areaM2: l.areaM2,
+    id, title, address: l.address, dong: l.dong, lat: l.lat + 0.0004, lng: l.lng - 0.0004, deposit: l.deposit, rent: l.rent, mgmtFee: l.mgmtFee, areaM2: l.areaM2,
     roomType: l.roomType, floor: l.floor, remainingMonths, availableFrom: dayOffset(14 + id * 7), description, photoUrls: [], photos: [placeholderImage(`양도 ${id}`, '#a58a6f')],
     authorNickname, mine: false, status: 'OPEN',
   };
 };
 
 export const TRANSFERS: StoredTransfer[] = [
-  TR(1, 2, 14, '한양2210', '군 입대로 양도해요. 가구 일체 두고 갑니다. 관리비 포함 금액이에요.'),
-  TR(2, 5, 9, '한양9051', '교환학생 가게 되어 남은 계약 양도합니다. 협의 가능해요.'),
-  TR(3, 13, 20, '한양4408', '졸업 후 이사 예정이라 양도합니다. 에어컨 새것이에요.'),
+  TR(1, 2, 14, '한양2210', '입대로 급하게 양도해요, 가구 다 두고 가요', '군 입대로 양도해요. 가구 일체 두고 갑니다. 관리비 포함 금액이에요.'),
+  TR(2, 5, 9, '한양9051', '교환학생 가는 동안 9개월 양도', '교환학생 가게 되어 남은 계약 양도합니다. 협의 가능해요.'),
+  TR(3, 13, 20, '한양4408', '졸업해서 이사해요, 에어컨 새것', '졸업 후 이사 예정이라 양도합니다. 에어컨 새것이에요.'),
 ];
 
 export function makeHome(): MyHome {

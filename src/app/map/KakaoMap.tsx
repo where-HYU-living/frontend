@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import places from '../data/campusPlaces.json';
+import { visiblePlaces } from '../data/hiddenBuildings';
 import type { Place } from '../campusSearch';
 import { useUi } from '../state/ui';
 import { useWorld } from '../state/world';
 import { KAKAO_ERRORS, loadKakao } from './loadKakao';
 import { toLatLng, toLocal } from './geo';
 import { useListings, useListingsUi } from '../features/listings';
-import { GRADE_META } from '../../lib/grade';
+import { GRADE_META, inkFor } from '../../lib/grade';
 import { depositRent, manwon } from '../../lib/money';
 import type { ListingSummary } from '../../api/types';
 import { HeartButton } from '../HeartButton';
 
-const ALL = (places as unknown as Place[]).filter((p) => p.center);
+const ALL = visiblePlaces.filter((p) => p.center);
 
 /** 이 확대 단계(카카오 level, 작을수록 확대) 이하에서만 건물 이름을 띄운다 */
 const NAME_LEVEL = 3;
@@ -193,7 +193,7 @@ export function KakaoMap() {
       {pickedListing && (
         <div className="ui-map-card" role="dialog" aria-label={pickedListing.title}>
           <div className="ui-map-card-title">
-            <span className="ui-map-card-no" style={{ background: GRADE_META[pickedListing.grade].color }}>{GRADE_META[pickedListing.grade].label}</span>
+            <span className="ui-map-card-no" style={{ background: GRADE_META[pickedListing.grade].color, color: inkFor(GRADE_META[pickedListing.grade].color) }}>{GRADE_META[pickedListing.grade].label}</span>
             {depositRent(pickedListing.deposit, pickedListing.rent)} · {pickedListing.title}
           </div>
           <p className="ui-map-card-msg">환산 {manwon(pickedListing.convertedRent)} · {pickedListing.walkMin == null ? '도보 정보 없음' : `도보 ${pickedListing.walkMin}분`}</p>
