@@ -16,12 +16,14 @@ import { makeAmphitheater, makeStationExits, makeLabel, makeProps } from './land
 import { makeLion } from './landmarks/lion.js';
 import { Player } from './player.js';
 
-const fill = document.getElementById('loading-fill');
+// 3D 장면 진입점. React 메뉴 층(src/app)이 initWorld(container)로 불러 쓴다.
+// 화면 요소 중 3D가 직접 쓰는 것: #minimap(canvas), #joystick, #attrib (React가 깔아 둠, 없으면 건너뜀)
+// 타입 선언: src/main.d.ts
+export async function initWorld(app, { onProgress = () => {} } = {}) {
 const T0 = performance.now(), marks = [];
-const progress = (p, tag) => { fill.style.width = `${Math.round(p * 100)}%`; if (tag) marks.push([tag, Math.round(performance.now() - T0)]); };
+const progress = (p, tag) => { onProgress(p); if (tag) marks.push([tag, Math.round(performance.now() - T0)]); };
 
 // ---- 렌더러
-const app = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); // 성능: 레티나 2배 → 1.5배
 renderer.setSize(innerWidth, innerHeight);
@@ -52,6 +54,17 @@ sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 
+const onResize = () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
+};
+addEventListener('resize', onResize);
+
+return bootScene({ renderer, labelRenderer, scene, camera, sun, sunDir, onResize, marks, progress });
+}
+
 function flatten(t, [cx, cz], r, fall) {
   const h0 = makeHeightFn(t)(cx, cz);
   for (let j = 0; j < t.h; j++) for (let i = 0; i < t.w; i++) {
@@ -63,7 +76,7 @@ function flatten(t, [cx, cz], r, fall) {
   }
 }
 
-async function boot() {
+async function bootScene({ renderer, labelRenderer, scene, camera, sun, sunDir, onResize, marks, progress }) {
   const world = await (await fetch('/world.json')).json();
   progress(0.1, 'world');
   // 사자상 앞 잔디밭은 실제로 평평함 → 거친 지형 데이터를 그 주변만 평평하게
@@ -199,29 +212,25 @@ async function boot() {
   const spawn = lm.station.p;
   player.teleport(spawn[0] + 4, spawn[1] - 6, lm.lion.p[0], lm.lion.p[1]);
 
-  // 랜드마크 메뉴
-  const list = document.getElementById('landmark-list');
+  // 랜드마크 이동 (메뉴는 React 쪽에서 api.landmarks 로 그림)
   lm.aeji.name = '애지문 (한양대역 2번 출구)';
   const order = ['aeji', 'lion', 'main', 'history', 'amph'];
-  order.forEach((key, i) => {
+  const goToLandmark = (key) => {
     const l = lm[key];
-    const btn = document.createElement('button');
-    btn.innerHTML = `<span class="n">${i + 1}</span>${l.name}`;
-    btn.onclick = () => {
-      // 랜드마크 앞 빈자리 찾기
-      const [lx, lz] = l.p;
-      for (let r = 10; r < 60; r += 4) for (let a = 0; a < 16; a++) {
-        const ang = (a / 16) * Math.PI * 2 + 0.6;
-        const x = lx + Math.cos(ang) * r, z = lz + Math.sin(ang) * r;
-        if (!collide(x, z) && !pointInPoly(x, z, amphB.pts)) { player.teleport(x, z, lx, lz); return; }
-      }
-    };
-    list.appendChild(btn);
-  });
-  document.getElementById('attrib').textContent = world.attribution;
+    if (!l) return false;
+    // 랜드마크 앞 빈자리 찾기
+    const [lx, lz] = l.p;
+    for (let r = 10; r < 60; r += 4) for (let a = 0; a < 16; a++) {
+      const ang = (a / 16) * Math.PI * 2 + 0.6;
+      const x = lx + Math.cos(ang) * r, z = lz + Math.sin(ang) * r;
+      if (!collide(x, z) && !pointInPoly(x, z, amphB.pts)) { player.teleport(x, z, lx, lz); return true; }
+    }
+    return false;
+  };
+  const attrib = document.getElementById('attrib');
+  if (attrib) attrib.textContent = world.attribution;
   // 시작: 사자상 정면 (서쪽 광장에서 동쪽을 봄 — 뒤로 역사관, 오른쪽 뒤로 애지문·한양대역)
   const heroShot = () => { player.teleport(lm.lion.p[0] - 13, lm.lion.p[1] + 1.5, lm.lion.p[0], lm.lion.p[1]); player.dist = 19; player.pitch = 0.17; };
-  { const btn = document.createElement('button'); btn.innerHTML = '<span class="n">★</span>사자상 정면'; btn.onclick = heroShot; list.prepend(btn); }
   heroShot();
   // URL 로 카메라 지정 (스크린샷·디버그용): ?cam=x,z,tx,tz[,dist[,pitch]]  또는  ?go=209 (건물 번호)
   {
@@ -238,8 +247,8 @@ async function boot() {
     }
   }
 
-  // 미니맵
-  const mm = document.getElementById('minimap');
+  // 미니맵 (React 쪽이 #minimap canvas 를 깔아 둠. 없으면 미니맵 없이 동작)
+  const mm = document.getElementById('minimap') || document.createElement('canvas');
   const mg = mm.getContext('2d');
   const mmBase = document.createElement('canvas');
   mmBase.width = mm.width; mmBase.height = mm.height;
@@ -283,7 +292,6 @@ async function boot() {
   };
 
   progress(1, 'labels+player');
-  setTimeout(() => document.getElementById('loading').classList.add('done'), 250);
 
   // ---- 후처리: 주변광 차폐(GTAO) — 건물 모서리·처마·계단 틈에 자연스러운 그늘
   const composer = new EffectComposer(renderer);
@@ -293,7 +301,8 @@ async function boot() {
   ao.blendIntensity = 0.85;
   composer.addPass(ao);
   composer.addPass(new OutputPass());
-  addEventListener('resize', () => composer.setSize(innerWidth, innerHeight));
+  const onComposerResize = () => composer.setSize(innerWidth, innerHeight);
+  addEventListener('resize', onComposerResize);
   const useAO = !/noao/.test(location.search);
 
   // ---- 루프
@@ -316,14 +325,24 @@ async function boot() {
   window.__ready = true;
   window.__proto = { marks, zones, world, player, trees, renderer, scene, camera, heroShot };
   console.log(`trees: ${trees.count}, buildings: ${buildings.children.length}`);
-}
 
-addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-  labelRenderer.setSize(innerWidth, innerHeight);
-});
+  // React 메뉴 층이 쓰는 API (타입: src/main.d.ts)
+  return {
+    landmarks: [{ key: 'hero', name: '사자상 정면' }, ...order.map((key) => ({ key, name: lm[key].name }))],
+    goToLandmark: (key) => (key === 'hero' ? (heroShot(), true) : goToLandmark(key)),
+    teleport: (x, z, faceX, faceZ) => { if (collide(x, z)) return false; player.teleport(x, z, faceX, faceZ); return true; },
+    getPose: () => ({ p: [player.pos.x, player.pos.y, player.pos.z], heading: player.heading }),
+    dispose: () => {
+      renderer.setAnimationLoop(null);
+      removeEventListener('resize', onResize);
+      removeEventListener('resize', onComposerResize);
+      composer.dispose();
+      renderer.dispose();
+      renderer.domElement.remove();
+      labelRenderer.domElement.remove();
+    },
+  };
+}
 
 // 구역 플러그인 불러오기 — 파일 하나가 깨져도 나머지는 뜨게 (개별 try/catch)
 async function loadZones(ctx) {
@@ -344,8 +363,3 @@ async function loadZones(ctx) {
   for (const m of mods.filter(isRoads)) { const r = await run(m, out); if (r) out.push(r); }
   return out;
 }
-
-boot().catch((e) => {
-  console.error(e);
-  document.querySelector('.loading-sub').textContent = '불러오기 실패: ' + e.message;
-});

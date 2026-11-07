@@ -1,0 +1,83 @@
+/* 메뉴 층 (React). 3D 쪽 style.css 와 이름이 겹치지 않게 --ui-* 변수만 쓴다 */
+:root {
+  --ui-ink: #16202e;
+  --ui-ink-2: rgba(22, 32, 46, 0.66);
+  --ui-ink-3: rgba(22, 32, 46, 0.45);
+  --ui-glass: rgba(255, 255, 255, 0.52);
+  --ui-glass-strong: rgba(255, 255, 255, 0.74);
+  --ui-glass-line: rgba(255, 255, 255, 0.7);
+  --ui-hair: rgba(22, 32, 46, 0.09);
+  --ui-blur: saturate(170%) blur(22px);
+}
+
+/* 3D 층 */
+#world { position: fixed; inset: 0; z-index: 0; }
+#world canvas { display: block; touch-action: none; }
+#minimap { top: auto; bottom: 16px; right: 16px; position: fixed; width: 188px; height: 149px; z-index: 5; }
+#attrib { position: fixed; bottom: 4px; right: 16px; font-size: 10px; color: rgba(255, 255, 255, 0.6); pointer-events: none; z-index: 5; }
+#joystick { position: fixed; z-index: 5; }
+
+/* 메뉴 층: 빈 곳은 클릭이 3D로 통과 */
+.ui-layer { position: fixed; inset: 0; z-index: 10; pointer-events: none; color: var(--ui-ink); font-size: 14px; line-height: 1.5; }
+.ui-layer > *, .topbar > * { pointer-events: auto; }
+.ui-layer button, .ui-layer input { font: inherit; color: inherit; }
+.ui-layer button { border: 0; background: none; cursor: pointer; }
+.ui-layer button:disabled { cursor: default; opacity: 0.55; }
+.ui-layer :focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
+
+.glass {
+  background: var(--ui-glass);
+  backdrop-filter: var(--ui-blur);
+  -webkit-backdrop-filter: var(--ui-blur);
+  border: 1px solid var(--ui-glass-line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 10px 30px rgba(22, 32, 46, 0.1);
+}
+
+/* 상단 바 */
+.topbar { position: absolute; z-index: 2; left: 16px; right: 16px; top: 16px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.topbar .grow { flex: 1; pointer-events: none; }
+.search-wrap { position: relative; width: 300px; flex: 0 1 300px; }
+.search { height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 12px; color: var(--ui-ink-3); }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--ui-ink); }
+.search input::placeholder { color: var(--ui-ink-3); }
+.suggest { position: absolute; left: 0; right: 0; top: 48px; list-style: none; margin: 0; padding: 6px; border-radius: 12px; }
+.suggest button { width: 100%; text-align: left; padding: 8px 10px; border-radius: 8px; }
+.suggest button:hover { background: var(--ui-glass-strong); }
+.tabs { display: flex; flex: none; height: 42px; padding: 4px; border-radius: 12px; }
+.tabs button { padding: 0 14px; border-radius: 8px; color: var(--ui-ink-2); font-weight: 500; white-space: nowrap; }
+.tabs button[aria-selected='true'] { background: var(--ui-glass-strong); color: var(--ui-ink); font-weight: 650; box-shadow: 0 1px 3px rgba(22, 32, 46, 0.12); }
+.textbtn { flex: none; height: 42px; padding: 0 16px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
+.iconbtn { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; }
+
+/* 왼쪽 패널 */
+.ui-panel { position: absolute; left: 16px; top: 70px; bottom: 16px; width: 364px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
+.ui-panel-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px 12px; }
+.ui-panel-head h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.fold { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--ui-ink-2); }
+.fold:hover { background: var(--ui-glass-strong); }
+.ui-panel-body { flex: 1; overflow: auto; border-top: 1px solid var(--ui-hair); padding: 18px; }
+.empty { margin: 0; color: var(--ui-ink-2); }
+.reopen { position: absolute; left: 16px; top: 70px; height: 42px; padding: 0 14px; border-radius: 12px; font-weight: 600; }
+
+/* 로딩 */
+.loading { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #c9d7e4, #8fa3b6); }
+.loading-card { text-align: center; padding: 28px 40px; border-radius: 18px; color: var(--ui-ink); }
+.loading-title { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.loading-sub { margin-top: 4px; color: var(--ui-ink-2); font-size: 14px; }
+.loading-bar { margin: 16px auto 0; width: 220px; height: 4px; border-radius: 4px; background: rgba(22, 32, 46, 0.12); overflow: hidden; }
+.loading-bar span { display: block; height: 100%; background: var(--ui-ink); transition: width 0.3s ease; }
+
+@media (max-width: 1100px) {
+  .search-wrap { flex-basis: 200px; }
+  .tabs button { padding: 0 10px; }
+}
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; }
+  .search-wrap { flex: 1 1 100%; }
+  .tabs { order: 3; overflow-x: auto; max-width: 100%; }
+  .textbtn, .iconbtn { display: none; }
+  .ui-panel { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 55%; border-radius: 16px 16px 0 0; }
+  .reopen { top: auto; bottom: 16px; }
+  #minimap { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .loading-bar span { transition: none; } }

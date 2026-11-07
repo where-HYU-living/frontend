@@ -5,7 +5,7 @@
 ## 실행
 ```bash
 npm install
-npm run dev        # http://localhost:5180
+npm run dev        # http://localhost:5173 (메뉴 React 층 + 3D)
 ```
 - 시작 화면: **사자상 정면** (서쪽 광장에서 동쪽 — 뒤로 역사관·본관, 오른쪽 뒤로 애지문)
 - 조작: WASD/방향키 이동, Shift 달리기, 드래그 시점, 휠 확대, 왼쪽 메뉴로 랜드마크 이동, 미니맵 클릭 이동
