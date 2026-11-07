@@ -1,7 +1,7 @@
 # frontend 작업 규칙 (3D 세션·메뉴 세션 공통)
 
 화면은 두 층이다.
-- **3D 층**: R3F `<Canvas>` (`src/world/WorldCanvas.tsx`). 장면 내용은 `src/world/buildWorld.js` 가 만들고, 후처리(GTAO)·라벨은 `WorldCanvas` 안의 `Post` 가 그린다. 타입은 `src/main.d.ts`·`src/world/buildWorld.d.ts`. 스타일은 `src/style.css`. (`?classic=1` 이면 예전 순수 three.js 경로 `src/main.js` 의 `initWorld` — 육안 확인 뒤 삭제 예정)
+- **3D 층**: R3F `<Canvas>` (`src/world/WorldCanvas.tsx`). 장면 내용은 `src/world/buildWorld.js` 가 만들고, 후처리(GTAO)·라벨은 `WorldCanvas` 안의 `Post` 가 그린다. 타입은 `src/main.d.ts`(WorldApi)·`src/world/buildWorld.d.ts`. 스타일은 `src/style.css`.
 - **품질 프리셋**: `src/quality.ts` (`?q=high|med|low`, 없으면 기기에 맞춰 자동). 픽셀비·그림자 크기·나무 그림자·GTAO·MSAA 를 정한다. 새 무거운 효과는 프리셋에 넣어서 끌 수 있게 할 것.
 - **메뉴 층 (React+TS)**: `src/app/`. 스타일은 `src/app/app.css`. 3D API는 `useWorld().api` 로만 부른다.
 

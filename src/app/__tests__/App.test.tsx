@@ -9,7 +9,6 @@ const fakeApi = {
   dispose: vi.fn(),
 };
 vi.mock('../../world/WorldCanvas', () => ({ WorldCanvas: () => null }));
-vi.mock('../../main', () => ({ initWorld: vi.fn(async () => fakeApi) }));
 
 import { App } from '../App';
 import { useUi } from '../state/ui';

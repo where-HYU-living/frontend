@@ -11,7 +11,7 @@ import { makeAmphitheater, makeStationExits, makeLabel, makeProps } from '../lan
 import { makeLion } from '../landmarks/lion.js';
 import { Player } from '../player.js';
 
-// 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: main.js 의 initWorld 또는 R3F WorldCanvas).
+// 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: R3F WorldCanvas).
 // 반환값의 frame(dt) 를 매 프레임 부르면 플레이어·태양·LOD·미니맵이 갱신된다.
 
 function flatten(t, [cx, cz], r, fall) {

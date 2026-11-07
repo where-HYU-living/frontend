@@ -1,4 +1,4 @@
-// src/main.js (3D 장면) 의 타입. 3D 쪽 API를 바꾸면 여기도 같이 바꾼다.
+// 3D 층이 메뉴에 주는 API 타입 (WorldCanvas 가 useWorld().api 에 채움). API를 바꾸면 여기도 같이 바꾼다.
 export type Landmark = { key: string; name: string };
 
 export type WorldApi = {
@@ -11,8 +11,3 @@ export type WorldApi = {
   getPose(): { p: [number, number, number]; heading: number };
   dispose(): void;
 };
-
-export function initWorld(
-  container: HTMLElement,
-  opts?: { onProgress?: (p: number) => void },
-): Promise<WorldApi>;

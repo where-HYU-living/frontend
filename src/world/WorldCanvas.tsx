@@ -85,7 +85,7 @@ function Post({ Q }: { Q: Quality }) {
   return null;
 }
 
-/** R3F 경로의 3D 층 (?r3f=1). initWorld 와 같은 WorldApi 를 useWorld 에 채운다. */
+/** 3D 층. 장면이 준비되면 WorldApi 를 useWorld 에 채운다. */
 export function WorldCanvas() {
   const Q = useMemo(detectQuality, []);
   return (
