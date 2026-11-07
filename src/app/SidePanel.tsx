@@ -1,6 +1,8 @@
 import { TABS, useUi, type Tab } from './state/ui';
+import { CampusTourPanel } from './CampusTourPanel';
 
 const EMPTY: Record<Tab, { title: string; body: string }> = {
+  tour: { title: '캠퍼스 투어', body: '' },
   home: { title: '자취방', body: '매물 데이터가 연결되면 여기에 목록과 필터가 나와요.' },
   dorm: { title: '기숙사', body: '기숙사 정보가 연결되면 여기에 호실과 월 비용이 나와요.' },
   housing: { title: '청년안심주택', body: '단지와 공고 일정이 연결되면 여기에 나와요.' },
@@ -30,7 +32,7 @@ export function SidePanel() {
         </button>
       </div>
       <div className="ui-panel-body">
-        <p className="empty">{e.body}</p>
+        {tab === 'tour' ? <CampusTourPanel /> : <p className="empty">{e.body}</p>}
       </div>
     </aside>
   );

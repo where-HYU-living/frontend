@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 const fakeApi = {
   landmarks: [{ key: 'hero', name: '사자상 정면' }, { key: 'main', name: '본관' }],
   goToLandmark: vi.fn(() => true),
+  goToPlace: vi.fn(() => true),
   teleport: vi.fn(() => true),
   getPose: () => ({ p: [0, 0, 0] as [number, number, number], heading: 0 }),
   dispose: vi.fn(),
@@ -28,7 +29,7 @@ const renderReady = async () => {
 test('menu tabs appear exactly once', async () => {
   await renderReady();
   expect(screen.getAllByRole('tab', { name: '집 찾기' })).toHaveLength(1);
-  expect(screen.getAllByRole('tab')).toHaveLength(5);
+  expect(screen.getAllByRole('tab')).toHaveLength(6);
 });
 
 test('loading overlay goes away when 3D is ready', async () => {

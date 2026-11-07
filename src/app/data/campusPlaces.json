@@ -1,0 +1,725 @@
+[
+ {
+  "no": "101",
+  "name": "역사관(구본관)",
+  "en": "History Museum",
+  "group": "etc",
+  "center": [
+   32.4,
+   12.8
+  ]
+ },
+ {
+  "no": "102",
+  "name": "본관",
+  "en": "Administration Building",
+  "group": "etc",
+  "center": [
+   20.5,
+   -56
+  ]
+ },
+ {
+  "no": "104",
+  "name": "애지문(한양대역 2번 출구)",
+  "en": "Aejeemun(Hanyang Station Exit #2)",
+  "group": "etc",
+  "center": [
+   -41.8,
+   10.9
+  ]
+ },
+ {
+  "no": "105",
+  "name": "학생복지관(한양플라자)",
+  "en": "Student Welfare Building(Hanyang Plaza)",
+  "group": "etc",
+  "center": [
+   -32.9,
+   -43
+  ]
+ },
+ {
+  "no": "106",
+  "name": "우체국",
+  "en": "University Post Office",
+  "group": "etc",
+  "center": [
+   -40.3,
+   -84.3
+  ]
+ },
+ {
+  "no": "107",
+  "name": "학생회관",
+  "en": "Student Union",
+  "group": "etc",
+  "center": [
+   -20.3,
+   -151.2
+  ]
+ },
+ {
+  "no": "108",
+  "name": "국제관",
+  "en": "International Building",
+  "group": "etc",
+  "center": [
+   -5.2,
+   106.3
+  ]
+ },
+ {
+  "no": "109",
+  "name": "박물관",
+  "en": "University Museum",
+  "group": "etc",
+  "center": [
+   27.6,
+   109.9
+  ]
+ },
+ {
+  "no": "201",
+  "name": "재성토목관",
+  "en": "Jae Sung Civil Engineering Building",
+  "group": "etc",
+  "center": [
+   -14.1,
+   192.7
+  ]
+ },
+ {
+  "no": "202",
+  "name": "건축관",
+  "en": "Hanyang Architecture Center",
+  "group": "etc",
+  "center": [
+   7.9,
+   217.8
+  ]
+ },
+ {
+  "no": "203",
+  "name": "과학기술관",
+  "en": "Engineering Science & Technology Building",
+  "group": "etc",
+  "center": [
+   35.3,
+   213.9
+  ]
+ },
+ {
+  "no": "204",
+  "name": "신소재공학관",
+  "en": "Advanced Materials & Chemical Engineering Building",
+  "group": "etc",
+  "center": [
+   80.4,
+   184.6
+  ]
+ },
+ {
+  "no": "206",
+  "name": "공업센터본관",
+  "en": "Engineering Center",
+  "group": "etc",
+  "center": [
+   160.8,
+   150.2
+  ]
+ },
+ {
+  "no": "207",
+  "name": "공업센터별관",
+  "en": "Engineering Center Annex",
+  "group": "etc",
+  "center": [
+   198.3,
+   157.6
+  ]
+ },
+ {
+  "no": "208",
+  "name": "퓨전테크센터(FTC)",
+  "en": "Fusion Technology Center",
+  "group": "etc",
+  "center": [
+   256.1,
+   174.5
+  ]
+ },
+ {
+  "no": "209",
+  "name": "노천극장",
+  "en": "Amphitheater",
+  "group": "etc",
+  "center": [
+   81.5,
+   69.1
+  ]
+ },
+ {
+  "no": "210",
+  "name": "정몽구미래자동차연구센터",
+  "en": "Chung Mong-Koo Automotive Research Center",
+  "group": "etc",
+  "center": [
+   91.2,
+   -6
+  ]
+ },
+ {
+  "no": "211",
+  "name": "제2공학관",
+  "en": "Engineering Building II",
+  "group": "etc",
+  "center": [
+   165.1,
+   47.1
+  ]
+ },
+ {
+  "no": "212",
+  "name": "제1공학관",
+  "en": "Engineering Building I",
+  "group": "etc",
+  "center": [
+   110.5,
+   -40.3
+  ]
+ },
+ {
+  "no": "213",
+  "name": "구자겸기계관",
+  "en": "",
+  "group": "etc",
+  "center": [
+   339.6,
+   144.5
+  ]
+ },
+ {
+  "no": "301",
+  "name": "대운동장",
+  "en": "Track and Field",
+  "group": "etc",
+  "center": [
+   289.6,
+   73.8
+  ]
+ },
+ {
+  "no": "304",
+  "name": "산학기술관",
+  "en": "R & D Building",
+  "group": "etc",
+  "center": [
+   429.4,
+   63.8
+  ]
+ },
+ {
+  "no": "305",
+  "name": "IT/BT관",
+  "en": "Information Technology / Bio Technology",
+  "group": "etc",
+  "center": [
+   459.6,
+   29.9
+  ]
+ },
+ {
+  "no": "306",
+  "name": "올림픽체육관",
+  "en": "Olympic Gymnasium",
+  "group": "etc",
+  "center": [
+   494.3,
+   -44.3
+  ]
+ },
+ {
+  "no": "401",
+  "name": "생활과학대학",
+  "en": "College of Human Ecology",
+  "group": "etc",
+  "center": [
+   209.5,
+   -58.5
+  ]
+ },
+ {
+  "no": "402",
+  "name": "제1음악관",
+  "en": "Music Hall I",
+  "group": "etc",
+  "center": [
+   272.7,
+   -49.6
+  ]
+ },
+ {
+  "no": "403",
+  "name": "제2음악관",
+  "en": "Music Hall II",
+  "group": "etc",
+  "center": [
+   255.7,
+   -61.5
+  ]
+ },
+ {
+  "no": "405",
+  "name": "백남음악관",
+  "en": "Paiknam Music Hall",
+  "group": "etc",
+  "center": [
+   240.5,
+   -19.2
+  ]
+ },
+ {
+  "no": "406",
+  "name": "학군단",
+  "en": "R.O.T.C. Headquarters",
+  "group": "etc",
+  "center": [
+   196.8,
+   -0.7
+  ]
+ },
+ {
+  "no": "407",
+  "name": "제1법학관",
+  "en": "Law Building I",
+  "group": "etc",
+  "center": [
+   315.3,
+   -42.2
+  ]
+ },
+ {
+  "no": "408",
+  "name": "제2법학관",
+  "en": "Law Building II",
+  "group": "etc",
+  "center": [
+   310.6,
+   -16.8
+  ]
+ },
+ {
+  "no": "409",
+  "name": "제3법학관",
+  "en": "Law Building III",
+  "group": "etc",
+  "center": [
+   356.8,
+   -23.1
+  ]
+ },
+ {
+  "no": "410",
+  "name": "경제금융대학·법학학술정보관",
+  "en": "College of Economics & Finance/Law Library",
+  "group": "etc",
+  "center": [
+   361.5,
+   -53.3
+  ]
+ },
+ {
+  "no": "501",
+  "name": "백남학술정보관",
+  "en": "Paiknam Academic Information Center & Library",
+  "group": "etc",
+  "center": [
+   117.1,
+   -134.5
+  ]
+ },
+ {
+  "no": "503",
+  "name": "사자가 군것질 할 때",
+  "en": "Convenience Store",
+  "group": "etc",
+  "center": [
+   141.1,
+   -52.5
+  ]
+ },
+ {
+  "no": "504",
+  "name": "사회과학관·공공정책대학원",
+  "en": "College of Social Sciences/Graduate School of Public Policy",
+  "group": "etc",
+  "center": [
+   15.9,
+   -121.4
+  ]
+ },
+ {
+  "no": "505",
+  "name": "사범대학 본관",
+  "en": "College of Education",
+  "group": "etc",
+  "center": [
+   68.9,
+   -215.8
+  ]
+ },
+ {
+  "no": "506",
+  "name": "사범대학 별관",
+  "en": "College of Education Annex",
+  "group": "etc",
+  "center": [
+   32,
+   -243.1
+  ]
+ },
+ {
+  "no": "507",
+  "name": "자연과학대학",
+  "en": "College of Natural Sciences",
+  "group": "etc",
+  "center": [
+   -0.2,
+   -283.6
+  ]
+ },
+ {
+  "no": "508",
+  "name": "인문관",
+  "en": "College of Humanities",
+  "group": "etc",
+  "center": [
+   -68.1,
+   -255.4
+  ]
+ },
+ {
+  "no": "604",
+  "name": "제1의학관",
+  "en": "College of Medicine I",
+  "group": "etc",
+  "center": [
+   -171,
+   -234.3
+  ]
+ },
+ {
+  "no": "605",
+  "name": "제2의학관",
+  "en": "College of Medicine II",
+  "group": "etc",
+  "center": [
+   -194.1,
+   -312.1
+  ]
+ },
+ {
+  "no": "606",
+  "name": "의과대학본관",
+  "en": "College of Medicine",
+  "group": "etc",
+  "center": [
+   -138.3,
+   -301.3
+  ]
+ },
+ {
+  "no": "607",
+  "name": "동문회관",
+  "en": "Alumni Association Building",
+  "group": "etc",
+  "center": [
+   -250.4,
+   -359.5
+  ]
+ },
+ {
+  "no": "609",
+  "name": "병원서관(국제병원,종합검진센터,장례식장)",
+  "en": "HUMC West Wing",
+  "group": "etc",
+  "center": [
+   -84.2,
+   -375.3
+  ]
+ },
+ {
+  "no": "610",
+  "name": "병원본관",
+  "en": "Hanyang University Medical Center",
+  "group": "etc",
+  "center": [
+   -10.9,
+   -438.5
+  ]
+ },
+ {
+  "no": "611",
+  "name": "권역응급의료센터",
+  "en": "Regional Emergency Medical Center",
+  "group": "etc",
+  "center": [
+   6.4,
+   -380.3
+  ]
+ },
+ {
+  "no": "614",
+  "name": "병원동관(류마티스병원)·신한플라자",
+  "en": "HUMC East Wing",
+  "group": "etc",
+  "center": [
+   41.2,
+   -435
+  ]
+ },
+ {
+  "no": "617",
+  "name": "간호미래교육관",
+  "en": "",
+  "group": "etc",
+  "center": [
+   168.1,
+   -268.3
+  ]
+ },
+ {
+  "no": "618",
+  "name": "의대 계단강의동",
+  "en": "College of Medicine Lecture Hall",
+  "group": "etc",
+  "center": [
+   138.8,
+   -355.7
+  ]
+ },
+ {
+  "no": "619",
+  "name": "의생명융합연구센터",
+  "en": "",
+  "group": "etc",
+  "center": [
+   151.1,
+   -399.4
+  ]
+ },
+ {
+  "no": "701",
+  "name": "한양종합기술연구원(HIT)·코맥스 스타트업타운",
+  "en": "Hanyang Institute of Technology",
+  "group": "etc",
+  "center": [
+   218.3,
+   -179.3
+  ]
+ },
+ {
+  "no": "702",
+  "name": "한양사이버대학교 1관",
+  "en": "Hanyang Cyber University Bldg 1",
+  "group": "etc",
+  "center": null
+ },
+ {
+  "no": "703",
+  "name": "한양사이버대학교 2관",
+  "en": "",
+  "group": "etc",
+  "center": null
+ },
+ {
+  "no": "705",
+  "name": "융합교육관",
+  "en": "Multidisciplinary Lecture Hall",
+  "group": "etc",
+  "center": [
+   280.4,
+   -210.5
+  ]
+ },
+ {
+  "no": "706",
+  "name": "경영관",
+  "en": "Business Administration Building",
+  "group": "etc",
+  "center": [
+   340.7,
+   -220.8
+  ]
+ },
+ {
+  "no": "707",
+  "name": "행원파크",
+  "en": "Haengwon Park",
+  "group": "etc",
+  "center": [
+   368.9,
+   -163.6
+  ]
+ },
+ {
+  "no": "801",
+  "name": "제1학생생활관",
+  "en": "Student Residence Hall I",
+  "group": "dorm",
+  "center": [
+   256.5,
+   -294.6
+  ]
+ },
+ {
+  "no": "802",
+  "name": "제3학생생활관",
+  "en": "Student Residence Hall III",
+  "group": "dorm",
+  "center": [
+   214.5,
+   -372.6
+  ]
+ },
+ {
+  "no": "803",
+  "name": "제5학생생활관",
+  "en": "Student Residence Hall V",
+  "group": "dorm",
+  "center": [
+   118.8,
+   -377.7
+  ]
+ },
+ {
+  "no": "804",
+  "name": "제2학생생활관·한양테크노숙사",
+  "en": "Student Residence Hall II / Hanyang Techno Residence Hall",
+  "group": "dorm",
+  "center": [
+   483.4,
+   -395.3
+  ]
+ },
+ {
+  "no": "805",
+  "name": "개나리관",
+  "en": "Gaenari Residence Hall",
+  "group": "dorm",
+  "center": [
+   475.6,
+   -428.5
+  ]
+ },
+ {
+  "no": "806",
+  "name": "한누리관",
+  "en": "Hannuri Residence Hall",
+  "group": "dorm",
+  "center": [
+   455.7,
+   -385.5
+  ]
+ },
+ {
+  "no": "807",
+  "name": "게스트하우스",
+  "en": "Hanyang International House III",
+  "group": "dorm",
+  "center": [
+   394.1,
+   -517
+  ]
+ },
+ {
+  "no": "809",
+  "name": "제6학생생활관",
+  "en": "",
+  "group": "dorm",
+  "center": [
+   115.1,
+   -751.5
+  ]
+ },
+ {
+  "no": "810",
+  "name": "제7학생생활관",
+  "en": "",
+  "group": "dorm",
+  "center": [
+   101.1,
+   -649.1
+  ]
+ },
+ {
+  "no": "L01",
+  "name": "사자상",
+  "en": "Lion Statue",
+  "group": "etc",
+  "center": [
+   0,
+   0
+  ]
+ },
+ {
+  "no": "L02",
+  "name": "한양대역 출구",
+  "en": "Hanyang Univ. Station Exits",
+  "group": "etc",
+  "center": null
+ },
+ {
+  "no": "N08",
+  "name": "토건관",
+  "en": "",
+  "group": "etc",
+  "center": [
+   -15.2,
+   147.9
+  ]
+ },
+ {
+  "no": "N10",
+  "name": "사근동기숙사",
+  "en": "",
+  "group": "dorm",
+  "center": null
+ },
+ {
+  "no": "N11",
+  "name": "연구지원센터",
+  "en": "",
+  "group": "etc",
+  "center": null
+ },
+ {
+  "no": "N12",
+  "name": "대학원",
+  "en": "",
+  "group": "etc",
+  "center": null
+ },
+ {
+  "no": "N13",
+  "name": "제1교육관(행정자치대학원)",
+  "en": "",
+  "group": "etc",
+  "center": null
+ },
+ {
+  "no": "N14",
+  "name": "제2교육관",
+  "en": "",
+  "group": "etc",
+  "center": null
+ },
+ {
+  "no": "N15",
+  "name": "사회대도서관",
+  "en": "",
+  "group": "etc",
+  "center": null
+ }
+]

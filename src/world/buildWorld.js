@@ -187,6 +187,15 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     }
     return false;
   };
+  // 지점 (x,z) 가 보이는 빈자리(25~90m 바깥)로 이동해 그쪽을 바라봄. 빈자리가 없으면 false
+  const goToPlace = (cx, cz) => {
+    for (let r = 25; r < 90; r += 5) for (let a = 0; a < 16; a++) {
+      const ang = (a / 16) * Math.PI * 2;
+      const x = cx + Math.cos(ang) * r, z = cz + Math.sin(ang) * r;
+      if (!collide(x, z)) { player.teleport(x, z, cx, cz); player.dist = 30; player.pitch = 0.3; return true; }
+    }
+    return false;
+  };
   const attrib = document.getElementById('attrib');
   if (attrib) attrib.textContent = world.attribution;
   // 시작: 사자상 정면 (서쪽 광장에서 동쪽을 봄 — 뒤로 역사관, 오른쪽 뒤로 애지문·한양대역)
@@ -202,7 +211,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       const b = world.buildings.find((b) => b.no === q.get('go'));
       if (b) {
         const cx = b.pts.reduce((a, p) => a + p[0], 0) / b.pts.length, cz = b.pts.reduce((a, p) => a + p[1], 0) / b.pts.length;
-        for (let r = 25; r < 90; r += 5) { let done = false; for (let a = 0; a < 16 && !done; a++) { const ang = (a / 16) * Math.PI * 2; const x = cx + Math.cos(ang) * r, zz = cz + Math.sin(ang) * r; if (!collide(x, zz)) { player.teleport(x, zz, cx, cz); player.dist = 30; player.pitch = 0.3; done = true; } } if (done) break; }
+        goToPlace(cx, cz);
       }
     }
   }
@@ -270,6 +279,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     // React 메뉴 층이 쓰는 API (dispose 제외, 타입: src/main.d.ts)
     api: {
       landmarks: [{ key: 'hero', name: '사자상 정면' }, ...order.map((key) => ({ key, name: lm[key].name }))],
+      goToPlace,
       goToLandmark: (key) => (key === 'hero' ? (heroShot(), true) : goToLandmark(key)),
       teleport: (x, z, faceX, faceZ) => { if (collide(x, z)) return false; player.teleport(x, z, faceX, faceZ); return true; },
       getPose: () => ({ p: [player.pos.x, player.pos.y, player.pos.z], heading: player.heading }),

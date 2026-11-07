@@ -57,6 +57,16 @@
 .fold:hover { background: var(--ui-glass-strong); }
 .ui-panel-body { flex: 1; overflow: auto; border-top: 1px solid var(--ui-hair); padding: 18px; }
 .empty { margin: 0; color: var(--ui-ink-2); }
+.ui-tour-search input { width: 100%; box-sizing: border-box; height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: inherit; font: inherit; }
+.ui-tour-msg { margin: 10px 0 0; font-size: 13px; color: var(--ui-ink-2); }
+.ui-tour-group h3 { margin: 18px 0 6px; font-size: 12px; font-weight: 700; color: var(--ui-ink-2); letter-spacing: .02em; }
+.ui-tour-group ul { list-style: none; margin: 0; padding: 0; }
+.ui-tour-item { width: 100%; display: flex; align-items: baseline; gap: 10px; text-align: left; padding: 9px 8px; border-radius: 8px; }
+.ui-tour-item:hover:not(:disabled) { background: var(--ui-glass-strong); }
+.ui-tour-item:disabled { opacity: .5; cursor: default; }
+.ui-tour-no { flex: 0 0 34px; font-variant-numeric: tabular-nums; color: var(--ui-ink-2); font-size: 13px; }
+.ui-tour-name { flex: 1; }
+.ui-tour-note { font-size: 11px; color: var(--ui-ink-2); }
 .reopen { position: absolute; left: 16px; top: 70px; height: 42px; padding: 0 14px; border-radius: 12px; font-weight: 600; }
 
 /* 로딩 */
