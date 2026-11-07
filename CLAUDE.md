@@ -22,6 +22,7 @@
 ## 서버 연결
 - `VITE_API_BASE`(기본 `http://localhost:8080`)로 실서버에 바로 붙는다. 목 서버 없음 — 아직 없는 API(검색·찜·비교 등)는 실패해도 화면이 깨지지 않게 빈 상태/오류 문구로 처리한다.
 - 계약 타입은 `src/api/types.ts` 한 곳, 호출은 `src/api/client.ts`(`api<T>()`), 서버 상태는 TanStack Query(`src/app/features/*.ts`), 로그인은 `src/app/state/session.ts`.
+- 로그인: `VITE_GOOGLE_CLIENT_ID` 가 있으면 구글 버튼(`src/app/auth/`)이 뜨고 ID 토큰을 `POST /auth/google` 로 보낸다(도메인 검증은 서버). 없으면 메일 코드 인증만.
 - 금액은 서버가 원, 화면은 만원(`src/lib/money.ts`). `null` 은 "정보 없음"으로 보여주고 0으로 바꾸지 않는다.
 
 ## 기능 위치

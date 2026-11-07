@@ -59,5 +59,5 @@ test('login rejects non-hanyang mail with a friendly message', async () => {
   renderWithClient(<LoginModal />);
   fireEvent.change(screen.getByLabelText('학교 메일'), { target: { value: 'a@gmail.com' } });
   fireEvent.click(screen.getByText('인증 코드 받기'));
-  expect(await screen.findByText('한양대 메일(@hanyang.ac.kr)만 가능해요')).toBeTruthy();
+  expect(await screen.findByText(/한양대 메일\(@hanyang.ac.kr\)만 가능해요/)).toBeTruthy();
 });
