@@ -77,7 +77,7 @@ export function TopBar() {
         <Moon size={15} aria-hidden="true" />
         <span className="tod-clock" aria-live="off">{clockLabel(timeOfDay)}</span>
       </div>
-      <button className="textbtn glass" type="button" onClick={() => setMapMode(mapMode === '3d' ? '2d' : '3d')}>
+      <button className="textbtn glass mapswitch" type="button" onClick={() => setMapMode(mapMode === '3d' ? '2d' : '3d')}>
         {mapMode === '3d' ? '지도로 보기' : '3D로 보기'}
       </button>
       <button className="iconbtn glass" type="button" aria-label="찜 목록" onClick={() => selectTab('fav')}>

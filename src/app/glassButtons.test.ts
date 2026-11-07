@@ -12,3 +12,9 @@ test('glass buttons set their own text color so they stay readable on a dark sky
   const css = readFileSync('src/app/app.css', 'utf8');
   expect(css).toMatch(/\.textbtn, \.iconbtn, \.reopen \{ color: var\(--ui-ink\); \}/);
 });
+
+test('map switch button and clock have fixed widths so the top bar does not shift when text changes', () => {
+  const css = readFileSync('src/app/app.css', 'utf8');
+  expect(css).toMatch(/\.mapswitch \{ width: \d+px;/);
+  expect(css).toMatch(/\.tod-clock \{[^}]*width: \d+px/);
+});
