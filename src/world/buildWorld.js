@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import { makeHeightFn, SegIndex, pointInPoly, mergeStatic } from '../util.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -164,6 +165,54 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     labels.push(obj);
   }
 
+  // 말풍선 (React 가 setMarkers 로 그룹별 목록을 넘김: 매물/기숙사/단지 …). 클릭하면 onClick, 멀면 숨김
+  const markerGroups = new Map();
+  const MARKER_FAR = 380;
+  const setMarkers = (items, group = 'listing') => {
+    for (const o of markerGroups.get(group) || []) { scene.remove(o); o.element.remove(); }
+    const objs = [];
+    for (const it of items) {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'w3d-marker';
+      el.style.setProperty('--mk', it.color);
+      el.textContent = it.text;
+      if (it.label) el.setAttribute('aria-label', it.label);
+      el.addEventListener('click', (e) => { e.stopPropagation(); it.onClick?.(); });
+      const obj = new CSS2DObject(el);
+      obj.position.set(it.x, heightAt(it.x, it.z) + 10, it.z);
+      scene.add(obj);
+      objs.push(obj);
+    }
+    markerGroups.set(group, objs);
+  };
+
+  // 다른 접속자 (멀티플레이). React 의 net 쪽이 보간한 위치를 매 프레임 넘긴다
+  const remotes = new Map();
+  const remoteMat = new THREE.MeshStandardMaterial({ color: 0xf2994a, roughness: 0.7 });
+  const setRemotePlayers = (list) => {
+    const seen = new Set();
+    for (const r of list) {
+      seen.add(r.id);
+      let m = remotes.get(r.id);
+      if (!m) {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.35, 0.9, 4, 10), remoteMat); body.position.y = 0.8; body.castShadow = true;
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), remoteMat); head.position.y = 1.65;
+        g.add(body, head);
+        const el = document.createElement('div'); el.className = 'w3d-nick';
+        const tag = new CSS2DObject(el); tag.position.set(0, 2.3, 0); g.add(tag);
+        scene.add(g);
+        m = { g, el };
+        remotes.set(r.id, m);
+      }
+      if (m.el.dataset.n !== r.nickname + (r.chat || '')) { m.el.dataset.n = r.nickname + (r.chat || ''); m.el.textContent = r.chat ? `${r.nickname}: ${r.chat}` : r.emote ? `${r.nickname} ${r.emote}` : r.nickname; }
+      m.g.position.set(r.x, heightAt(r.x, r.z), r.z);
+      m.g.rotation.y = r.r;
+    }
+    for (const [id, m] of remotes) if (!seen.has(id)) { scene.remove(m.g); m.el.remove(); remotes.delete(id); }
+  };
+
   // 플레이어
   const collide = (x, z) => bIndex.hit(x, z, 0.35) || lionHit(x, z);
   const lionHit = (x, z) => Math.hypot(x - lm.lion.p[0], z - lm.lion.p[1]) < 2.1;
@@ -270,6 +319,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       const d = l.position.distanceTo(camera.position);
       l.element.style.opacity = d < 320 ? 1 : 0;
     }
+    for (const objs of markerGroups.values()) for (const o of objs) o.element.style.display = o.position.distanceTo(camera.position) < MARKER_FAR ? '' : 'none';
     if ((lodTick += dt) > 0.25) { lodTick = 0; trees.update(camera.position); }
     if ((mmTick += dt) > 0.1) { mmTick = 0; drawMinimap(); }
   };
@@ -280,6 +330,8 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     api: {
       landmarks: [{ key: 'hero', name: '사자상 정면' }, ...order.map((key) => ({ key, name: lm[key].name }))],
       goToPlace,
+      setMarkers,
+      setRemotePlayers,
       goToLandmark: (key) => (key === 'hero' ? (heroShot(), true) : goToLandmark(key)),
       teleport: (x, z, faceX, faceZ) => { if (collide(x, z)) return false; player.teleport(x, z, faceX, faceZ); return true; },
       getPose: () => ({ p: [player.pos.x, player.pos.y, player.pos.z], heading: player.heading }),

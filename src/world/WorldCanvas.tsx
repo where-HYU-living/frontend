@@ -89,14 +89,15 @@ function Post({ Q }: { Q: Quality }) {
 /** 3D 층. 장면이 준비되면 WorldApi 를 useWorld 에 채운다. */
 export function WorldCanvas() {
   const Q = useMemo(detectQuality, []);
-  const mapMode = useUi((s) => s.mapMode); // 지도를 보는 동안은 3D 를 그리지 않는다 (GPU 절약)
+  const mapMode = useUi((s) => s.mapMode); // 지도·실내를 보는 동안은 동네 3D 를 그리지 않는다 (GPU 절약)
+  const indoor = useUi((s) => s.indoor);
   return (
     <Canvas
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       dpr={[1, Q.pixelRatio]}
       shadows={{ type: THREE.PCFSoftShadowMap }}
       camera={{ fov: 55, near: 0.3, far: 3000 }}
-      frameloop={mapMode === '2d' ? 'never' : 'always'}
+      frameloop={mapMode === '2d' || indoor ? 'never' : 'always'}
       onCreated={({ gl }) => {
         gl.outputColorSpace = THREE.SRGBColorSpace;
         gl.toneMapping = THREE.ACESFilmicToneMapping;
