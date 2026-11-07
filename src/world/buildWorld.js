@@ -267,19 +267,6 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     for (const [id, m] of remotes) if (!seen.has(id)) { scene.remove(m.g); m.el.remove(); remotes.delete(id); }
   };
 
-  // 내 캐릭터 머리 위 말풍선 (서버가 되돌려 준 내 chat/emote)
-  const selfEl = document.createElement('div'); selfEl.className = 'w3d-nick';
-  const selfTag = new CSS2DObject(selfEl); selfTag.position.set(0, 2.3, 0); selfTag.visible = false; player.mesh.add(selfTag);
-  let selfSig = '';
-  const setSelfBubble = ({ chat, emote } = {}) => {
-    const sig = `${chat || ''}|${emote ? 1 : 0}`;
-    if (sig === selfSig) return;
-    selfSig = sig;
-    selfTag.visible = !!(chat || emote);
-    selfEl.textContent = chat || '';
-    if (emote && !chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = emote; selfEl.appendChild(ic); }
-  };
-
   // 빛 기둥+깃발 (모집 중인 청년안심주택 강조). React 가 setBeacons 로 전체 교체
   const beaconObjs = [];
   const beaconMat = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -301,6 +288,20 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   const collide = (x, z) => bIndex.hit(x, z, 0.35) || lionHit(x, z);
   const lionHit = (x, z) => Math.hypot(x - lm.lion.p[0], z - lm.lion.p[1]) < 2.1;
   const player = new Player({ scene, camera, dom: domElement, heightAt, collide, bounds: world.bounds });
+
+  // 내 캐릭터 머리 위 말풍선 (서버가 되돌려 준 내 chat/emote)
+  const selfEl = document.createElement('div'); selfEl.className = 'w3d-nick';
+  const selfTag = new CSS2DObject(selfEl); selfTag.position.set(0, 2.3, 0); selfTag.visible = false; player.mesh.add(selfTag);
+  let selfSig = '';
+  const setSelfBubble = ({ chat, emote } = {}) => {
+    const sig = `${chat || ''}|${emote ? 1 : 0}`;
+    if (sig === selfSig) return;
+    selfSig = sig;
+    selfTag.visible = !!(chat || emote);
+    selfEl.textContent = chat || '';
+    if (emote && !chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = emote; selfEl.appendChild(ic); }
+  };
+
   player.occluders = [buildings];
   extras = makeExtras({ Q, scene, camera, world, heightAt, collide, player, bIndex, host: domElement.parentElement || document.body });
   extras.setNight(lastT);
