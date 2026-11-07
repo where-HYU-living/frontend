@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useBuildingNames, useDepartments, useProfile, useSaveProfile } from './features/catalog';
 import { DepartmentPicker } from './DepartmentPicker';
+import { BuildingPicker } from './BuildingPicker';
+import campusPlaces from './data/campusPlaces.json';
 import { useSession } from './state/session';
 import { useUi } from './state/ui';
 
@@ -15,6 +17,9 @@ export function ProfileModal() {
   const deps = useDepartments();
   const save = useSaveProfile();
   const buildingNames = useBuildingNames();
+  const [buildingIds, setBuildingIds] = useState<number[]>([]);
+  // 건물 후보: 앱 건물 목록(서버 이름이 있으면 그걸로)
+  const options = campusPlaces.map((p) => ({ id: p.id, name: buildingNames.get(p.id) ?? p.name }));
   const [dep, setDep] = useState('');
   const [rent, setRent] = useState('');
   const [deposit, setDeposit] = useState('');
@@ -24,6 +29,7 @@ export function ProfileModal() {
     const p = profile.data;
     if (!p) return;
     setDep(p.departmentId == null ? '' : String(p.departmentId));
+    setBuildingIds(p.buildingIds ?? []);
     setRent(man(p.budget?.rentCap)); setDeposit(man(p.budget?.depositCap));
     if (p.departmentId == null && p.budget == null && !sessionStorage.getItem('chatatda.onboarded')) useUi.setState({ profileOpen: true });
   }, [profile.data]);
@@ -34,7 +40,7 @@ export function ProfileModal() {
     const d = deps.data?.find((x) => String(x.id) === dep);
     const rentCap = won(rent), depositCap = won(deposit);
     save.mutate(
-      { departmentId: d ? d.id : undefined, buildingIds: d ? d.defaultBuildingIds : undefined, budget: rentCap == null && depositCap == null ? undefined : { rentCap, depositCap } },
+      { departmentId: d ? d.id : undefined, buildingIds, budget: rentCap == null && depositCap == null ? undefined : { rentCap, depositCap } },
       { onSuccess: close },
     );
   };
@@ -44,7 +50,8 @@ export function ProfileModal() {
       <div className="ui-modal glass" role="dialog" aria-label="내 정보" onMouseDown={(e) => e.stopPropagation()}>
         <h2>내 정보</h2>
         <p className="ui-modal-sub">학과를 고르면 과 건물까지 도보 시간을 보여주고, 예산을 넣으면 초과 여부를 알려줘요. 건너뛰어도 돼요.</p>
-        <DepartmentPicker departments={deps.data ?? []} value={dep === '' ? null : Number(dep)} buildingNames={buildingNames} onChange={(id) => setDep(id == null ? '' : String(id))} />
+        <DepartmentPicker departments={deps.data ?? []} value={dep === '' ? null : Number(dep)} onChange={(id) => { setDep(id == null ? '' : String(id)); const d = deps.data?.find((x) => x.id === id); if (d) setBuildingIds(d.defaultBuildingIds); }} />
+        <BuildingPicker selected={buildingIds} options={options} onChange={setBuildingIds} />
         <label className="ui-modal-row">월세 상한 <input inputMode="numeric" value={rent} onChange={(e) => setRent(e.target.value)} aria-label="월세 상한(만원)" /> 만원</label>
         <label className="ui-modal-row">보증금 상한 <input inputMode="numeric" value={deposit} onChange={(e) => setDeposit(e.target.value)} aria-label="보증금 상한(만원)" /> 만원</label>
         {save.isError && <p className="ui-modal-error" role="alert">저장하지 못했어요. 잠시 뒤 다시 해 보세요.</p>}

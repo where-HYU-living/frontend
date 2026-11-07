@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWithClient } from '../test/wrap';
+import { BuildingPicker } from './BuildingPicker';
 import { buildingNamesOf, filterDepartments, groupByCollege, type Dept } from './departments';
 import { DepartmentPicker } from './DepartmentPicker';
 import { ProfileModal } from './ProfileModal';
@@ -37,12 +38,12 @@ test('building names skip unknown ids', () => {
 
 function Harness({ onChange }: { onChange?: (id: number | null) => void }) {
   const [v, setV] = useState<number | null>(null);
-  return <DepartmentPicker departments={DEPTS} value={v} buildingNames={NAMES} onChange={(id) => { setV(id); onChange?.(id); }} />;
+  return <DepartmentPicker departments={DEPTS} value={v} onChange={(id) => { setV(id); onChange?.(id); }} />;
 }
 
 afterEach(cleanup);
 
-test('typing narrows the list, picking shows the mapped buildings, clear removes it', () => {
+test('typing narrows the list, picking reports the department, clear removes it', () => {
   const onChange = vi.fn();
   renderWithClient(<Harness onChange={onChange} />);
   const input = screen.getByLabelText('학과 검색');
@@ -52,14 +53,14 @@ test('typing narrows the list, picking shows the mapped buildings, clear removes
   expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['경영학부']);
   fireEvent.mouseDown(screen.getByRole('option', { name: '경영학부' }));
   expect(onChange).toHaveBeenLastCalledWith(3);
-  expect(screen.getByText('학과 사무실 건물: 경영관')).toBeTruthy();
+  expect(screen.getByText('경영학부')).toBeTruthy(); // 고른 학과 표시
   expect(screen.queryByRole('listbox')).toBeNull(); // 고르면 닫힘
   fireEvent.click(screen.getByLabelText('학과 선택 지우기'));
   expect(onChange).toHaveBeenLastCalledWith(null);
-  expect(screen.queryByText('학과 사무실 건물: 경영관')).toBeNull();
+  expect(screen.queryByLabelText('학과 선택 지우기')).toBeNull();
 });
 
-test('keyboard: arrows move, enter picks; department without a building says so; empty search shows a message', () => {
+test('keyboard: arrows move, enter picks; empty search shows a message', () => {
   const onChange = vi.fn();
   renderWithClient(<Harness onChange={onChange} />);
   const input = screen.getByLabelText('학과 검색');
@@ -67,9 +68,6 @@ test('keyboard: arrows move, enter picks; department without a building says so;
   fireEvent.keyDown(input, { key: 'ArrowDown' }); // 목록 순서: 공과(기계,컴퓨터) → 경영 → 인문 → 두 번째 = 컴퓨터
   fireEvent.keyDown(input, { key: 'Enter' });
   expect(onChange).toHaveBeenLastCalledWith(1);
-  fireEvent.change(input, { target: { value: '국어' } });
-  fireEvent.keyDown(input, { key: 'Enter' });
-  expect(screen.getByText('건물 정보가 아직 없어요')).toBeTruthy();
   fireEvent.change(input, { target: { value: 'zzzz' } });
   expect(screen.getByText('검색 결과가 없어요')).toBeTruthy();
 });
@@ -116,4 +114,64 @@ test('bundled list covers Hanyang Seoul: every department has a college and know
     for (const b of d.defaultBuildingIds) expect(ids.has(b)).toBe(true); // 건물 id 는 앱 건물 목록에 있어야 한다
   }
   expect(bundled.some((d) => d.name === '컴퓨터소프트웨어학부')).toBe(true);
+});
+
+const OPTIONS = [{ id: 212, name: '제1공학관' }, { id: 305, name: 'IT/BT관' }, { id: 706, name: '경영관' }];
+
+function BuildingHarness({ start, onChange }: { start: number[]; onChange?: (ids: number[]) => void }) {
+  const [ids, setIds] = useState(start);
+  return <BuildingPicker selected={ids} options={OPTIONS} onChange={(n) => { setIds(n); onChange?.(n); }} />;
+}
+
+test('building picker: auto-filled chips, first is 대표, add by search, remove, change primary', () => {
+  const onChange = vi.fn();
+  renderWithClient(<BuildingHarness start={[305]} onChange={onChange} />);
+  expect(screen.getByText('IT/BT관')).toBeTruthy();
+  expect(screen.getByText('대표')).toBeTruthy();
+  const input = screen.getByLabelText('건물 추가');
+  fireEvent.focus(input);
+  expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['제1공학관', '경영관']); // 이미 고른 건물은 후보에서 빠짐
+  fireEvent.change(input, { target: { value: '경영' } });
+  fireEvent.mouseDown(screen.getByRole('option', { name: '경영관' }));
+  expect(onChange).toHaveBeenLastCalledWith([305, 706]);
+  fireEvent.click(screen.getByLabelText('경영관 대표로 지정'));
+  expect(onChange).toHaveBeenLastCalledWith([706, 305]);
+  fireEvent.click(screen.getByLabelText('IT/BT관 빼기'));
+  expect(onChange).toHaveBeenLastCalledWith([706]);
+});
+
+test('building picker: shows an empty message and handles unknown ids', () => {
+  renderWithClient(<BuildingHarness start={[]} />);
+  expect(screen.getByText('아직 고른 건물이 없어요.')).toBeTruthy();
+  cleanup();
+  renderWithClient(<BuildingHarness start={[999]} />);
+  expect(screen.getByText('건물 999')).toBeTruthy();
+});
+
+test('profile modal: choosing a department fills its buildings, the user can change them, save sends the edited list', async () => {
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    if (url.includes('/departments')) return Promise.resolve(json(DEPTS));
+    if (url.includes('/me/profile') && init?.method === 'PUT') return Promise.resolve(json({ id: 1 }));
+    if (url.includes('/me/profile')) return Promise.resolve(json({ id: 1, email: 'a', nickname: 'n', departmentId: null, buildingIds: [], budget: null }));
+    return Promise.resolve(json([]));
+  });
+  renderWithClient(<ProfileModal />);
+  fireEvent.change(await screen.findByLabelText('학과 검색'), { target: { value: '컴퓨터' } });
+  fireEvent.mouseDown(await screen.findByRole('option', { name: '컴퓨터소프트웨어학부' }));
+  const chips = within(screen.getByLabelText('내 건물'));
+  expect(chips.getByText('제1공학관')).toBeTruthy(); // 212 자동 매핑
+  expect(chips.getByText('연구지원센터')).toBeTruthy(); // 1005
+  fireEvent.click(screen.getByLabelText('연구지원센터 빼기'));
+  fireEvent.change(screen.getByLabelText('건물 추가'), { target: { value: 'IT/BT' } });
+  fireEvent.mouseDown(await screen.findByRole('option', { name: 'IT/BT관' }));
+  fireEvent.click(screen.getByText('저장'));
+  await waitFor(() => {
+    const put = fetchMock.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === 'PUT');
+    expect(JSON.parse((put![1] as RequestInit).body as string)).toMatchObject({ departmentId: 1, buildingIds: [212, 305] });
+  });
+});
+
+test('bundled data: 정보시스템학과 maps to IT/BT관 (305)', async () => {
+  const { default: bundled } = await import('./data/departments.json');
+  expect(bundled.find((d) => d.name === '정보시스템학과')!.defaultBuildingIds).toEqual([305]);
 });

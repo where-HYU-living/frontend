@@ -1,10 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
-import { buildingNamesOf, filterDepartments, groupByCollege, type Dept } from './departments';
+import { filterDepartments, groupByCollege, type Dept } from './departments';
 
 /** 학과 검색 선택창: 입력하면 학과·단과대 이름으로 걸러지고, 고르면 연결된 건물을 보여준다 */
-export function DepartmentPicker({ departments, value, buildingNames, onChange }: {
-  departments: Dept[]; value: number | null; buildingNames: Map<number, string>; onChange: (id: number | null) => void;
+export function DepartmentPicker({ departments, value, onChange }: {
+  departments: Dept[]; value: number | null; onChange: (id: number | null) => void;
 }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -32,7 +32,6 @@ export function DepartmentPicker({ departments, value, buildingNames, onChange }
     else if (e.key === 'Enter' && open && flat[active]) { e.preventDefault(); pick(flat[active]); }
     else if (e.key === 'Escape') { if (open) { e.stopPropagation(); setOpen(false); } }
   };
-  const bNames = selected ? buildingNamesOf(selected, buildingNames) : [];
 
   return (
     <div className="ui-dept" ref={box}>
@@ -40,7 +39,6 @@ export function DepartmentPicker({ departments, value, buildingNames, onChange }
         <div className="ui-dept-chosen">
           <div>
             <strong>{selected.name}</strong> <span className="ui-card-sub">{selected.college}</span>
-            <div className="ui-card-sub">{bNames.length ? `학과 사무실 건물: ${bNames.join(', ')}` : '건물 정보가 아직 없어요'}</div>
           </div>
           <button type="button" className="ui-dept-clear" aria-label="학과 선택 지우기" onClick={() => onChange(null)}><X size={14} aria-hidden="true" /></button>
         </div>
