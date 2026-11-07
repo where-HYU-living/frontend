@@ -35,6 +35,11 @@
 - `node scripts/perf.mjs "q=med"` — draw call/삼각형/프레임/외부 요청. dev 서버(5173)가 떠 있어야 한다. 기준값은 `scripts/perf-baseline.json`.
 - 텍스처는 `public/tex` 합계 12MB 이하·한 변 1024px(노멀·러프니스 512) 이하 — `npm test` 가 지킨다. 줄이는 도구: `node scripts/shrink-textures.mjs`.
 
+## 배포 (Vercel)
+- `vercel.json` 준비됨(Vite, `dist`, 정적 자원 캐시). 저장소를 Vercel 에 불러오면 그대로 빌드된다.
+- Vercel 프로젝트 환경변수(Production·Preview 모두): `VITE_API_BASE`(백엔드 주소), `VITE_KAKAO_JS_KEY`, `VITE_GOOGLE_CLIENT_ID`. 값은 `.env.example` 참고. `VITE_` 변수는 빌드 때 번들에 들어가므로 바꾸면 다시 배포해야 한다.
+- 배포 주소가 생기면: 카카오 콘솔(JS SDK 도메인)과 구글 콘솔(승인된 JavaScript 원본), 백엔드 `CORS_ALLOWED_ORIGINS` 에 그 주소를 추가한다. `/privacy.html`, `/terms.html` 은 구글 OAuth 게시 URL 로 쓴다.
+
 ## 실행
 - `npm run dev` → http://localhost:5173 (백엔드 CORS 허용 포트)
 - `npm test` (Vitest), `npm run typecheck`, `npm run build`
