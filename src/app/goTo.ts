@@ -1,6 +1,7 @@
 import { useWorld } from './state/world';
 import { useArea, siteOf } from './state/area';
 import { serviceTargetFor } from '../world/serviceArea';
+import { planLanding, type Landing } from '../world/landing';
 
 /**
  * 위경도 지점으로 3D 이동: 캠퍼스면 그 자리로, 집 주변이면 그 동네로 들어가서, 서비스 지역 밖이면 false.
@@ -32,6 +33,30 @@ export function useGoToCampus() {
   return (x: number, z: number): boolean | 'switching' => {
     if ((areaId ?? 'campus') !== 'campus') { useArea.getState().goTo('campus', x, z); return 'switching'; }
     return api?.goToPlace(x, z) ?? false;
+  };
+}
+
+/**
+ * 지도 정보 카드의 '3D로 가기' (3-3): 서비스 안이면 그 지점에 서고(걸을 수 없으면 가장 가까운 빈자리),
+ * 밖이면 가장 가까운 월드의 진입점으로. 돌려준 Landing 으로 안내 문구를 만든다.
+ */
+export function useLandAt() {
+  const api = useWorld((s) => s.api);
+  const areaId = useWorld((s) => s.areaId);
+  return (p: { lat: number; lng: number }): Landing => {
+    const cur = (areaId ?? 'campus') as Landing['area'];
+    const plan = planLanding(p.lat, p.lng, cur);
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__lastLanding = plan;
+    const pose = api?.getPose?.();
+    const from = pose && cur === 'campus' ? { x: pose.p[0], z: pose.p[2], yaw: pose.heading } : null;
+    if (plan.area === cur && api) {
+      const site = cur !== 'campus' && plan.kind === 'outside';
+      if (site) api.goToLandmark('hero');
+      else if (!api.teleport(plan.x, plan.z, plan.x, plan.z - 1) && !api.goToPlace(plan.x, plan.z)) api.goToLandmark('hero');
+    } else {
+      useArea.getState().goTo(plan.area, plan.x, plan.z, from, plan.kind === 'inside');
+    }
+    return plan;
   };
 }
 export { siteOf };

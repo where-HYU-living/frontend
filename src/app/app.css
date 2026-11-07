@@ -133,7 +133,7 @@
 .ui-map-card-no { margin-right: 8px; font-size: 13px; font-weight: 600; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
 .ui-map-card-msg { margin: 6px 0 0; font-size: 13px; color: #b3412b; }
 .ui-map-card-actions { display: flex; gap: 8px; margin-top: 12px; }
-.ui-map-card-actions button { height: 38px; padding: 0 14px; border: 0; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
+.ui-map-card-actions button { min-height: 44px; padding: 0 14px; border: 0; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
 .ui-map-go { flex: 1; background: #0e4a84; color: #fff; }
 .ui-map-close { background: var(--ui-hair); color: var(--ui-ink); }
 .ui-map :focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
@@ -310,3 +310,22 @@
 .ui-bld-chips li.is-primary { border-color: #0e4a84; background: rgba(14, 74, 132, .1); }
 .ui-bld-chips button { display: inline-flex; border: 0; background: none; padding: 2px; color: var(--ui-ink-2); cursor: pointer; }
 .ui-bld-tag { padding: 0 6px; border-radius: 999px; background: #0e4a84; color: #fff; font-size: 11px; font-weight: 700; }
+
+/* 지도 모드 (3-3): 검색으로 고른 곳 마커·정보 카드·서비스 영역 범례·3D 도착 안내 */
+.ui-map-target { --pin: #b42318; position: relative; width: 30px; height: 38px; pointer-events: none; }
+.ui-map-target .ui-map-pin-head { left: 2px; width: 26px; height: 26px; background: var(--pin); border-width: 3px; }
+.ui-map-housing .ui-map-pin-head { border-radius: 4px; transform: translateY(2px) rotate(0); }
+.ui-map-card-sub { margin: 4px 0 0; font-size: 13px; color: var(--ui-ink-2); }
+.ui-map-card-svc { margin: 8px 0 0; padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.ui-map-card-svc.is-in { background: #e7f5ec; color: #1f6e3c; }
+.ui-map-card-svc.is-out { background: #fdecea; color: #b3412b; }
+.ui-map-near { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.ui-map-near button { width: 100%; min-height: 40px; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 8px; border: 0; border-radius: 8px; background: none; font: inherit; text-align: left; cursor: pointer; color: var(--ui-ink); }
+.ui-map-near button:hover { background: #f1f4f7; }
+.ui-map-near small { flex: none; color: var(--ui-ink-3); font-size: 12px; }
+.ui-map-legend { position: absolute; z-index: 1; right: 16px; bottom: 16px; margin: 0; padding: 8px 12px; border-radius: 10px; font-size: 12px; color: var(--ui-ink-2); }
+.ui-map-legend i { display: inline-block; width: 12px; height: 12px; margin: 0 4px -2px 8px; border: 1.5px dashed; border-radius: 2px; }
+.ui-map-legend i:first-child { margin-left: 0; }
+.ui-map-legend .is-campus { border-color: #0e4a84; } .ui-map-legend .is-listing { border-color: #d9480f; } .ui-map-legend .is-housing { border-color: #2f9e57; }
+.ui-land-note { position: fixed; z-index: 5; left: 50%; top: 76px; transform: translateX(-50%); max-width: min(560px, calc(100% - 32px)); margin: 0; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--ui-ink); }
+@media (max-width: 760px) { .ui-map-legend { left: 12px; right: 12px; bottom: auto; top: 64px; } }

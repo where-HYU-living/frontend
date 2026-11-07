@@ -48,7 +48,8 @@ export function NeighborhoodHud() {
     const g = consumeGoto(areaId);
     if (!g) return;
     const m = siteMeta(areaId);
-    if (m && Math.hypot(g.x - m.x, g.z - m.z) < 30) return; // 동네에 막 들어갔고 집 근처면 기본 자리(집 앞)에서 시작
+    if (m && Math.hypot(g.x - m.x, g.z - m.z) < 30) { api.goToLandmark('hero'); return; } // 집 근처면 기본 자리(집 앞 길)
+    if (g.stand) { if (!api.teleport(g.x, g.z, g.x, g.z - 1) && !api.goToPlace(g.x, g.z)) api.goToLandmark('hero'); return; }
     if (!api.goToPlace(g.x, g.z)) api.teleport(g.x, g.z);
   }, [api, areaId, pendingGoto, consumeGoto]);
 

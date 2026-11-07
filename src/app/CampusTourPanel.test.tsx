@@ -49,6 +49,6 @@ test('동네 월드에서 누르면 캠퍼스 월드로 바꾸고 도착 후 그
   const p = (places as unknown as { name: string; center: [number, number] }[]).find((x) => x.name === '제1공학관')!;
   expect(goToPlace).not.toHaveBeenCalled(); // 동네 월드 api 에 캠퍼스 좌표를 넘기지 않는다
   expect(useArea.getState().area).toBe('campus');
-  expect(useArea.getState().pendingGoto).toEqual({ area: 'campus', x: p.center[0], z: p.center[1] });
+  expect(useArea.getState().pendingGoto).toMatchObject({ area: 'campus', x: p.center[0], z: p.center[1] });
   useWorld.setState({ areaId: 'campus' });
 });

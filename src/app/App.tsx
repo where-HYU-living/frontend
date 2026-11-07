@@ -3,7 +3,7 @@ import { TopBar } from './TopBar';
 import { SidePanel } from './SidePanel';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
-import { KakaoMap } from './map/KakaoMap';
+import { KakaoMap, LandingNotice } from './map/KakaoMap';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginModal } from './LoginModal';
 import { ListingMarkers } from './ListingMarkers';
@@ -47,6 +47,7 @@ export function App() {
         <TopBar />
         {mapMode === '3d' && <SidePanel />}
       </div>
+      <LandingNotice />
       <WorldChat />
       <InteriorScene />
       <LoginModal />

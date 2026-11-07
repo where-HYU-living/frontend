@@ -7,6 +7,10 @@ type MapFocusState = {
   target: MapTarget | null;
   /** 같은 지점을 다시 골라도 effect 가 돌도록 */
   seq: number;
+  /** 지도를 닫았다 다시 열 때 보던 자리 (중심·확대) */
+  view: { lat: number; lng: number; level: number } | null;
+  /** 지도에서 3D 로 넘어간 뒤 한 번 보여 줄 안내 */
+  notice: string | null;
   focus: (t: MapTarget) => void;
   clear: () => void;
 };
@@ -14,6 +18,11 @@ type MapFocusState = {
 export const useMapFocus = create<MapFocusState>((set) => ({
   target: null,
   seq: 0,
+  view: null,
+  notice: null,
   focus: (target) => set((s) => ({ target, seq: s.seq + 1 })),
   clear: () => set({ target: null }),
 }));
+
+// 점검 스크립트용 (scripts/map-check.mjs)
+if (import.meta.env.DEV && typeof window !== 'undefined') (window as unknown as Record<string, unknown>).__mapFocus = useMapFocus;
