@@ -8,6 +8,7 @@ const fakeApi = {
   getPose: () => ({ p: [0, 0, 0] as [number, number, number], heading: 0 }),
   dispose: vi.fn(),
 };
+vi.mock('../../world/WorldCanvas', () => ({ WorldCanvas: () => null }));
 vi.mock('../../main', () => ({ initWorld: vi.fn(async () => fakeApi) }));
 
 import { App } from '../App';
@@ -22,7 +23,7 @@ afterEach(cleanup);
 
 const renderReady = async () => {
   render(<App />);
-  await act(async () => {});
+  await act(async () => { useWorld.setState({ status: 'ready', progress: 1, api: fakeApi as never }); });
 };
 
 test('menu tabs appear exactly once', async () => {

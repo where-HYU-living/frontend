@@ -29,8 +29,8 @@ function ClassicWorld() {
 
 /** 3D 층: 화면 전체를 3D 캔버스가 채운다. 미니맵·조이스틱·출처 표기는 3D 코드가 id로 찾아 쓴다 */
 export function WorldLayer() {
-  // ?r3f=1 이면 R3F 경로, 아니면 기존 initWorld 경로 (이식 검증용으로 나란히 둠)
-  const r3f = new URLSearchParams(location.search).get('r3f') === '1';
+  // 기본은 R3F 경로. ?classic=1 이면 기존 initWorld 경로 (육안 확인이 끝나면 삭제 예정)
+  const r3f = new URLSearchParams(location.search).get('classic') !== '1';
   return (
     <>
       {r3f ? <div id="world"><WorldCanvas /></div> : <ClassicWorld />}
