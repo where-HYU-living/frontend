@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { makeHeightFn, SegIndex, pointInPoly } from './util.js';
+import { makeHeightFn, SegIndex, pointInPoly, mergeStatic } from './util.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { makeSplat, makeTerrain } from './terrain.js';
 import { makeBuildings } from './buildings.js';
 import { makeTrees, makePines } from './trees.js';
@@ -16,12 +17,13 @@ import { makeLion } from './landmarks/lion.js';
 import { Player } from './player.js';
 
 const fill = document.getElementById('loading-fill');
-const progress = (p) => (fill.style.width = `${Math.round(p * 100)}%`);
+const T0 = performance.now(), marks = [];
+const progress = (p, tag) => { fill.style.width = `${Math.round(p * 100)}%`; if (tag) marks.push([tag, Math.round(performance.now() - T0)]); };
 
 // ---- 렌더러
 const app = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); // 성능: 레티나 2배 → 1.5배
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -63,7 +65,7 @@ function flatten(t, [cx, cz], r, fall) {
 
 async function boot() {
   const world = await (await fetch('/world.json')).json();
-  progress(0.1);
+  progress(0.1, 'world');
   // 사자상 앞 잔디밭은 실제로 평평함 → 거친 지형 데이터를 그 주변만 평평하게
   flatten(world.terrain, world.landmarks.find((l) => l.key === 'lion').p, 10, 14);
   const heightAt = makeHeightFn(world.terrain);
@@ -79,7 +81,7 @@ async function boot() {
   bg.colorSpace = THREE.SRGBColorSpace;
   scene.background = bg;
   scene.backgroundBlurriness = 0.0;
-  progress(0.25);
+  progress(0.25, 'sky');
 
   const lm = Object.fromEntries(world.landmarks.map((l) => [l.key, l]));
   const amphB = world.buildings.find((b) => b.id === lm.amph.bid);
@@ -91,22 +93,31 @@ async function boot() {
   const splat = makeSplat(world, [plaza], [plazaPoly]);
   const { mesh: terrain, outer } = await makeTerrain(world, splat.canvas, splat.plaza);
   scene.add(terrain, outer);
-  progress(0.45);
+  progress(0.45, 'terrain');
 
   // 건물 (노천극장은 별도 조형으로 대체)
   // 주인공 건물(101·102·104·105)은 사진 보고 따로 만든 모델로
   const hero = await makeHero(world, heightAt, lm.lion.p);
-  const special = { skip: new Set([lm.amph.bid, ...hero.ids]) };
+  // ---- 구역 플러그인: src/zones/*.js (구역마다 파일 하나 — docs: src/zones/README.md)
+  const zones = await loadZones({ THREE, world, heightAt, lm, scene, renderer });
+  const zoneSkip = zones.flatMap((z) => z.skipIds || []);
+  const zoneReplace = new Set(zones.flatMap((z) => z.replace || []));
+  const special = { skip: new Set([lm.amph.bid, ...hero.ids, ...zoneSkip]) };
   const { group: buildings, index: bIndex, info: bInfo } = await makeBuildings(world, heightAt, special);
   for (const [id, inf] of hero.info) { bIndex.add(inf.pts, { id }); bInfo.set(id, inf); }
+  for (const z of zones) {
+    for (const f of z.footprints || []) { bIndex.add(f.pts, { id: f.id }); bInfo.set(f.id, f); }
+    if (z.group) { if (z.merge !== false) mergeStatic(z.group, mergeGeometries); (z.occlude === false ? scene : buildings).add(z.group); }
+  }
   if (hero.info.has(lm.aeji.bid)) lm.aeji.p = hero.info.get(lm.aeji.bid).center; // 옮긴 애지문 위치로 라벨·메뉴
+  console.log('hero merge', mergeStatic(hero.group, mergeGeometries));
   buildings.add(hero.group);
   scene.add(buildings);
   // 옹벽·석축·계단 (국토지리정보원 수치지도)
   const site = await makeSite(world, heightAt);
   scene.add(site.group);
   console.log(`옹벽 ${site.walls}, 계단 ${site.stairs}`);
-  progress(0.6);
+  progress(0.6, 'buildings+site');
 
   // 길 색인
   const roadIdx = new SegIndex(20);
@@ -126,16 +137,20 @@ async function boot() {
   // 사자상은 역사관 정면 계단 앞에서 광장(서쪽)을 바라봄
   // (lion.js 의 조각 모델은 머리가 진행 방향에서 90° 돌아가 있어, 서쪽을 보게 하려면 남쪽 벡터를 넘김)
   const lion = await makeLion(lm.lion.p, heightAt, [0.08, 1]);
-  const amph = await makeAmphitheater(amphB.pts, heightAt);
+  progress(0.62, 'lion');
+  const amph = zoneReplace.has('amph') ? { group: new THREE.Group() } : await makeAmphitheater(amphB.pts, heightAt);
+  progress(0.64, 'amph');
   // 한양대역 2번 출구 = 애지문 (hero.js 에서 캐노피·계단으로 만듦) → 일반 출구 모형에서 뺌
   const aejiC = lm.aeji.p;
   const exits = makeStationExits(world.exits.filter((e) => !(e.ref === '2' && Math.hypot(e.p[0] - aejiC[0], e.p[1] - aejiC[1]) < 30)), heightAt, nearestRoadDir);
+  for (const o of [lion, amph.group, exits]) mergeStatic(o, mergeGeometries);
   scene.add(lion, amph.group, exits);
   const props = makeProps(world, heightAt, bIndex, plaza);
+  mergeStatic(props, mergeGeometries);
   scene.add(props);
-  scene.add(makeHeroProps(world, heightAt, lm.lion.p));
+  { const hp = makeHeroProps(world, heightAt, lm.lion.p); console.log('props merge', mergeStatic(hp, mergeGeometries)); scene.add(hp); }
   // 소나무 (사자상 화단·역사관 앞·애지문 옆)
-  scene.add(makePines([[9, 9, 1.15], [13, -9, 1.0], [18, 16, 0.9], [-6, -10, 0.85], [-50, 15, 1.0], [-31, 38, 1.05], [-52, 30, 0.9]], heightAt));
+  { const pn = makePines([[9, 9, 1.15], [13, -9, 1.0], [18, 16, 0.9], [-6, -10, 0.85], [-50, 15, 1.0], [-31, 38, 1.05], [-52, 30, 0.9]], heightAt); mergeStatic(pn, mergeGeometries); scene.add(pn); }
   // 광장 바닥 글씨 HANYANG UNIVERSITY (화강석 상감)
   {
     const c = document.createElement('canvas'); c.width = 2048; c.height = 160;
@@ -149,14 +164,14 @@ async function boot() {
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2 }));
     m.position.set(cx, 0, cz); m.receiveShadow = true; scene.add(m);
   }
-  progress(0.7);
+  progress(0.7, 'lion+props');
 
   // 나무 (사자상 광장·노천극장 객석은 비움)
   const blockIdx = {
-    hit: (x, z, pad) => bIndex.hit(x, z, pad) || Math.hypot(x - plaza.p[0], z - plaza.p[1]) < plaza.r + 1 || pointInPoly(x, z, amphB.pts) || pointInPoly(x, z, plazaPoly) || hero.clear.some((q) => pointInPoly(x, z, q)),
+    hit: (x, z, pad) => bIndex.hit(x, z, pad) || Math.hypot(x - plaza.p[0], z - plaza.p[1]) < plaza.r + 1 || pointInPoly(x, z, amphB.pts) || pointInPoly(x, z, plazaPoly) || hero.clear.some((q) => pointInPoly(x, z, q)) || zones.some((zn) => (zn.clear || []).some((q) => pointInPoly(x, z, q))),
   };
   const trees = await makeTrees(world, heightAt, blockIdx, roadIdx, scene);
-  progress(0.9);
+  progress(0.9, 'trees');
 
   // 라벨
   const labelInfo = [
@@ -208,6 +223,20 @@ async function boot() {
   const heroShot = () => { player.teleport(lm.lion.p[0] - 13, lm.lion.p[1] + 1.5, lm.lion.p[0], lm.lion.p[1]); player.dist = 19; player.pitch = 0.17; };
   { const btn = document.createElement('button'); btn.innerHTML = '<span class="n">★</span>사자상 정면'; btn.onclick = heroShot; list.prepend(btn); }
   heroShot();
+  // URL 로 카메라 지정 (스크린샷·디버그용): ?cam=x,z,tx,tz[,dist[,pitch]]  또는  ?go=209 (건물 번호)
+  {
+    const q = new URLSearchParams(location.search);
+    if (q.get('cam')) {
+      const [x, z, tx, tz, dist, pitch] = q.get('cam').split(',').map(Number);
+      player.teleport(x, z, tx, tz); if (dist) player.dist = dist; if (pitch != null && !isNaN(pitch)) player.pitch = pitch;
+    } else if (q.get('go')) {
+      const b = world.buildings.find((b) => b.no === q.get('go'));
+      if (b) {
+        const cx = b.pts.reduce((a, p) => a + p[0], 0) / b.pts.length, cz = b.pts.reduce((a, p) => a + p[1], 0) / b.pts.length;
+        for (let r = 25; r < 90; r += 5) { let done = false; for (let a = 0; a < 16 && !done; a++) { const ang = (a / 16) * Math.PI * 2; const x = cx + Math.cos(ang) * r, zz = cz + Math.sin(ang) * r; if (!collide(x, zz)) { player.teleport(x, zz, cx, cz); player.dist = 30; player.pitch = 0.3; done = true; } } if (done) break; }
+      }
+    }
+  }
 
   // 미니맵
   const mm = document.getElementById('minimap');
@@ -253,7 +282,7 @@ async function boot() {
     mg.restore();
   };
 
-  progress(1);
+  progress(1, 'labels+player');
   setTimeout(() => document.getElementById('loading').classList.add('done'), 250);
 
   // ---- 후처리: 주변광 차폐(GTAO) — 건물 모서리·처마·계단 틈에 자연스러운 그늘
@@ -273,7 +302,6 @@ async function boot() {
   renderer.setAnimationLoop(() => {
     const dt = Math.min(0.05, clock.getDelta());
     player.update(dt);
-    trees.uTime.value += dt;
     sun.position.copy(player.pos).addScaledVector(sunDir, 160);
     sun.target.position.copy(player.pos);
     for (const l of labels) {
@@ -284,7 +312,9 @@ async function boot() {
     if (useAO) composer.render(); else renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
   });
-  window.__proto = { world, player, trees, renderer, scene, camera, heroShot };
+  console.table(marks);
+  window.__ready = true;
+  window.__proto = { marks, zones, world, player, trees, renderer, scene, camera, heroShot };
   console.log(`trees: ${trees.count}, buildings: ${buildings.children.length}`);
 }
 
@@ -294,6 +324,26 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   labelRenderer.setSize(innerWidth, innerHeight);
 });
+
+// 구역 플러그인 불러오기 — 파일 하나가 깨져도 나머지는 뜨게 (개별 try/catch)
+async function loadZones(ctx) {
+  const mods = /nozones/.test(location.search) ? [] : Object.entries(import.meta.glob('./zones/*.js')).sort();
+  const run = async ([path, load], prior) => {
+    try {
+      const m = await load();
+      if (typeof m.default !== 'function') return null;
+      const t = performance.now();
+      const r = (await m.default({ ...ctx, prior })) || {};
+      console.log(`zone ${path}: ${Math.round(performance.now() - t)}ms`);
+      return { name: path, ...r };
+    } catch (e) { console.error(`zone ${path} 실패`, e); return null; }
+  };
+  // 성능: 건물 구역들은 동시에 (텍스처 로딩이 겹침), 길(roads)은 다른 구역 광장을 피해야 해서 마지막에
+  const isRoads = ([p]) => /roads\.js$/.test(p);
+  const out = (await Promise.all(mods.filter((m) => !isRoads(m)).map((m) => run(m, [])))).filter(Boolean);
+  for (const m of mods.filter(isRoads)) { const r = await run(m, out); if (r) out.push(r); }
+  return out;
+}
 
 boot().catch((e) => {
   console.error(e);

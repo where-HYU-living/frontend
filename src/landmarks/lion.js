@@ -10,7 +10,9 @@ import { loadTex } from '../util.js';
 import { ellipsoid, capsule, box, sphere, smin, smax, fbm, noise3, polygonize, stoneMaterial } from './sdf.js';
 
 // ---- 사자 + 바위 받침 SDF (단위 m, 바위 바닥 y=0, 머리 방향 +x, 고개는 +z 쪽으로 돌림)
-function lionSDF() {
+export const LION_BOX = { center: [0, 0.82, 0], half: 1.45 };
+
+export function lionSDF() {
   const y0 = 0.32; // 바위 윗면
   const H = [0.93, y0 + 1.17, 0.22];
   let f = [0.5, 0.06, 0.86];
@@ -123,13 +125,11 @@ export async function makeLion(p, heightAt, outward = [0, 1]) {
   g.add(plaque);
 
   // 사자 조각
-  const t0 = performance.now();
-  const geo = polygonize(lionSDF(), { center: [0, 0.82, 0], half: 1.45, res: 112 });
+  const geo = await loadLionGeometry();
   const lion = new THREE.Mesh(geo, lionStone);
   lion.position.y = topY + 0.16;
   lion.scale.setScalar(1.15);
   g.add(lion);
-  console.log(`lion sculpt: ${(geo.attributes.position.count / 3) | 0} tris, ${(performance.now() - t0) | 0}ms`);
 
   // 잔디 위 흰 원형 선
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.55, 3.66, 96), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.9 }));
@@ -145,4 +145,30 @@ export async function makeLion(p, heightAt, outward = [0, 1]) {
   // 좌대 정면(+z)과 사자 고개가 본관 바깥쪽을 보게
   g.rotation.y = Math.atan2(outward[0], outward[1]);
   return g;
+}
+
+// scripts/bake-lion.mjs 가 미리 구운 조각 메시 (없으면 그 자리에서 계산)
+async function loadLionGeometry() {
+  try {
+    const buf = await (await fetch('/models/lion.bin')).arrayBuffer();
+    const [n, ni] = new Uint32Array(buf, 0, 2);
+    const qp = new Uint16Array(buf, 8, n * 3);
+    let o = 8 + n * 6;
+    const qn = new Int8Array(buf, o, n * 3);
+    o += n * 3 + ((4 - ((n * 3) % 4)) % 4);
+    const qi = new Uint16Array(buf, o, ni);
+    const { center, half } = LION_BOX;
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n * 3; i++) pos[i] = center[i % 3] + (qp[i] / 65535 * 2 - 1) * half;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(qn, 3, true));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+    g.setIndex(new THREE.BufferAttribute(qi, 1));
+    g.computeBoundingSphere();
+    return g;
+  } catch (e) {
+    console.warn('lion.bin 없음 → 실시간 계산 (npm run bake)', e);
+    return polygonize(lionSDF(), { ...LION_BOX, res: 112 });
+  }
 }

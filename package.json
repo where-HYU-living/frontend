@@ -8,12 +8,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "world": "npm --prefix ../campus-data run world",
-    "assets": "node scripts/fetch-assets.mjs"
+    "assets": "node scripts/fetch-assets.mjs",
+    "bake": "node scripts/bake-lion.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"
   },
   "devDependencies": {
+    "playwright-core": "^1.65.0",
     "vite": "^6.3.5"
   }
 }

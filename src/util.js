@@ -28,10 +28,19 @@ export function makeHeightFn(t) {
   };
 }
 
+// 다각형마다 경계 상자를 한 번만 계산해 두고 먼저 거른다 (나무 배치 등에서 수십만 번 불림)
+const _bb = new WeakMap();
 export function pointInPoly(x, z, pts) {
+  let b = _bb.get(pts);
+  if (!b) {
+    b = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [px, pz] of pts) { if (px < b[0]) b[0] = px; if (pz < b[1]) b[1] = pz; if (px > b[2]) b[2] = px; if (pz > b[3]) b[3] = pz; }
+    _bb.set(pts, b);
+  }
+  if (x < b[0] || x > b[2] || z < b[1] || z > b[3]) return false;
   let inside = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const [xi, zi] = pts[i], [xj, zj] = pts[j];
+    const xi = pts[i][0], zi = pts[i][1], xj = pts[j][0], zj = pts[j][1];
     if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
   }
   return inside;
@@ -117,4 +126,38 @@ export function loadTex(url, { srgb = true, repeat = 1, aniso = 8 } = {}) {
 }
 export function loadImage(url) {
   return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = url; });
+}
+
+// 성능: 움직이지 않는 메시들을 재질별로 하나로 합친다 (그리기 호출 수 줄이기)
+// 다중 재질·인스턴스·CSS 라벨 등 합칠 수 없는 것은 그대로 둔다
+export function mergeStatic(root, mergeGeometries) {
+  root.updateMatrixWorld(true);
+  const inv = root.matrixWorld.clone().invert();
+  const buckets = new Map(), victims = [];
+  root.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || Array.isArray(o.material) || o.morphTargetInfluences) return;
+    const g = o.geometry;
+    const key = [o.material.uuid, o.castShadow, o.receiveShadow, o.renderOrder, Object.keys(g.attributes).sort().join()].join('|');
+    if (!buckets.has(key)) buckets.set(key, { mat: o.material, cast: o.castShadow, recv: o.receiveShadow, order: o.renderOrder, items: [] });
+    buckets.get(key).items.push(o);
+  });
+  let before = 0, after = 0;
+  for (const b of buckets.values()) {
+    before += b.items.length;
+    if (b.items.length < 2) { after++; continue; }
+    const geos = b.items.map((o) => {
+      let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      for (const n of Object.keys(g.morphAttributes)) delete g.morphAttributes[n];
+      return g.applyMatrix4(inv.clone().multiply(o.matrixWorld));
+    });
+    const merged = mergeGeometries(geos);
+    if (!merged) { after += b.items.length; continue; }
+    const m = new (b.items[0].constructor)(merged, b.mat);
+    Object.assign(m, { castShadow: b.cast, receiveShadow: b.recv, renderOrder: b.order });
+    root.add(m);
+    victims.push(...b.items);
+    after++;
+  }
+  for (const o of victims) o.removeFromParent();
+  return { before, after };
 }

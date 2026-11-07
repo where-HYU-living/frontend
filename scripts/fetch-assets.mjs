@@ -30,6 +30,9 @@ for (const [id, name] of TEX) {
   const files = await (await fetch(`https://api.polyhaven.com/files/${id}`)).json();
   const hdr = path.join(PUB, 'env', `${name}_1k.hdr`), bg = path.join(PUB, 'env', `${name}_bg.jpg`);
   if (!fs.existsSync(hdr)) fs.writeFileSync(hdr, await get(files.hdri['1k'].hdr.url));
-  if (!fs.existsSync(bg)) fs.writeFileSync(bg, await get(files.tonemapped.url));
+  if (!fs.existsSync(bg)) {
+    fs.writeFileSync(bg, await get(files.tonemapped.url)); // 원본 8K(22MB) → 4K 로 줄임 (macOS sips)
+    try { (await import('node:child_process')).execFileSync('sips', ['-Z', '4096', '-s', 'formatOptions', '82', bg, '--out', bg]); } catch { console.warn('sips 없음: 하늘 사진을 4K 로 직접 줄여 주세요'); }
+  }
   console.log('hdri', hdr, bg);
 }
