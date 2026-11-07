@@ -11,7 +11,7 @@ const PLAZA = [[-49, -12], [-15, -16], [-14, -30], [-8, -44], [12, -37], [14, -2
 const CAR = new Set(['service', 'residential', 'living_street', 'primary', 'primary_link', 'secondary', 'secondary_link', 'trunk', 'tertiary', 'unclassified']);
 const CAMPUS = new Set(['service', 'residential', 'living_street', 'unclassified']); // 분홍 보행띠를 칠하는 교내 도로
 const FOOT = new Set(['footway', 'pedestrian', 'path', 'cycleway']);
-const STEP = 2.5; // 길이 방향 샘플 간격 (지형 격자 2m 에 맞춤)
+const STEP = 4; // 길이 방향 샘플 간격 (성능: 2.5 → 4m. 삼각형 수 감소)
 
 export default async function (ctx) {
   const { THREE, world } = ctx;
