@@ -215,7 +215,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   // 말풍선 (React 가 setMarkers 로 그룹별 목록을 넘김: 매물/기숙사/단지 …). 클릭하면 onClick, 멀면 숨김
   const markerGroups = new Map();
   const MARKER_NEAR = 60; // 플레이어에서 수평 거리 (m). 이보다 멀면 말풍선을 숨긴다
-  const GROUP_PRIO = { home: 3, mybuilding: 3, gate: 2 }; // 겹치면 먼저 자리를 차지하는 그룹 (랜드마크 이름표는 1, 나머지 0)
+  const GROUP_PRIO = { home: 3, mybuilding: 3, route: 3, gate: 2 }; // 겹치면 먼저 자리를 차지하는 그룹 (랜드마크 이름표는 1, 나머지 0)
   const setMarkers = (items, group = 'listing') => {
     for (const o of markerGroups.get(group) || []) { scene.remove(o); o.element.remove(); }
     const objs = [];
@@ -299,6 +299,47 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       g.add(pillar, flag, pole); g.position.set(it.x, y, it.z);
       scene.add(g); beaconObjs.push(g);
     }
+  };
+
+  // 도보 경로 (4단계 F6): 지형을 따라 바닥에 파란 띠 + 흰 화살표. React 가 월드 범위 안 구간만 잘라 넘긴다 (src/app/route)
+  let routeObj = null;
+  const setRoute = (segments) => {
+    if (routeObj) { scene.remove(routeObj); routeObj.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); routeObj = null; }
+    if (!segments || !segments.length) return { points: 0, arrows: 0 };
+    const g = new THREE.Group(); g.name = 'walk-route';
+    const W = 0.7, Y = 0.16; // 반폭(m), 지면 위 높이
+    const pos = [], idx = [], apos = [];
+    let pts = 0, arrows = 0;
+    for (const seg of segments) {
+      const base = pos.length / 3;
+      for (let i = 0; i < seg.length; i++) {
+        const a = seg[Math.max(0, i - 1)], b = seg[Math.min(seg.length - 1, i + 1)];
+        let dx = b.x - a.x, dz = b.z - a.z; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+        const nx = -dz * W, nz = dx * W, p = seg[i];
+        pos.push(p.x + nx, heightAt(p.x + nx, p.z + nz) + Y, p.z + nz, p.x - nx, heightAt(p.x - nx, p.z - nz) + Y, p.z - nz);
+        if (i > 0) { const k = base + (i - 1) * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+        pts++;
+      }
+      // 화살표: 10m 마다 진행 방향 쐐기
+      let acc = 0;
+      for (let i = 1; i < seg.length; i++) {
+        const a = seg[i - 1], b = seg[i], L = Math.hypot(b.x - a.x, b.z - a.z); acc += L;
+        if (acc < 10 || L < 0.01) continue; acc = 0;
+        const dx = (b.x - a.x) / L, dz = (b.z - a.z) / L, y = heightAt(b.x, b.z) + Y + 0.03, s = 0.55;
+        apos.push(b.x + dx * s, y, b.z + dz * s, b.x - dx * s * 0.6 - dz * s, y, b.z - dz * s * 0.6 + dx * s, b.x - dx * s * 0.6 + dz * s, y, b.z - dz * s * 0.6 - dx * s);
+        arrows++;
+      }
+    }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x1c7ed6, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4 });
+    const ribbon = new THREE.Mesh(geo, mat); ribbon.renderOrder = 2; g.add(ribbon);
+    if (apos.length) {
+      const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(apos, 3));
+      const am = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6 });
+      const arrowMesh = new THREE.Mesh(ag, am); arrowMesh.renderOrder = 3; g.add(arrowMesh);
+    }
+    scene.add(g); routeObj = g;
+    return { points: pts, arrows };
   };
 
   // 플레이어
@@ -471,6 +512,8 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       goToPlace,
       setMarkers,
       setBeacons,
+      setRoute,
+      bounds: { ...world.bounds },
       setDoors: (items) => extras.setDoors(items),
       setGates: (items) => extras.setGates(items),
       setTimeOfDay,

@@ -17,6 +17,7 @@ import { PhotoGrid } from './forms/PhotoGrid';
 import { CONVERSION_NOTE, convertedRentWon, isPositive, isPositiveInt, missingReason, wonToManText } from './forms/calc';
 import './forms/forms.css';
 import { useGoTo } from './DormPanel';
+import { WalkLink } from './route/RouteHud';
 
 const ROOMS: [RoomType, string][] = [['OPEN', '오픈형'], ['SEPARATED', '분리형'], ['ONE_HALF', '1.5룸'], ['TWO_ROOM', '투룸'], ['DUPLEX', '복층']];
 
@@ -136,7 +137,7 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
         <dt>관리비</dt><dd>{t.mgmtFee == null ? '정보 없음' : manwon(t.mgmtFee)}</dd>
         <dt>남은 계약</dt><dd>{t.remainingMonths}개월</dd>
         <dt>입주 가능</dt><dd>{t.availableFrom ?? '협의'}</dd>
-        <dt>도보</dt><dd>{t.walkMin == null ? '도보 시간 정보 없음' : `과 건물까지 ${t.walkMin}분`}</dd>
+        <dt>도보</dt><dd><WalkLink walkMin={t.walkMin} from={{ lat: t.lat, lng: t.lng, name: t.title }} /></dd>
       </dl>
       {t.description && <p className="ui-desc">{t.description}</p>}
       <button type="button" className="ui-primary" onClick={() => go(t)}>3D로 보기</button>

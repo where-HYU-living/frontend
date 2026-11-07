@@ -1,4 +1,4 @@
-import { Bell, Footprints, Phone } from 'lucide-react';
+import { Bell, Phone } from 'lucide-react';
 import { BackButton } from './icons';
 import { InfoChip, SectionTitle, UnitCard } from './venue';
 import { useState } from 'react';
@@ -11,6 +11,7 @@ import { useUi } from './state/ui';
 import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
 import { NeighborhoodButton } from './NeighborhoodButton';
+import { WalkLink } from './route/RouteHud';
 import type { Housing } from '../api/types';
 import { useMyHome } from './features/more';
 import { convertedRentWon } from './forms/calc';
@@ -40,7 +41,7 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
       <p className="ui-v-addr">{h.address}</p>
       <NeighborhoodButton kind="housing" id={h.id} />
       <ul className="ui-v-chips">
-        <InfoChip icon={<Footprints size={14} aria-hidden="true" />} muted={h.walkMin == null}>{h.walkMin == null ? '과 건물까지 도보 정보 없음' : `과 건물까지 도보 ${h.walkMin}분`}</InfoChip>
+        <li className="ui-v-chip-li"><WalkLink walkMin={h.walkMin} from={{ lat: h.lat, lng: h.lng, name: h.name }} className="ui-v-chip ui-walk-link" /></li>
         {h.contact && <InfoChip icon={<Phone size={14} aria-hidden="true" />}>입주지원센터 {h.contact}</InfoChip>}
       </ul>
       <button type="button" className={`ui-v-notify ${h.subscribed ? 'is-on' : 'is-off'}`} onClick={() => { if (requireLogin()) sub.mutate(!h.subscribed); }}>

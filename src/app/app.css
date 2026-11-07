@@ -329,3 +329,5 @@
 .ui-map-legend .is-campus { border-color: #0e4a84; } .ui-map-legend .is-listing { border-color: #d9480f; } .ui-map-legend .is-housing { border-color: #2f9e57; }
 .ui-land-note { position: fixed; z-index: 5; left: 50%; top: 76px; transform: translateX(-50%); max-width: min(560px, calc(100% - 32px)); margin: 0; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--ui-ink); }
 @media (max-width: 760px) { .ui-map-legend { left: 12px; right: 12px; bottom: auto; top: 64px; } }
+.ui-map-route-end { padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; box-shadow: 0 1px 5px rgba(22, 32, 46, .3); }
+.ui-map-route-end.is-from { background: #d9480f; } .ui-map-route-end.is-to { background: #1c7ed6; }

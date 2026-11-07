@@ -6,6 +6,7 @@ import { useGoToListing } from './ListingsPanel';
 import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
 import { NeighborhoodButton } from './NeighborhoodButton';
+import { WalkLink } from './route/RouteHud';
 import { VerdictCard } from './VerdictCard';
 import { ReviewSection } from './ReviewSection';
 import { CompareSection } from './dossier/CompareSection';
@@ -55,7 +56,7 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
         <dt>관리비</dt><dd>{l.mgmtFee == null ? '정보 없음' : manwon(l.mgmtFee)}</dd>
         <dt>면적·층</dt><dd>{l.areaM2}㎡ · {l.floor == null ? '층 정보 없음' : `${l.floor}층`}</dd>
         <dt>구조</dt><dd>{ROOM[l.roomType] ?? l.roomType}</dd>
-        <dt>도보</dt><dd>{l.walkMin == null ? '도보 시간 정보 없음' : `과 건물까지 ${l.walkMin}분`}</dd>
+        <dt>도보</dt><dd><WalkLink walkMin={l.walkMin} from={{ lat: l.lat, lng: l.lng, name: l.title }} /></dd>
         {l.options.length > 0 && (<><dt>옵션</dt><dd>{l.options.join(', ')}</dd></>)}
       </dl>
       {l.description && <p className="ui-desc">{l.description}</p>}

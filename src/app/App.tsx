@@ -5,6 +5,7 @@ import { SidePanel } from './SidePanel';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
 import { LandingNotice } from './map/LandingNotice';
+import { RouteHud } from './route/RouteHud';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginModal } from './LoginModal';
 import { ListingMarkers } from './ListingMarkers';
@@ -25,6 +26,12 @@ function Indoor() {
 import { MockBadge } from '../mock/MockBadge';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
+// 점검 스크립트용 (scripts/*-check.mjs): 화면 상태를 숫자로 읽고 바꾼다. 개발 서버에서만
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  void Promise.all([import('./features/listings'), import('./state/detail'), import('../api/client')]).then(([l, d, c]) => {
+    (window as unknown as Record<string, unknown>).__app = { useUi, useListingsUi: l.useListingsUi, useDetailSel: d.useDetailSel, queryClient, api: c.api };
+  });
+}
 
 function Loading() {
   const { status, progress, error } = useWorld();
@@ -56,6 +63,7 @@ export function App() {
         {mapMode === '3d' && <SidePanel />}
       </div>
       <LandingNotice />
+      <RouteHud />
       <WorldChat />
       <Indoor />
       <LoginModal />

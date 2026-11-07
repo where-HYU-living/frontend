@@ -16,6 +16,7 @@ import { useMapFocus, type MapTarget } from './mapFocus';
 import { SITES } from '../../world/neighborhood';
 import { CAMPUS_BOX, serviceTargetFor } from '../../world/serviceArea';
 import { distLabel, planLanding } from '../../world/landing';
+import { useRoute } from '../route/useRoute';
 
 const ALL = visiblePlaces.filter((p) => p.center);
 
@@ -91,6 +92,7 @@ export function KakaoMap() {
   const showHousing = useUi((s) => s.showHousing);
   const target = useMapFocus((s) => s.target);
   const seq = useMapFocus((s) => s.seq);
+  const route = useRoute((s) => s.route);
 
   useEffect(() => {
     let dead = false;
@@ -224,6 +226,27 @@ export function KakaoMap() {
     setPicked(null); setPickedListing(null); setMsg('');
     return () => o.setMap(null);
   }, [target, seq, status]);
+
+  // 4단계 F6: 집 → 과 건물 도보 길 (폴리라인 + 출발·도착 표시), 화면에 길 전체가 들어오게
+  useEffect(() => {
+    const m = mapRef.current;
+    if (status !== 'ready' || !m || !route) return;
+    const { kakao, map } = m;
+    const pts = route.path.map(([lat, lng]) => new kakao.maps.LatLng(lat, lng));
+    const b = new kakao.maps.LatLngBounds();
+    for (const [lat, lng] of route.path) { b.extend(new kakao.maps.LatLng(lat, lng)); m.extend(lat, lng); }
+    const line = new kakao.maps.Polyline({ map, path: pts, strokeWeight: 6, strokeColor: '#1c7ed6', strokeOpacity: 0.9, strokeStyle: route.estimated ? 'shortdash' : 'solid' });
+    const end = (lat: number, lng: number, cls: string, text: string) => {
+      const el = document.createElement('div'); el.className = `ui-map-route-end ${cls}`; el.textContent = text;
+      return new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(lat, lng), content: el, xAnchor: 0.5, yAnchor: 1.3, zIndex: 9 });
+    };
+    const a = end(route.path[0][0], route.path[0][1], 'is-from', '출발 · 집');
+    const last = route.path[route.path.length - 1];
+    const z = end(last[0], last[1], 'is-to', `도착 · ${route.to.name}`);
+    map.setBounds(b, 80, 80, 160, 80);
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__routeMap = { points: pts.length, lengthM: Math.round(line.getLength()) };
+    return () => { line.setMap(null); a.setMap(null); z.setMap(null); };
+  }, [route, status]);
 
   // 고른 핀은 커지고 색이 채워지며 이름이 항상 보인다
   useEffect(() => {

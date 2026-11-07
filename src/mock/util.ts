@@ -19,6 +19,13 @@ export function walkMinutesFor(distance: number): number {
 
 export const round7 = (n: number) => Math.round(n * 1e7) / 1e7;
 
+/** 목 도보 경로: ㄱ자(동서 → 남북). 거리 = 경로 길이, 분 = 거리 ÷ 80m (실서버 TMAP 처럼 경로·거리·분이 서로 맞게) */
+export function walkRoute(lat: number, lng: number, toLat: number, toLng: number): { path: [number, number][]; distanceM: number; minutes: number } {
+  const path: [number, number][] = [[lat, lng], [lat, toLng], [toLat, toLng]];
+  const d = Math.round(distanceM(lat, lng, lat, toLng) + distanceM(lat, toLng, toLat, toLng));
+  return { path, distanceM: d, minutes: Math.max(1, Math.round(d / 80)) };
+}
+
 /** 3D 미터 오프셋(원점=사자상, x 동, z 남) → {lat,lng} */
 export function at(x: number, z: number): { lat: number; lng: number } {
   const [lat, lng] = toLatLng(x, z);
