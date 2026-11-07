@@ -63,19 +63,6 @@ export function nearestItems(t: { lat: number; lng: number }, listings: ListingS
   return out.filter((o) => o.d > 5 && o.d <= maxM).sort((a, b) => a.d - b.d).slice(0, n);
 }
 
-/** 지도에서 3D 로 넘어간 직후 한 번 보여 줄 안내 (서비스 밖이라 가까운 곳으로 왔어요 등) */
-export function LandingNotice() {
-  const notice = useMapFocus((s) => s.notice);
-  const mapMode = useUi((s) => s.mapMode);
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => useMapFocus.setState({ notice: null }), 7000);
-    return () => clearTimeout(t);
-  }, [notice]);
-  if (!notice || mapMode !== '3d') return null;
-  return <p className="ui-land-note glass" role="status">{notice}</p>;
-}
-
 /**
  * "지도로 보기" (3-3): 캠퍼스 건물·매물·청년안심주택 핀, 3D 로 걸을 수 있는 영역(캠퍼스+동네 12곳) 표시,
  * 상단 검색 결과는 3D 로 가지 않고 여기서 마커·정보 카드(주소·서비스 안/밖·가까운 집/건물)로 보여 준다. 카드의 [3D로 가기] 로 넘어간다.

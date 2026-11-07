@@ -1,9 +1,10 @@
+import { lazy, Suspense } from 'react';
 import { WorldLayer } from './WorldLayer';
 import { TopBar } from './TopBar';
 import { SidePanel } from './SidePanel';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
-import { KakaoMap, LandingNotice } from './map/KakaoMap';
+import { LandingNotice } from './map/LandingNotice';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginModal } from './LoginModal';
 import { ListingMarkers } from './ListingMarkers';
@@ -13,7 +14,14 @@ import { NeighborhoodHud } from './NeighborhoodButton';
 import { TransferMarkers } from './TransferMarkers';
 import { ProfileModal } from './ProfileModal';
 import { WorldChat } from './WorldChat';
-import { InteriorScene } from '../interior/InteriorScene';
+// 3-4 성능: 실내 3D·카카오 지도는 들어갈 때만 내려받는다 (첫 화면 번들에서 뺌)
+const KakaoMap = lazy(() => import('./map/KakaoMap').then((m) => ({ default: m.KakaoMap })));
+const InteriorScene = lazy(() => import('../interior/InteriorScene').then((m) => ({ default: m.InteriorScene })));
+function Indoor() {
+  const indoor = useUi((s) => s.indoor);
+  if (!indoor) return null;
+  return <Suspense fallback={<div className="loading" role="status"><div className="loading-card glass"><div className="loading-sub">실내를 불러오는 중</div></div></div>}><InteriorScene /></Suspense>;
+}
 import { MockBadge } from '../mock/MockBadge';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
@@ -42,14 +50,14 @@ export function App() {
       <WorldEffects />
       <NeighborhoodHud />
       <TransferMarkers />
-      {mapMode === '2d' && <KakaoMap />}
+      {mapMode === '2d' && <Suspense fallback={<p className="ui-map-note" role="status">지도를 불러오는 중</p>}><KakaoMap /></Suspense>}
       <div className="ui-layer">
         <TopBar />
         {mapMode === '3d' && <SidePanel />}
       </div>
       <LandingNotice />
       <WorldChat />
-      <InteriorScene />
+      <Indoor />
       <LoginModal />
       <ProfileModal />
       <Loading />

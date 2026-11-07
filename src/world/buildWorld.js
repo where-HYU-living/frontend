@@ -85,7 +85,11 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     new HDRLoader().loadAsync('/env/sky_1k.hdr'),
     new THREE.TextureLoader().loadAsync('/env/sky_bg.jpg'),
   ]);
-  scene.environment = pmrem.fromEquirectangular(hdr).texture;
+  const envRT = pmrem.fromEquirectangular(hdr);
+  scene.environment = envRT.texture;
+  scene.userData.envRT = envRT; // 렌더 타깃 텍스처는 texture.dispose() 로는 GL 에서 안 지워진다 → disposeScene 이 envRT.dispose()
+  // 환경맵을 만든 뒤 PMREM 생성기(내부 평면 geometry·블러 재질·렌더 타깃)와 원본 HDR 은 더 쓰지 않는다 → 월드 전환마다 쌓이던 누수(3-4)
+  pmrem.dispose(); hdr.dispose();
   scene.environmentIntensity = 0.8;
   bg.mapping = THREE.EquirectangularReflectionMapping;
   bg.colorSpace = THREE.SRGBColorSpace;

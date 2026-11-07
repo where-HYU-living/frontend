@@ -3,7 +3,9 @@ import * as THREE from 'three';
 /** 장면에 올라간 것을 모두 내리고 GPU 자원을 해제한다 (월드를 다른 월드로 바꿀 때) */
 export function disposeScene(scene: THREE.Scene): { geometries: number; materials: number; textures: number } {
   const geos = new Set<THREE.BufferGeometry>(), mats = new Set<THREE.Material>(), texs = new Set<THREE.Texture>();
+  const lights: THREE.Light[] = [];
   scene.traverse((o) => {
+    if ((o as THREE.Light).isLight) lights.push(o as THREE.Light); // 그림자 맵(렌더 타깃 텍스처)은 light.dispose() 로만 풀린다
     const el = (o as unknown as { element?: HTMLElement }).element;
     if (el && typeof el.remove === 'function') el.remove();
     const m = o as THREE.Mesh;
@@ -22,6 +24,8 @@ export function disposeScene(scene: THREE.Scene): { geometries: number; material
   });
   for (const c of [...scene.children]) scene.remove(c);
   geos.forEach((g) => g.dispose()); mats.forEach((m) => m.dispose()); texs.forEach((t) => t.dispose());
+  lights.forEach((l) => l.dispose());
+  (scene.userData.envRT as THREE.WebGLRenderTarget | undefined)?.dispose(); delete scene.userData.envRT; // PMREM 결과(렌더 타깃)
   scene.environment?.dispose?.(); (scene.background as THREE.Texture | null)?.dispose?.(); scene.background = null; scene.environment = null; scene.fog = null;
   return { geometries: geos.size, materials: mats.size, textures: texs.size };
 }
