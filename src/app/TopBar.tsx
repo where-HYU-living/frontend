@@ -10,7 +10,7 @@ import { toLocal } from './map/geo';
 import type { SearchResult } from '../api/types';
 
 export function TopBar() {
-  const { tab, panelOpen, selectTab, mapMode, setMapMode } = useUi();
+  const { tab, panelOpen, selectTab, mapMode, setMapMode, timeOfDay, setTimeOfDay } = useUi();
   const api = useWorld((s) => s.api);
   const { token, nickname, openLogin, logout } = useSession();
   const unread = unreadCount(useNotifications().data);
@@ -69,6 +69,11 @@ export function TopBar() {
       </nav>
 
       <div className="grow" />
+      <div className="tod glass" role="group" aria-label="시간대">
+        {([['day', '☀️', '낮'], ['evening', '🌇', '저녁'], ['night', '🌙', '밤']] as const).map(([k, icon, name]) => (
+          <button key={k} type="button" aria-label={name} aria-pressed={timeOfDay === k} title={name} onClick={() => setTimeOfDay(k)}>{icon}</button>
+        ))}
+      </div>
       <button className="textbtn glass" type="button" onClick={() => setMapMode(mapMode === '3d' ? '2d' : '3d')}>
         {mapMode === '3d' ? '지도로 보기' : '3D로 보기'}
       </button>

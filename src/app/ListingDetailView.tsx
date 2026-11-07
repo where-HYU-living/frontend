@@ -1,6 +1,6 @@
 import { manwon } from '../lib/money';
 import { ApiError } from '../api/client';
-import { useAlternatives, useListingDetail, usePriceCheck } from './features/listings';
+import { cheaperListings, useAlternatives, useListingDetail, useListings, useListingsUi, usePriceCheck } from './features/listings';
 import { useGoToListing } from './ListingsPanel';
 import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
@@ -15,6 +15,8 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
   const alt = useAlternatives(id);
   const go = useGoToListing();
   const token = useSession((s) => s.token);
+  const all = useListings(useListingsUi((s) => s.filters)).data?.items;
+  const select = useListingsUi((s) => s.select);
 
   if (d.isLoading) return <p className="empty">불러오는 중…</p>;
   if (d.isError || !d.data) {
@@ -57,6 +59,19 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
         </section>
       )}
 
+      {all && all.length > 0 && (() => {
+        const cheaper = cheaperListings(all, l);
+        return cheaper.length === 0 ? null : (
+          <section aria-label="더 싼 매물">
+            <h4>더 싼 매물</h4>
+            <ul className="ui-alt">
+              {cheaper.map((c) => (
+                <li key={c.id}><button type="button" className="ui-link" onClick={() => { select(c.id); go(c); }}>{c.title}</button> · 환산 {manwon(c.convertedRent)} (월 {manwon(l.convertedRent - c.convertedRent)} 저렴)</li>
+              ))}
+            </ul>
+          </section>
+        );
+      })()}
       <ReviewSection targetType="LISTING" targetId={l.id} />
       <button type="button" className="ui-primary" onClick={() => go(l)}>3D에서 보기</button>
     </div>

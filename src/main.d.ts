@@ -16,6 +16,10 @@ export type WorldApi = {
   teleport(x: number, z: number, faceX?: number, faceZ?: number): boolean;
   /** 3D 위에 매물 말풍선을 그린다 (전체 교체). x,z = 3D 좌표(m) */
   setMarkers(items: Marker[], group?: string): void;
+  /** 빛 기둥+깃발 (전체 교체). 모집 중인 청년안심주택 강조 */
+  setBeacons(items: { x: number; z: number; color: string | number }[]): void;
+  /** 시간대 조명 */
+  setTimeOfDay(t: 'day' | 'evening' | 'night'): void;
   /** 다른 접속자 표시 (전체 교체, 목록에 없는 사람은 지움). r = y축 회전(라디안) */
   setRemotePlayers(list: RemotePlayer[]): void;
   getPose(): { p: [number, number, number]; heading: number };

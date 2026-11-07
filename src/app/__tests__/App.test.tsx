@@ -7,6 +7,8 @@ const fakeApi = {
   goToPlace: vi.fn(() => true),
   setMarkers: vi.fn(),
   setRemotePlayers: vi.fn(),
+  setBeacons: vi.fn(),
+  setTimeOfDay: vi.fn(),
   teleport: vi.fn(() => true),
   getPose: () => ({ p: [0, 0, 0] as [number, number, number], heading: 0 }),
   dispose: vi.fn(),

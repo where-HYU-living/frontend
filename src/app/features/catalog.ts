@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api/client';
-import type { Announcement, AnnouncementStatus, Department, Dorm, EventType, FavoriteItem, FloorPlan, Housing, HousingDetail, Profile } from '../../api/types';
+import type { Nearby, CampusBuilding, Announcement, AnnouncementStatus, Department, Dorm, EventType, FavoriteItem, FloorPlan, Housing, HousingDetail, Profile } from '../../api/types';
 import { useSession } from '../state/session';
 
 const get = <T,>(path: string, query?: Record<string, string | number | undefined>) => ({ signal }: { signal: AbortSignal }) => api<T>(path, { query, signal });
@@ -11,6 +11,9 @@ export const useHousingDetail = (id: number | null) => useQuery({ queryKey: ['ho
 export const useAnnouncements = (status?: AnnouncementStatus) => useQuery({ queryKey: ['announcements', status], queryFn: get<Announcement[]>('/housing/announcements', { status }) });
 export const useFloorPlan = (id: number | null) => useQuery({ queryKey: ['floorplan', id], enabled: id != null, staleTime: Infinity, queryFn: get<FloorPlan>(`/floorplans/${id}`) });
 export const useDepartments = () => useQuery({ queryKey: ['departments'], queryFn: get<Department[]>('/departments'), staleTime: Infinity });
+export const useCampusBuildings = () => useQuery({ queryKey: ['buildings'], queryFn: get<CampusBuilding[]>('/buildings'), staleTime: Infinity, retry: false });
+/** F5: 집 주변 300m 시설. 서버에 없거나 실패하면 빈 목록 취급 */
+export const useNearby = (listingId: number | null) => useQuery({ queryKey: ['nearby', listingId], enabled: listingId != null, retry: false, staleTime: 300_000, queryFn: get<Nearby[]>(`/listings/${listingId}/nearby`, { radius: 300 }) });
 export const useFavorites = () => {
   const token = useSession((s) => s.token);
   return useQuery({ queryKey: ['favorites', !!token], enabled: !!token, queryFn: get<FavoriteItem[]>('/me/favorites') });
@@ -55,3 +58,7 @@ export function dday(date: string, today: Date = new Date()): string {
   const d = Math.round((a.getTime() - b.getTime()) / 86400000);
   return d === 0 ? 'D-day' : d > 0 ? `D-${d}` : `D+${-d}`;
 }
+
+export const NEARBY_ICON: Record<Nearby['category'], { icon: string; label: string }> = {
+  CONVENIENCE: { icon: '🏪', label: '편의점' }, LAUNDRY: { icon: '🧺', label: '세탁방' }, BUS_STOP: { icon: '🚌', label: '버스정류장' }, SUBWAY: { icon: '🚇', label: '지하철역' },
+};

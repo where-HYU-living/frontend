@@ -1,17 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { api, type Query } from '../../api/client';
-import type { Alternative, Grade, ListingDetail, ListingSummary, Page, PriceCheck } from '../../api/types';
+import type { Alternative, Grade, RoomType, ListingDetail, ListingSummary, Page, PriceCheck } from '../../api/types';
 
-export type Filters = { maxRentMan: string; maxDepositMan: string; grades: Grade[] };
-export const NO_FILTERS: Filters = { maxRentMan: '', maxDepositMan: '', grades: [] };
+export type Filters = { maxRentMan: string; maxDepositMan: string; grades: Grade[]; maxWalkMin: string; roomType: RoomType | '' };
+export const NO_FILTERS: Filters = { maxRentMan: '', maxDepositMan: '', grades: [], maxWalkMin: '', roomType: '' };
 
 const num = (s: string) => { const n = Number(s); return s.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : null; };
 
 /** 화면은 만원, 서버는 원. 빈 값은 생략 */
 export function buildListingParams(f: Filters): Query {
   const rent = num(f.maxRentMan), dep = num(f.maxDepositMan);
-  return { maxRent: rent == null ? undefined : rent * 10000, maxDeposit: dep == null ? undefined : dep * 10000, grade: f.grades, size: 100 };
+  const walk = num(f.maxWalkMin);
+  return { maxRent: rent == null ? undefined : rent * 10000, maxDeposit: dep == null ? undefined : dep * 10000, grade: f.grades, maxWalkMin: walk == null || walk === 0 ? undefined : walk, roomType: f.roomType || undefined, size: 100 };
 }
 
 type ListingsUi = {
@@ -42,3 +43,11 @@ export const useAlternatives = (id: number | null) =>
     queryKey: ['alternatives', id], enabled: id != null, retry: false,
     queryFn: ({ signal }) => api<{ housing: Alternative[]; dorms: Alternative[] }>(`/listings/${id}/alternatives`, { signal }),
   });
+
+/** D8: 같은 예산에서 더 싼 매물. 환산 월세가 더 낮은 것 중 가장 싼 n개 (판정 보류·자기 자신 제외) */
+export function cheaperListings(all: ListingSummary[], current: { id: number; convertedRent: number }, n = 3): ListingSummary[] {
+  return all
+    .filter((l) => l.id !== current.id && l.grade !== 'PENDING' && l.convertedRent < current.convertedRent)
+    .sort((a, b) => a.convertedRent - b.convertedRent)
+    .slice(0, n);
+}

@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginModal } from './LoginModal';
 import { ListingMarkers } from './ListingMarkers';
 import { PlaceMarkers } from './PlaceMarkers';
+import { WorldEffects } from './WorldEffects';
 import { TransferMarkers } from './TransferMarkers';
 import { ProfileModal } from './ProfileModal';
 import { WorldChat } from './WorldChat';
@@ -36,6 +37,7 @@ export function App() {
       <WorldLayer />
       <ListingMarkers />
       <PlaceMarkers />
+      <WorldEffects />
       <TransferMarkers />
       {mapMode === '2d' && <KakaoMap />}
       <div className="ui-layer">

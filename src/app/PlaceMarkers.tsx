@@ -10,6 +10,7 @@ export function PlaceMarkers() {
   const api = useWorld((s) => s.api);
   const dorms = useDorms().data;
   const housing = useHousingList().data;
+  const showHousing = useUi((s) => s.showHousing);
 
   useEffect(() => {
     if (!api) return;
@@ -23,12 +24,12 @@ export function PlaceMarkers() {
 
   useEffect(() => {
     if (!api) return;
-    api.setMarkers((housing ?? []).map((h) => {
+    api.setMarkers((showHousing ? housing ?? [] : []).map((h) => {
       const [x, z] = toLocal(h.lat, h.lng);
       return { id: `h${h.id}`, x, z, color: h.recruiting ? '#2f9e57' : '#2f6fb3', text: `${h.name}${h.recruiting ? ' · 모집 중' : ''}`, label: `청년안심주택 ${h.name}`, onClick: () => useUi.setState({ tab: 'housing', panelOpen: true }) };
     }), 'housing');
     return () => api.setMarkers([], 'housing');
-  }, [api, housing]);
+  }, [api, housing, showHousing]);
 
   return null;
 }

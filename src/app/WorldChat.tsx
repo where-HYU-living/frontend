@@ -6,7 +6,7 @@ import { useUi } from './state/ui';
 /** 접속 상태·이모트·한 줄 채팅·초대 링크 (왼쪽 아래) */
 export function WorldChat() {
   useMultiplayer();
-  const { status, count, conn, selfId } = useNet();
+  const { status, count, conn, selfId, invited } = useNet();
   const mapMode = useUi((s) => s.mapMode);
   const indoor = useUi((s) => s.indoor);
   const [text, setText] = useState('');
@@ -39,6 +39,7 @@ export function WorldChat() {
         </div>
       )}
       {note && <div className="ui-chat-note">{note}</div>}
+      {invited && <div className="ui-chat-note" role="status">초대한 사람 옆으로 왔어요</div>}
     </div>
   );
 }

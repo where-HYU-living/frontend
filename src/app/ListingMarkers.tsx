@@ -19,7 +19,7 @@ export function ListingMarkers() {
       const g = GRADE_META[l.grade];
       return {
         id: String(l.id), x, z, color: g.color,
-        text: l.grade === 'PENDING' ? `${depositRent(l.deposit, l.rent)} ?` : depositRent(l.deposit, l.rent),
+        text: `${l.favorited ? '♥ ' : ''}${depositRent(l.deposit, l.rent)}${l.grade === 'PENDING' ? ' ?' : ''}`,
         label: `${l.title} ${g.label}`,
         onClick: () => { useListingsUi.getState().select(l.id); useUi.setState({ tab: 'home', panelOpen: true }); },
       };

@@ -6,8 +6,8 @@ import { connectWorld, type WorldConnection } from './worldSocket';
 import { CHAT_MS, emptyWorld, EMOTE_MS, interpolate, INTERP_DELAY, worldReducer, type ServerMsg, type WorldModel } from './worldReducer';
 
 export type NetStatus = 'connecting' | 'open' | 'closed' | 'full';
-type NetUi = { status: NetStatus; selfId: string | null; count: number; conn: WorldConnection | null };
-export const useNet = create<NetUi>(() => ({ status: 'closed', selfId: null, count: 0, conn: null }));
+type NetUi = { status: NetStatus; selfId: string | null; count: number; conn: WorldConnection | null; /** 초대 링크로 들어와 초대한 사람 옆으로 이동했을 때 true (잠깐 안내) */ invited: boolean };
+export const useNet = create<NetUi>(() => ({ status: 'closed', selfId: null, count: 0, conn: null, invited: false }));
 
 const wsBase = () => ((import.meta.env.VITE_API_BASE as string | undefined) ?? 'http://localhost:8080').replace(/^http/, 'ws').replace(/\/$/, '');
 const guestName = () => { try { const k = 'chatatda.nick'; let n = sessionStorage.getItem(k); if (!n) { n = `손님${Math.floor(1000 + Math.random() * 9000)}`; sessionStorage.setItem(k, n); } return n; } catch { return '손님'; } };
@@ -43,6 +43,7 @@ export function useMultiplayer() {
         if (m.t === 'welcome') {
           useNet.setState({ selfId: m.selfId });
           if (m.spawn && (m.spawn.p[0] !== 0 || m.spawn.p[2] !== 0)) api.teleport(m.spawn.p[0], m.spawn.p[2]);
+          if (invite) { useNet.setState({ invited: true }); setTimeout(() => useNet.setState({ invited: false }), 5000); }
         }
         useNet.setState({ count: Object.keys(model.current.players).length });
       },

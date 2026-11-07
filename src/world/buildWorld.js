@@ -11,6 +11,7 @@ import { makeSite } from '../site.js';
 import { makeAmphitheater, makeStationExits, makeLabel, makeProps } from '../landmarks.js';
 import { makeLion } from '../landmarks/lion.js';
 import { Player } from '../player.js';
+import { LIGHT_PRESETS } from './timeOfDay';
 
 // 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: R3F WorldCanvas).
 // 반환값의 frame(dt) 를 매 프레임 부르면 플레이어·태양·LOD·미니맵이 갱신된다.
@@ -29,9 +30,17 @@ function flatten(t, [cx, cz], r, fall) {
 export async function buildWorld({ Q, renderer, domElement, scene, camera, marks = [], progress = () => {} }) {
   // ---- 안개·빛 (봄 오후 — 해가 서남쪽: 사자상 정면을 비춤)
   scene.fog = new THREE.FogExp2(0xc9d7e4, 0.0026);
-  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x56613f, 0.6));
+  const hemi = new THREE.HemisphereLight(0xdfeaff, 0x56613f, 0.6);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff1dc, 3.0);
   const sunDir = new THREE.Vector3(-0.62, 0.66, 0.42).normalize();
+  const setTimeOfDay = (key) => {
+    const L = LIGHT_PRESETS[key]; if (!L) return;
+    sun.intensity = L.sun; sun.color.setHex(L.sunColor); sunDir.set(...L.sunDir).normalize();
+    hemi.intensity = L.hemi; scene.environmentIntensity = L.env; scene.backgroundIntensity = L.bg;
+    scene.fog.color.setHex(L.fog); scene.fog.density = L.fogDensity;
+    renderer.toneMappingExposure = L.exposure;
+  };
   sun.castShadow = true;
   sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
   Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 400 });
@@ -213,6 +222,23 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     for (const [id, m] of remotes) if (!seen.has(id)) { scene.remove(m.g); m.el.remove(); remotes.delete(id); }
   };
 
+  // 빛 기둥+깃발 (모집 중인 청년안심주택 강조). React 가 setBeacons 로 전체 교체
+  const beaconObjs = [];
+  const beaconMat = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending });
+  const setBeacons = (items) => {
+    for (const g of beaconObjs) { scene.remove(g); g.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); }
+    beaconObjs.length = 0;
+    for (const it of items) {
+      const g = new THREE.Group();
+      const y = heightAt(it.x, it.z);
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 60, 16, 1, true), beaconMat(it.color)); pillar.position.y = 30;
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({ color: it.color, side: THREE.DoubleSide })); flag.position.set(2.6, 24, 0);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 14, 6), new THREE.MeshBasicMaterial({ color: 0xffffff })); pole.position.y = 21;
+      g.add(pillar, flag, pole); g.position.set(it.x, y, it.z);
+      scene.add(g); beaconObjs.push(g);
+    }
+  };
+
   // 플레이어
   const collide = (x, z) => bIndex.hit(x, z, 0.35) || lionHit(x, z);
   const lionHit = (x, z) => Math.hypot(x - lm.lion.p[0], z - lm.lion.p[1]) < 2.1;
@@ -331,6 +357,8 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       landmarks: [{ key: 'hero', name: '사자상 정면' }, ...order.map((key) => ({ key, name: lm[key].name }))],
       goToPlace,
       setMarkers,
+      setBeacons,
+      setTimeOfDay,
       setRemotePlayers,
       goToLandmark: (key) => (key === 'hero' ? (heroShot(), true) : goToLandmark(key)),
       teleport: (x, z, faceX, faceZ) => { if (collide(x, z)) return false; player.teleport(x, z, faceX, faceZ); return true; },

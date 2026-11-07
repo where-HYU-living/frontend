@@ -110,3 +110,6 @@ export type TransferSummary = ListingSummary & { remainingMonths: number; availa
 export type TransferDetail = TransferSummary & { description: string | null; photos: string[]; priceCheck: PriceCheck; mine: boolean };
 export type TransferBody = { address: string; dong: string; lat: number; lng: number; deposit: number; rent: number; mgmtFee: number | null; areaM2: number; roomType: RoomType; floor: number | null; remainingMonths: number; availableFrom: string | null; description: string; photoUrls: string[] };
 export type AddressResult = { address: string; roadAddress: string | null; dong: string; lat: number; lng: number };
+
+export type NearbyCategory = 'CONVENIENCE' | 'LAUNDRY' | 'BUS_STOP' | 'SUBWAY';
+export type Nearby = { category: NearbyCategory; name: string; lat: number; lng: number; distanceM: number };
