@@ -5,6 +5,7 @@ import { cheaperListings, useAlternatives, useListingDetail, useListings, useLis
 import { useGoToListing } from './ListingsPanel';
 import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
+import { NeighborhoodButton } from './NeighborhoodButton';
 import { VerdictCard } from './VerdictCard';
 import { ReviewSection } from './ReviewSection';
 import { CompareSection } from './dossier/CompareSection';
@@ -42,6 +43,7 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
       <div className="ui-case"><span>용의자 파일</span><span className="ui-case-tag">{caseNumber(l.id)}</span></div>
       <div className="ui-detail-head"><h3>{l.title}</h3><HeartButton type="LISTING" id={l.id} favorited={l.favorited} name={l.title} /></div>
       <p className="ui-card-sub">{l.address}</p>
+      <NeighborhoodButton kind="listing" id={l.id} />
 
       <VerdictCard pc={pc} fallbackGrade={l.grade} loggedIn={!!token} failed={p.isError} />
       {pc && pc.grade === 'CULPRIT' && <WantedFlyer id={l.id} title={l.title} pc={pc} />}

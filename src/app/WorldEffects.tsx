@@ -40,7 +40,8 @@ export function WorldEffects() {
     if (!api) return;
     const gates = resolveGates(buildings, toLocal, campusPlaces as never);
     api.setGates?.(gates);
-    api.setMarkers(gates.map((g) => ({ id: g.id, x: g.x, z: g.z, color: '#0e4a84', text: g.name, icon: CAMPUS_SVG, label: `입구 ${g.name}`, onClick: () => api.goToPlace(g.x, g.z) })), 'gate');
+    // 애지문은 3D 랜드마크 이름표('애지문 · 한양대역')가 이미 있어 말풍선을 또 달지 않는다
+    api.setMarkers(gates.filter((g) => !g.name.includes('애지문')).map((g) => ({ id: g.id, x: g.x, z: g.z, color: '#0e4a84', text: g.name, icon: CAMPUS_SVG, label: `입구 ${g.name}` })), 'gate');
     return () => { api.setGates?.([]); api.setMarkers([], 'gate'); };
   }, [api, buildings]);
 
@@ -48,7 +49,7 @@ export function WorldEffects() {
   useEffect(() => {
     if (!api) return;
     const mine = resolveMyBuildings(profile?.buildingIds, buildings, toLocal, campusPlaces as never);
-    api.setMarkers(mine.map((b) => ({ id: b.id, x: b.x, z: b.z, color: '#0e4a84', text: `내 과 건물 · ${b.name}`, icon: CAMPUS_SVG, label: `내 과 건물 ${b.name}`, onClick: () => api.goToPlace(b.x, b.z) })), 'mybuilding');
+    api.setMarkers(mine.map((b) => ({ id: b.id, x: b.x, z: b.z, color: '#0e4a84', text: `내 과 건물 · ${b.name}`, icon: CAMPUS_SVG, label: `내 과 건물 ${b.name}` })), 'mybuilding');
     return () => api.setMarkers([], 'mybuilding');
   }, [api, buildings, profile]);
 

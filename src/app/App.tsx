@@ -9,6 +9,7 @@ import { LoginModal } from './LoginModal';
 import { ListingMarkers } from './ListingMarkers';
 import { PlaceMarkers } from './PlaceMarkers';
 import { WorldEffects } from './WorldEffects';
+import { NeighborhoodHud } from './NeighborhoodButton';
 import { TransferMarkers } from './TransferMarkers';
 import { ProfileModal } from './ProfileModal';
 import { WorldChat } from './WorldChat';
@@ -39,6 +40,7 @@ export function App() {
       <ListingMarkers />
       <PlaceMarkers />
       <WorldEffects />
+      <NeighborhoodHud />
       <TransferMarkers />
       {mapMode === '2d' && <KakaoMap />}
       <div className="ui-layer">

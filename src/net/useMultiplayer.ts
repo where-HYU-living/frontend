@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { EMOTE_SVG } from '../app/icons';
+import { useArea } from '../app/state/area';
 import { useWorld } from '../app/state/world';
 import { useSession } from '../app/state/session';
 import { useUi } from '../app/state/ui';
@@ -21,7 +22,9 @@ export function useMultiplayer() {
   const api = useWorld((s) => s.api);
   const nickname = useSession((s) => s.nickname);
   const model = useRef<WorldModel>(emptyWorld());
-  const [enabled] = useState(() => !/[?&]solo\b/.test(location.search)); // ?solo 로 혼자 보기
+  const inNeighborhood = useArea((s) => s.area !== 'campus'); // 동네 둘러보기는 혼자 (v1)
+  const [soloFlag] = useState(() => /[?&]solo\b/.test(location.search)); // ?solo 로 혼자 보기
+  const enabled = !soloFlag && !inNeighborhood;
 
   useEffect(() => {
     if (!api || !enabled) return;

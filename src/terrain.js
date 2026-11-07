@@ -80,6 +80,7 @@ export async function makeTerrain(world, splatCanvas, plazaCanvas = null) {
   const mat = new THREE.MeshStandardMaterial({ map: leaves, normalMap: leavesN, roughness: 0.95, metalness: 0 });
   // uv를 미터 단위 타일로 쓰기 위한 배율 (텍스처 1장 = 약 3m)
   const tile = new THREE.Vector2(sizeX / 3, sizeZ / 3);
+  mat.userData.textures = [splat, plaza, plazaPave, grass, pave, road]; // disposeScene 이 해제할 수 있게 (uniform 으로만 쓰는 텍스처)
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, {
       uSplat: { value: splat }, uPlaza: { value: plaza }, uPlazaTex: { value: plazaPave }, uGrass: { value: grass }, uPave: { value: pave }, uRoad: { value: road }, uTile: { value: tile },

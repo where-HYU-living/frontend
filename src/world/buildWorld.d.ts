@@ -25,4 +25,6 @@ export function buildWorld(opts: {
   camera: THREE.Camera;
   marks?: [string, number][];
   progress?: (p: number, tag?: string) => void;
+  /** 월드 JSON 주소 (기본 '/world.json' = 캠퍼스, 동네는 '/neighborhoods/<id>.json') */
+  worldUrl?: string;
 }): Promise<BuiltWorld>;

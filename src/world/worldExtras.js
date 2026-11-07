@@ -11,7 +11,7 @@ export function makeExtras({ Q, scene, camera, world, heightAt, collide, player,
   // ---- 가로등 (InstancedMesh 1개: 기둥+전구를 정점 색으로). 품질 low 에서는 만들지 않는다
   let lamps = null;
   if (Q.streetlamps) {
-    const spots = sampleLamps(world.roads, { spacing: 30, max: 500 }).filter(([x, z]) => !bIndex.hit(x, z, 0.6));
+    const spots = (world.lamps || sampleLamps(world.roads, { spacing: 30, max: 500 })).filter(([x, z]) => !bIndex.hit(x, z, 0.6));
     const pole = new THREE.CylinderGeometry(0.06, 0.09, 4.4, 6); pole.translate(0, 2.2, 0);
     const bulb = new THREE.SphereGeometry(0.28, 8, 6); bulb.translate(0, 4.5, 0);
     const paint = (g, c) => { const a = new Float32Array(g.attributes.position.count * 3); for (let i = 0; i < a.length; i += 3) a.set(c, i); g.setAttribute('color', new THREE.BufferAttribute(a, 3)); return g; };
