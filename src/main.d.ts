@@ -3,7 +3,7 @@ export type Landmark = { key: string; name: string };
 
 export type Marker = { id: string; x: number; z: number; text: string; color: string; label?: string; /** 말 앞에 붙일 아이콘(SVG 문자열) */ icon?: string; onClick?: () => void };
 
-export type RemotePlayer = { id: string; nickname: string; x: number; z: number; r: number; chat?: string; /** 이모트 아이콘(SVG 문자열) */ emote?: string };
+export type RemotePlayer = { id: string; nickname: string; x: number; z: number; r: number; chat?: string; /** 이모트 아이콘(SVG 문자열) */ emote?: string; /** 걷는 중이면 true */ walking?: boolean; /** 상대의 캐릭터 꾸미기 (없으면 기본 모양) */ look?: { jacket: string; hair: string; skin: string } };
 
 export type WorldApi = {
   /** 메뉴에 띄울 랜드마크 (첫 항목 'hero' = 사자상 정면) */
@@ -22,6 +22,14 @@ export type WorldApi = {
   setTimeOfDay(t: number): void;
   /** 다른 접속자 표시 (전체 교체, 목록에 없는 사람은 지움). r = y축 회전(라디안) */
   setRemotePlayers(list: RemotePlayer[]): void;
+  /** 내 캐릭터 머리 위 말풍선·이모트 (둘 다 없으면 숨김) */
+  setSelfBubble?(b: { chat?: string; emote?: string }): void;
+  /** 내 캐릭터 외형(머티리얼 색만 바꿈). 색은 '#rrggbb' */
+  setAppearance(look: { jacket?: string; hair?: string; skin?: string }): void;
+  /** E1: 문 마커 (전체 교체). 가까이 가면 '들어가기' 안내가 뜨고 E 키/탭하면 onEnter. 빈 배열이면 안내도 사라진다 */
+  setDoors?(items: { id: string; x: number; z: number; title: string; onEnter: () => void }[]): void;
+  /** B5: 정문·후문 아치 (전체 교체). 길 방향에 맞춰 세운다 */
+  setGates?(items: { id: string; name: string; x: number; z: number }[]): void;
   getPose(): { p: [number, number, number]; heading: number };
   dispose(): void;
 };

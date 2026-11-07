@@ -11,6 +11,7 @@ import { useWorld } from '../app/state/world';
 import { useUi } from '../app/state/ui';
 import { buildWorld, type BuiltWorld } from './buildWorld.js';
 import { handleContextLost } from './contextLoss';
+import './world3d.css';
 
 type Built = BuiltWorld;
 

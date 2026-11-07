@@ -1,0 +1,25 @@
+.ui-avatar-wrap { position: relative; flex: none; }
+.ui-avatar-pop { position: absolute; right: 0; top: 50px; width: 380px; max-width: calc(100vw - 32px); padding: 14px; border-radius: 16px; z-index: 6; display: grid; gap: 12px; }
+.ui-avatar-pop h3 { margin: 0; font-size: 14px; }
+.ui-avatar-row { display: grid; gap: 6px; }
+.ui-avatar-row > span { font-size: 12px; color: var(--ui-ink-2); }
+.ui-avatar-sw { display: flex; flex-wrap: wrap; gap: 6px; }
+.ui-avatar-sw button { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.8); box-shadow: 0 0 0 1px var(--ui-hair); cursor: pointer; padding: 0; }
+.ui-avatar-sw button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ui-ink); }
+.ui-avatar-sw button:focus-visible { outline: 2px solid var(--ui-ink); outline-offset: 2px; }
+.ui-avatar-chip { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ui-ink-2); }
+.ui-avatar-chip i { display: inline-block; width: 22px; height: 22px; border-radius: 50%; border: 2px solid; box-shadow: 0 0 0 1px var(--ui-hair); }
+.ui-avatar-actions { display: flex; gap: 8px; }
+.ui-avatar-actions button { flex: 1; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); border-radius: 10px; padding: 6px 8px; cursor: pointer; color: var(--ui-ink); font: inherit; font-size: 12px; }
+.ui-avatar-note { margin: 0; font-size: 11px; color: var(--ui-ink-3); }
+
+/* 잠바 선택 카드 */
+.ui-avatar-pop { max-height: calc(100vh - 90px); overflow-y: auto; }
+.ui-jackets { display: grid; grid-template-columns: repeat(auto-fill, 84px); gap: 6px; }
+.ui-jacket { display: grid; gap: 2px; justify-items: center; text-align: center; padding: 8px 4px 6px; border-radius: 12px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: var(--ui-ink); cursor: pointer; font: inherit; }
+.ui-jacket[aria-pressed="true"] { border-color: var(--ui-ink); box-shadow: 0 0 0 2px var(--ui-ink); }
+.ui-jacket:focus-visible { outline: 2px solid var(--ui-ink); outline-offset: 2px; }
+.ui-jacket strong { font-size: 11px; line-height: 1.25; }
+.ui-jacket strong em { display: block; font-style: normal; font-size: 10px; color: #0e4a84; }
+.ui-jacket .ui-card-sub { font-size: 10px; line-height: 1.25; }
+.ui-jacket-img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background: #fff; margin-bottom: 2px; }

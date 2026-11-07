@@ -1,5 +1,6 @@
 import { useMarkRead, useNotifications } from './features/more';
 import { useSession } from './state/session';
+import './dossier/dossier.css';
 
 export const unreadCount = (list: { read: boolean }[] | undefined) => (list ?? []).filter((n) => !n.read).length;
 
@@ -17,8 +18,10 @@ export function InboxPanel() {
       {q.data.map((n) => (
         <li key={n.id}>
           <button type="button" className={`ui-card${n.read ? ' is-read' : ''}`} onClick={() => !n.read && mark.mutate(n.id)}>
+            <span className="ui-notice-kind">{n.type === 'HOUSING_DDAY' ? '청년안심주택 공고' : '내 집 계약'}</span>
             <strong>{!n.read && <span className="ui-dot" aria-label="안 읽음" />}{n.title}</strong>
             <span className="ui-card-sub">{n.body}</span>
+            <span className="ui-card-sub">{n.createdAt.slice(0, 10)}</span>
           </button>
         </li>
       ))}

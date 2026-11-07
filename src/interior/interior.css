@@ -1,0 +1,22 @@
+/* 실내 3D 전용 (ui-in- 접두사). 공용 .ui-interior* 는 app.css */
+.ui-interior canvas { touch-action: none; user-select: none; -webkit-user-select: none; }
+.ui-interior-bar.ui-in-bar { gap: 10px; flex-wrap: wrap; justify-content: center; }
+.ui-in-minimap { flex: none; border-radius: 8px; background: rgba(20, 32, 48, 0.12); }
+.ui-in-toggle { flex: none; height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--ui-hair, rgba(0,0,0,.2)); background: transparent; color: inherit; font: 600 12px inherit; font-family: inherit; cursor: pointer; }
+.ui-in-toggle[aria-pressed="true"] { background: #0e4a84; color: #fff; border-color: #0e4a84; }
+.ui-in-help { max-width: 360px; }
+.ui-in-chip { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); margin: 0; padding: 4px 12px; border-radius: 999px; font-size: 12px; background: rgba(20, 32, 48, 0.62); color: #fff; pointer-events: none; white-space: nowrap; }
+.ui-in-cross { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 0 1px rgba(0,0,0,.35); pointer-events: none; }
+.ui-in-joy { position: absolute; left: 20px; bottom: 28px; width: 116px; height: 116px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2px solid rgba(255,255,255,.55); display: grid; place-items: center; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ui-in-joy-knob { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.8); box-shadow: 0 2px 8px rgba(0,0,0,.3); pointer-events: none; }
+.ui-in-sheet { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(420px, calc(100vw - 24px)); max-height: 60vh; overflow: auto; padding: 12px 14px; border-radius: 16px; color: var(--ui-ink); z-index: 2; }
+.ui-in-sheet-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ui-in-sheet-head .ui-in-x { margin-left: auto; }
+.ui-in-x { border: 0; background: none; color: inherit; cursor: pointer; display: inline-flex; padding: 4px; }
+.ui-in-text { margin: 0; white-space: pre-wrap; word-break: break-word; }
+@media (max-width: 640px) {
+  .ui-in-help { display: none; }
+  .ui-interior-bar.ui-in-bar { top: 8px; padding: 6px 10px; }
+  .ui-in-chip { bottom: 150px; }
+  .ui-in-sheet { bottom: 8px; }
+}

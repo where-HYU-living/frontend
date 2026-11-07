@@ -12,7 +12,7 @@ export const useReviews = (t: ReviewTargetType, id: number) =>
 export function useAddReview(t: ReviewTargetType, id: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (b: { rating: number; scores: ReviewScores; text: string }) => api('/reviews', { method: 'POST', body: { targetType: t, targetId: id, pin: null, ...b } }),
+    mutationFn: (b: { rating: number; scores: ReviewScores; text: string; pin?: [number, number, number] | null }) => api('/reviews', { method: 'POST', body: { targetType: t, targetId: id, pin: null, ...b } }),
     onSuccess: () => inval(qc, 'reviews'),
   });
 }

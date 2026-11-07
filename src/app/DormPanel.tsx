@@ -5,6 +5,7 @@ import { useUi } from './state/ui';
 import { toLocal } from './map/geo';
 import { ApiError } from '../api/client';
 import type { Dorm } from '../api/types';
+import './dossier/dossier.css';
 
 export function useGoTo() {
   const api = useWorld((s) => s.api);
@@ -22,11 +23,15 @@ export function DormPanel() {
     <ul className="ui-cards">
       {q.data.map((d: Dorm) => (
         <li key={d.id} className="ui-block">
-          <button type="button" className="ui-block-head" onClick={() => go(d)}><strong>{d.name}</strong><span className="ui-card-sub">3D에서 보기</span></button>
+          <button type="button" className="ui-block-head" onClick={() => go(d)}><strong>{d.name}</strong><span className="ui-card-sub">{d.walkMin != null ? `도보 ${d.walkMin}분 · ` : ''}3D에서 보기</span></button>
           <ul className="ui-rows">
             {d.roomTypes.map((r) => (
               <li key={r.id}>
-                <span>{r.name} · {r.capacity}인 <span className="ui-card-sub">월 {manwon(r.monthlyCost)} 원 {r.mealIncluded ? '(식비 포함)' : '(식비 별도)'}</span></span>
+                <span>
+                  <span>{r.name} · {r.capacity}인 <strong className="ui-dorm-cost">{manwon(r.monthlyCost)}</strong></span>
+                  <span className="ui-card-sub">월 {manwon(r.monthlyCost)} 원 {r.mealIncluded ? '(식비 포함)' : '(식비 별도)'}</span>
+                  <span className="ui-card-sub">한 학기 {manwon(r.semesterFee)} ÷ {r.semesterMonths}개월 환산</span>
+                </span>
                 {r.floorplanId != null && <button type="button" className="ui-mini" onClick={() => enter(r.floorplanId!, `${d.name} ${r.name}`)}>실내 들어가기</button>}
               </li>
             ))}

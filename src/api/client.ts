@@ -1,4 +1,5 @@
 import { useSession } from '../app/state/session';
+import { isMockMode } from '../mock/flag';
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public status: number, public details: unknown = null) {
@@ -26,7 +27,7 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   const token = useSession.getState().token;
   let res: Response;
   try {
-    res = await fetch(`${BASE}/api/v1${path}${buildQuery(init.query)}`, {
+    res = await doFetch(`${BASE}/api/v1${path}${buildQuery(init.query)}`, {
       method: init.method ?? 'GET',
       headers: {
         ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
@@ -49,6 +50,12 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   }
   return data as T;
 }
+
+/** 목 모드(VITE_USE_MOCK=true 또는 ?mock=1)면 메모리 목 서버로, 아니면 진짜 fetch. 목 본체는 동적 import. */
+const doFetch: typeof fetch = (input, init) =>
+  isMockMode()
+    ? import('../mock/server').then((m) => m.mockFetch(String(input), { method: init?.method, headers: init?.headers as Record<string, string>, body: init?.body, signal: init?.signal ?? undefined }))
+    : fetch(input, init);
 
 function safeJson(t: string): unknown {
   try { return JSON.parse(t); } catch { return null; }

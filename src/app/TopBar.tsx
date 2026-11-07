@@ -9,6 +9,8 @@ import { unreadCount } from './InboxPanel';
 import { useSearch } from './features/search';
 import { useListingsUi } from './features/listings';
 import { toLocal } from './map/geo';
+import { AvatarButton } from './avatar/AvatarPicker';
+import { InviteButton } from './InviteButton';
 import type { SearchResult } from '../api/types';
 
 export function TopBar() {
@@ -80,6 +82,8 @@ export function TopBar() {
       <button className="textbtn glass mapswitch" type="button" onClick={() => setMapMode(mapMode === '3d' ? '2d' : '3d')}>
         {mapMode === '3d' ? '지도로 보기' : '3D로 보기'}
       </button>
+      <AvatarButton />
+      <InviteButton />
       <button className="iconbtn glass" type="button" aria-label="찜 목록" onClick={() => selectTab('fav')}>
         <Heart size={18} aria-hidden="true" />
       </button>

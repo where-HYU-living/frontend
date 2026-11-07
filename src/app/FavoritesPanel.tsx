@@ -3,6 +3,8 @@ import { manwon } from '../lib/money';
 import { useFavorites } from './features/catalog';
 import { useSession } from './state/session';
 import { useGoTo } from './DormPanel';
+import { DossierCard } from './dossier/DossierCard';
+import { GRADE_HINT } from './dossier/dossierLogic';
 
 const TYPE_LABEL = { LISTING: '자취방', HOUSING: '청년안심주택', DORM: '기숙사', TRANSFER: '양도' } as const;
 
@@ -19,11 +21,14 @@ export function FavoritesPanel() {
     <ul className="ui-cards">
       {q.data.map((f) => (
         <li key={`${f.type}${f.targetId}`}>
-          <button type="button" className="ui-card" onClick={() => go(f)}>
-            {f.grade && <span className="ui-card-badge" style={{ background: GRADE_META[f.grade].color }}>{GRADE_META[f.grade].label}</span>}
-            <strong>{f.name}</strong>
-            <span className="ui-card-sub">{TYPE_LABEL[f.type]} · 환산 {manwon(f.convertedRent)} · {f.walkMin == null ? '도보 정보 없음' : `도보 ${f.walkMin}분`}</span>
-          </button>
+          <DossierCard
+            grade={f.grade}
+            title={f.name}
+            rent={f.convertedRent == null ? '정보 없음' : manwon(f.convertedRent)}
+            hint={f.grade ? GRADE_HINT[f.grade] : null}
+            meta={[TYPE_LABEL[f.type], f.walkMin == null ? '도보 정보 없음' : `도보 ${f.walkMin}분`]}
+            onClick={() => go(f)}
+          />
         </li>
       ))}
     </ul>

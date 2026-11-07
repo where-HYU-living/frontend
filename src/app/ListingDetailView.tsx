@@ -7,6 +7,11 @@ import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
 import { VerdictCard } from './VerdictCard';
 import { ReviewSection } from './ReviewSection';
+import { CompareSection } from './dossier/CompareSection';
+import { WantedFlyer } from './dossier/WantedFlyer';
+import { caseNumber } from './dossier/dossierLogic';
+import { GRADE_META } from '../lib/grade';
+import './dossier/dossier.css';
 
 const ROOM: Record<string, string> = { OPEN: '오픈형', SEPARATED: '분리형', ONE_HALF: '1.5룸', TWO_ROOM: '투룸', DUPLEX: '복층' };
 
@@ -34,12 +39,16 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
   return (
     <div className="ui-detail">
       <BackButton onClick={onBack} />
+      <div className="ui-case"><span>용의자 파일</span><span className="ui-case-tag">{caseNumber(l.id)}</span></div>
       <div className="ui-detail-head"><h3>{l.title}</h3><HeartButton type="LISTING" id={l.id} favorited={l.favorited} /></div>
       <p className="ui-card-sub">{l.address}</p>
 
       <VerdictCard pc={pc} fallbackGrade={l.grade} loggedIn={!!token} failed={p.isError} />
+      {pc && pc.grade === 'CULPRIT' && <WantedFlyer id={l.id} title={l.title} pc={pc} />}
 
+      <h4 className="ui-section-title">기본 정보</h4>
       <dl className="ui-kv">
+        <dt>등급</dt><dd style={{ color: GRADE_META[pc?.grade ?? l.grade].color, fontWeight: 700 }}>{GRADE_META[pc?.grade ?? l.grade].label}</dd>
         <dt>보증금/월세</dt><dd>{manwon(l.deposit)} / {manwon(l.rent)}</dd>
         <dt>관리비</dt><dd>{l.mgmtFee == null ? '정보 없음' : manwon(l.mgmtFee)}</dd>
         <dt>면적·층</dt><dd>{l.areaM2}㎡ · {l.floor == null ? '층 정보 없음' : `${l.floor}층`}</dd>
@@ -49,22 +58,13 @@ export function ListingDetailView({ id, onBack }: { id: number; onBack: () => vo
       </dl>
       {l.description && <p className="ui-desc">{l.description}</p>}
 
-      {alt.data && (alt.data.housing.length > 0 || alt.data.dorms.length > 0) && (
-        <section aria-label="비교">
-          <h4>근처 청년안심주택·기숙사와 비교</h4>
-          <ul className="ui-alt">
-            {[...alt.data.housing, ...alt.data.dorms].map((a) => (
-              <li key={`${a.type}${a.id}`}>{a.name} · 환산 {manwon(a.convertedRent)} · 2년 {manwon(Math.abs(a.twoYearDiff))} {a.twoYearDiff >= 0 ? '저렴' : '비쌈'}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <CompareSection data={alt.data} loading={alt.isLoading} />
 
       {all && all.length > 0 && (() => {
         const cheaper = cheaperListings(all, l);
         return cheaper.length === 0 ? null : (
           <section aria-label="더 싼 매물">
-            <h4>더 싼 매물</h4>
+            <h4 className="ui-section-title">같은 예산에서 더 싼 매물</h4>
             <ul className="ui-alt">
               {cheaper.map((c) => (
                 <li key={c.id}><button type="button" className="ui-link" onClick={() => { select(c.id); go(c); }}>{c.title}</button> · 환산 {manwon(c.convertedRent)} (월 {manwon(l.convertedRent - c.convertedRent)} 저렴)</li>

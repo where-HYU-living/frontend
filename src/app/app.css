@@ -194,8 +194,20 @@
 .ui-interior-note { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--ui-ink-2); pointer-events: none; }
 
 /* 같이 걷기 (멀티플레이) */
-.ui-chat { position: fixed; left: 16px; bottom: 16px; z-index: 6; padding: 8px 10px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-width: min(340px, calc(100vw - 32px)); }
+.ui-chat { position: fixed; left: 16px; bottom: 16px; z-index: 6; padding: 8px 10px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; width: 300px; max-width: calc(100vw - 32px); }
 .ui-chat-status { color: var(--ui-ink-2); }
+.ui-chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ui-chat-status { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.ui-chat-dot { width: 7px; height: 7px; border-radius: 50%; background: #2fb36b; box-shadow: 0 0 0 3px rgba(47,179,107,.2); }
+.ui-chat-emotes { display: flex; gap: 4px; }
+.ui-chat-emotes button { width: 32px; height: 32px; padding: 0; border: 1px solid var(--ui-hair); border-radius: 50%; background: var(--ui-glass-strong); font-size: 17px; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: transform .12s; }
+.ui-chat-emotes button:hover { transform: scale(1.12); }
+.ui-chat-emotes button:active { transform: scale(.92); }
+.ui-chat-input { position: relative; display: flex; }
+.ui-chat-input input { flex: 1; min-width: 0; height: 36px; padding: 0 40px 0 12px; border-radius: 999px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); font: inherit; }
+.ui-chat-send { position: absolute; right: 4px; top: 4px; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: var(--ui-ink); color: #fff; cursor: pointer; display: grid; place-items: center; }
+.ui-chat-send:disabled { opacity: .3; cursor: default; }
+.ui-invite { display: inline-flex; align-items: center; gap: 5px; }
 .ui-chat-row { display: flex; gap: 4px; align-items: center; }
 .ui-chat-row button { height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--ui-glass-strong); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
 .ui-chat-row input { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); font: inherit; }

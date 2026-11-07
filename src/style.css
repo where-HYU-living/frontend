@@ -69,3 +69,4 @@ body { font-family: 'Pretendard', system-ui, -apple-system, sans-serif; color: v
 .w3d-ico { display: inline-flex; vertical-align: -2px; margin-right: 4px; }
 .w3d-ico svg { width: 13px; height: 13px; }
 .w3d-nick .w3d-ico { margin: 0 0 0 4px; }
+.w3d-nick .w3d-ico svg { width: 16px; height: 16px; background: #fff; border-radius: 50%; padding: 2px; box-sizing: content-box; }

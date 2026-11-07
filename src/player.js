@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 
 // 과잠 입은 한양대생 (단순화한 귀여운 캐릭터)
+import { STYLES, hasStyle, paintBack, paintPatch } from './world/jacketStyles.js';
+
 function makeStudent() {
   const g = new THREE.Group();
   const skin = new THREE.MeshStandardMaterial({ color: 0xf2c9a5, roughness: 0.7 });
   const jacket = new THREE.MeshStandardMaterial({ color: 0x141f3c, roughness: 0.85 });
   const sleeve = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.8 });
+  const trim = new THREE.MeshStandardMaterial({ color: 0x141f3c, roughness: 0.85 }); // 목깃·밑단·소맷단 바탕
+  const stripe = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.8 }); // 리브의 줄
   const pants = new THREE.MeshStandardMaterial({ color: 0x3b64a0, roughness: 0.9 }); // 청바지
   const hair = new THREE.MeshStandardMaterial({ color: 0x2a1d16, roughness: 0.6 });
   const shoe = new THREE.MeshStandardMaterial({ color: 0xf5f5f0, roughness: 0.6 });
@@ -15,31 +19,25 @@ function makeStudent() {
   // 등판: 아치형 HANYANG / UNIV. / 사자 / Since 1939
   const W = 512, H = 512;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const cg = c.getContext('2d'); cg.fillStyle = '#f3efe6'; cg.strokeStyle = '#f3efe6'; cg.textAlign = 'center'; cg.textBaseline = 'middle';
-  cg.font = '900 96px Pretendard, Arial Black, sans-serif';
-  const word = 'HANYANG', R = 290, span = 1.75, cx = W / 2, cy = 345;
-  for (let i = 0; i < word.length; i++) {
-    const a = -span / 2 + (span * (i + 0.5)) / word.length;
-    cg.save(); cg.translate(cx + Math.sin(a) * R, cy - Math.cos(a) * R); cg.rotate(a); cg.fillText(word[i], 0, 0); cg.restore();
-  }
-  cg.font = '900 88px Pretendard, Arial Black, sans-serif'; cg.fillText('UNIV.', cx, 170);
-  // 사자: 참고 이미지(public/tex/lion-patch.png)를 불러와 등판에 합성
+  const cg = c.getContext('2d');
+  // 사자: 참고 이미지(public/tex/lion-patch.png)를 한 번만 불러와, 잠바마다 색을 입혀 등판에 합성
   const lionImg = new Image();
-  lionImg.onload = () => { cg.drawImage(lionImg, cx - 105, 218, 210, 186); tex.needsUpdate = true; };
+  let style = STYLES.school1;
+  lionImg.onload = () => { paintBack(cg, style, lionImg); tex.needsUpdate = true; };
   lionImg.src = `${import.meta.env.BASE_URL}tex/lion-patch.png`;
-  cg.font = 'italic 44px Georgia, serif'; cg.fillText('Since 1939', cx, 458);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  paintBack(cg, style, null);
   const arc = 0.56 / 0.272;
   const letters = new THREE.Mesh(new THREE.CylinderGeometry(0.273, 0.273, 0.54, 24, 1, true, Math.PI - arc / 2, arc), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.85, side: THREE.FrontSide }));
   letters.position.y = 0.95; letters.scale.set(1.12, 1, 1);
   // 흰 줄 들어간 리브 (목깃·밑단)
-  const rib = (r, y) => { const g2 = new THREE.Group(); const t = new THREE.Mesh(new THREE.TorusGeometry(r, 0.03, 8, 24), jacket); t.rotation.x = Math.PI / 2; const w = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 6, 24), sleeve); w.rotation.x = Math.PI / 2; w.position.y = 0.0; w.scale.set(1.02, 1.02, 1); g2.add(t, w); g2.position.y = y; return g2; };
+  const rib = (r, y) => { const g2 = new THREE.Group(); const t = new THREE.Mesh(new THREE.TorusGeometry(r, 0.03, 8, 24), trim); t.rotation.x = Math.PI / 2; const w = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 6, 24), stripe); w.rotation.x = Math.PI / 2; w.position.y = 0.0; w.scale.set(1.02, 1.02, 1); g2.add(t, w); g2.position.y = y; return g2; };
   // 앞판: 왼가슴 H 패치 + 단추
   const hc = document.createElement('canvas'); hc.width = 128; hc.height = 128;
-  const hg = hc.getContext('2d'); hg.fillStyle = '#f3efe6'; hg.fillRect(8, 8, 112, 112); hg.fillStyle = '#141f3c'; hg.font = '900 100px Pretendard, Arial Black, sans-serif'; hg.textAlign = 'center'; hg.textBaseline = 'middle'; hg.fillText('H', 64, 70);
+  const hg = hc.getContext('2d'); paintPatch(hg, style);
   const htex = new THREE.CanvasTexture(hc); htex.colorSpace = THREE.SRGBColorSpace;
   const harc = 0.13 / 0.272;
-  const hPatch = new THREE.Mesh(new THREE.CylinderGeometry(0.274, 0.274, 0.13, 12, 1, true, -harc / 2, harc), new THREE.MeshStandardMaterial({ map: htex, roughness: 0.85 }));
+  const hPatch = new THREE.Mesh(new THREE.CylinderGeometry(0.274, 0.274, 0.13, 12, 1, true, -harc / 2, harc), new THREE.MeshStandardMaterial({ map: htex, transparent: true, roughness: 0.85 }));
   hPatch.position.y = 1.08; hPatch.rotation.y = 0.5; hPatch.scale.set(1.12, 1, 1);
   const btnMat = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.5 });
   const buttons = [1.14, 1.0, 0.86, 0.72].map((y) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), btnMat); b.position.set(0, y, 0.272 * 1.0 + 0.004); return b; });
@@ -54,7 +52,7 @@ function makeStudent() {
   const limb = (r, len, mat) => { const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), mat); m.position.y = -len / 2 - r * 0.5; const pivot = new THREE.Group(); pivot.add(m); return pivot; };
   const armL = limb(0.105, 0.36, sleeve), armR = limb(0.105, 0.36, sleeve);
   armL.position.set(-0.36, 1.18, 0); armR.position.set(0.36, 1.18, 0);
-  const cuffMat = jacket; for (const a of [armL, armR]) { const cf = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, 12), cuffMat); cf.position.y = -0.4; a.add(cf); }
+  const cuffMat = trim; for (const a of [armL, armR]) { const cf = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, 12), cuffMat); cf.position.y = -0.4; a.add(cf); }
   const legL = limb(0.1, 0.38, pants), legR = limb(0.1, 0.38, pants);
   legL.position.set(-0.13, 0.62, 0); legR.position.set(0.13, 0.62, 0);
   const sole = new THREE.MeshStandardMaterial({ color: 0xd8d6cf, roughness: 0.8 });
@@ -65,7 +63,16 @@ function makeStudent() {
   }
   g.add(torso, letters, hPatch, ...buttons, collar, hem, head, hairCap, ...eyes, armL, armR, legL, legR);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  g.userData = { armL, armR, legL, legR, head };
+  // 잠바 종류 바꾸기: 머티리얼 색·소매 질감·등판/가슴 캔버스만 다시 칠한다 (지오메트리 그대로)
+  const applyJacket = (id) => {
+    if (!hasStyle(id)) return;
+    style = STYLES[id];
+    jacket.color.set(style.body); sleeve.color.set(style.sleeve); sleeve.roughness = style.sleeveRough;
+    trim.color.set(style.trim); stripe.color.set(style.stripe); btnMat.color.set(style.button);
+    paintBack(cg, style, lionImg); tex.needsUpdate = true;
+    paintPatch(hg, style); htex.needsUpdate = true; hPatch.visible = style.patch !== 'none';
+  };
+  g.userData = { armL, armR, legL, legR, head, applyJacket, mats: { jacket, hair, skin } };
   return g;
 }
 
@@ -86,6 +93,13 @@ export class Player {
     this.occluders = null;
     this.offs = [];
     this.#bind(dom);
+  }
+  // 외형: jacket = 잠바 종류 id(src/world/avatar.ts JACKETS), hair/skin = '#rrggbb'. 머티리얼·캔버스만 바꾼다
+  setAppearance({ jacket, hair, skin }) {
+    const u = this.mesh.userData, m = u.mats;
+    if (jacket) u.applyJacket(jacket);
+    if (hair) m.hair.color.set(hair);
+    if (skin) m.skin.color.set(skin);
   }
   // 모든 입력 리스너를 지운다 (R3F 재마운트·HMR 에서 입력이 중복되지 않게)
   dispose() { for (const off of this.offs) off(); this.offs = []; this.keys.clear(); }

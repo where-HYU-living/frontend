@@ -13,12 +13,13 @@ export const NEARBY_ICON: Record<Nearby['category'], { label: string; svg: strin
   SUBWAY: { label: '지하철역', svg: svgOf(<TrainFront size={14} />) },
 };
 
+/** 이모트 (lucide 아이콘, 색으로 구분). 3D 말풍선에는 같은 아이콘을 SVG 문자열로 넣는다 */
 export const EMOTE = {
-  wave: { label: '손 흔들기', Icon: Hand },
-  heart: { label: '하트', Icon: Heart },
-  clap: { label: '박수', Icon: PartyPopper },
+  wave: { label: '손 흔들기', Icon: Hand, color: '#e0a100' },
+  heart: { label: '하트', Icon: Heart, color: '#e5484d' },
+  clap: { label: '박수', Icon: PartyPopper, color: '#d6409f' },
 } as const;
-export const EMOTE_SVG: Record<string, string> = Object.fromEntries(Object.entries(EMOTE).map(([k, v]) => [k, svgOf(<v.Icon size={14} />)]));
+export const EMOTE_SVG: Record<string, string> = Object.fromEntries(Object.entries(EMOTE).map(([k, v]) => [k, svgOf(<v.Icon size={16} color={v.color} strokeWidth={2.4} />)]));
 
 export const HEART_SVG = svgOf(<Heart size={12} fill="currentColor" />);
 export const CAMPUS_SVG = svgOf(<GraduationCap size={14} />);

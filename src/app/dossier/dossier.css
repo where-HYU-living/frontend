@@ -1,0 +1,97 @@
+/* U2 용의자 파일·판결·수배 전단. 접두사 ui-, 변수 --ui-* */
+.ui-dossier, .ui-gauge, .ui-wanted, .ui-compare, .ui-dc { --ui-gauge-ok: #6aa7d8; --ui-paper: #fbf6e9; --ui-paper-ink: #3a2f1f; }
+
+/* 용의자 파일 머리 */
+.ui-case { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 6px; font-size: 11px; letter-spacing: .06em; color: var(--ui-ink-2); text-transform: uppercase; }
+.ui-case-tag { padding: 1px 8px; border: 1px dashed var(--ui-ink-2); border-radius: 4px; font-weight: 700; }
+.ui-section-title { margin: 14px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--ui-ink-2); }
+.ui-evidence { margin: 4px 0; font-size: 12px; color: var(--ui-ink-2); line-height: 1.5; }
+.ui-budget { margin: 4px 0; font-size: 13px; font-weight: 600; }
+.ui-budget.is-over { color: #c0392b; }
+
+/* 판결 카드 */
+.ui-verdict { position: relative; border-left-width: 6px; }
+.ui-verdict-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ui-verdict-rent { display: flex; flex-direction: column; gap: 0; }
+.ui-verdict-rent small { font-size: 11px; color: var(--ui-ink-2); }
+.ui-verdict-rent strong { font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ui-verdict-total { display: flex; flex-direction: column; gap: 0; padding: 8px 10px; border-radius: 10px; background: rgba(0, 0, 0, .05); }
+.ui-verdict-total small { font-size: 11px; color: var(--ui-ink-2); }
+.ui-verdict-total strong { font-size: 24px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.ui-verdict-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 0; font-size: 12px; }
+.ui-verdict-mini dt { color: var(--ui-ink-2); }
+.ui-verdict-mini dd { margin: 0; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.ui-verdict.tone-FAIR { background: linear-gradient(180deg, rgba(59, 165, 92, .10), transparent 60%), var(--ui-glass-strong); }
+.ui-verdict.tone-SLIGHTLY_HIGH { background: linear-gradient(180deg, rgba(242, 201, 76, .16), transparent 60%), var(--ui-glass-strong); }
+.ui-verdict.tone-HIGH { background: linear-gradient(180deg, rgba(242, 153, 74, .16), transparent 60%), var(--ui-glass-strong); }
+.ui-verdict.tone-CULPRIT { background: linear-gradient(180deg, rgba(235, 87, 87, .16), transparent 60%), var(--ui-glass-strong); }
+.ui-verdict.tone-CULPRIT .ui-verdict-total strong { color: #c0392b; }
+.ui-verdict.tone-PENDING .ui-verdict-text { color: var(--ui-ink-2); }
+
+/* 게이지 */
+.ui-gauge { margin: 2px 0; }
+.ui-gauge-bar { position: relative; height: 12px; border-radius: 6px; background: rgba(0, 0, 0, .08); overflow: hidden; }
+.ui-gauge-fill, .ui-gauge-over { position: absolute; top: 0; bottom: 0; }
+.ui-gauge-fill { left: 0; }
+.ui-gauge-tick { position: absolute; top: -1px; bottom: -1px; width: 2px; margin-left: -1px; background: var(--ui-ink); }
+.ui-gauge-legend { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--ui-ink-2); }
+.ui-gauge-now { font-weight: 700; color: var(--ui-ink); }
+
+/* 수배 전단 */
+.ui-wanted { margin: 12px 0; padding: 12px 14px; border: 2px solid var(--ui-paper-ink); outline: 1px solid var(--ui-paper-ink); outline-offset: -6px; border-radius: 4px; background: var(--ui-paper); color: var(--ui-paper-ink); text-align: center; font-family: Georgia, 'Noto Serif KR', serif; box-shadow: 0 2px 0 rgba(0, 0, 0, .12); transform: rotate(-.6deg); }
+.ui-wanted-top { margin: 0; font-size: 10px; letter-spacing: .12em; }
+.ui-wanted-title { margin: 2px 0; font-size: 26px; font-weight: 900; letter-spacing: .18em; }
+.ui-wanted-name { margin: 0 0 6px; font-size: 13px; font-weight: 700; }
+.ui-wanted-kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; padding: 8px 0; border-top: 1px solid var(--ui-paper-ink); border-bottom: 1px solid var(--ui-paper-ink); font-size: 13px; text-align: left; }
+.ui-wanted-kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.ui-wanted-big { font-size: 20px; color: #a8261d; }
+.ui-wanted-foot { margin: 6px 0 0; font-size: 11px; opacity: .8; }
+
+/* 판결 & 비교 */
+.ui-cmp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ui-cmp { display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); border-left: 4px solid var(--ui-hair); }
+.ui-cmp.is-cheaper { border-left-color: #3ba55c; }
+.ui-cmp.is-pricier { border-left-color: #eb5757; }
+.ui-cmp-kind { grid-column: 1 / -1; font-size: 11px; color: var(--ui-ink-2); }
+.ui-cmp-name { font-size: 14px; }
+.ui-cmp-rent { grid-column: 1; font-size: 12px; color: var(--ui-ink-2); }
+.ui-cmp-diff { grid-column: 2; grid-row: 2 / span 2; align-self: center; font-size: 13px; font-weight: 700; text-align: right; }
+.ui-cmp.is-cheaper .ui-cmp-diff { color: #2e8049; }
+.ui-cmp.is-pricier .ui-cmp-diff { color: #c0392b; }
+
+/* 목록 카드 */
+.ui-dc { gap: 2px; }
+.ui-dc-top { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; }
+.ui-dc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.ui-dc-rent { display: flex; align-items: baseline; gap: 6px; }
+.ui-dc-rent-label { font-size: 11px; color: var(--ui-ink-2); }
+.ui-dc-rent strong { font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.ui-dc-deposit { font-size: 12px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+.ui-dc-hint { font-size: 12px; font-weight: 600; }
+.ui-dc-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12px; color: var(--ui-ink-2); }
+.ui-dc.is-wanted { background: var(--ui-paper); color: var(--ui-paper-ink); border: 1.5px dashed var(--ui-paper-ink); }
+.ui-dc.is-wanted .ui-dc-rent-label, .ui-dc.is-wanted .ui-dc-deposit, .ui-dc.is-wanted .ui-dc-meta { color: #6d5d44; }
+.ui-dc.is-wanted::before { content: '수배'; align-self: flex-end; margin-bottom: -16px; font: 700 10px/1 Georgia, serif; letter-spacing: .2em; opacity: .7; }
+
+/* 공고 타임라인 */
+.ui-timeline { list-style: none; margin: 0 0 4px 6px; padding: 0 0 0 14px; border-left: 2px solid var(--ui-hair); display: flex; flex-direction: column; gap: 10px; }
+.ui-tl-item { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.ui-tl-item::before { content: ''; position: absolute; left: -20px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--ui-glass-strong); border: 2px solid #0e4a84; }
+.ui-tl-item.is-past { opacity: .5; }
+.ui-tl-item.is-next::before { background: #0e4a84; }
+.ui-tl-main { display: flex; flex-direction: column; }
+.ui-tl-date { font-size: 11px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+
+/* 기숙사·알림 */
+.ui-dorm-cost { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ui-notice-kind { font-size: 11px; font-weight: 700; color: #0e4a84; }
+
+@media (max-width: 640px) {
+  .ui-verdict-rent strong { font-size: 26px; }
+  .ui-verdict-total strong { font-size: 21px; }
+}
+
+/* 캠퍼스 투어: 번호 칩 + 건물명 강조 */
+.ui-tour-no { display: inline-grid; place-items: center; min-width: 28px; height: 22px; border-radius: 6px; background: rgba(14, 74, 132, .1); color: #0e4a84; font-weight: 700; }
+.ui-tour-name { font-weight: 600; }
+.ui-tour-group h3 { padding-bottom: 4px; border-bottom: 1px solid var(--ui-hair); }

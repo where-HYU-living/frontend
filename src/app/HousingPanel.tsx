@@ -8,6 +8,7 @@ import { useUi } from './state/ui';
 import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
 import type { Housing } from '../api/types';
+import './dossier/dossier.css';
 
 function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   const q = useHousingDetail(id);
@@ -29,7 +30,10 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
       <ul className="ui-rows">
         {h.unitTypes.map((u) => (
           <li key={u.id}>
-            <span>{u.name} · {u.exclusiveAreaM2}㎡ <span className="ui-card-sub">보증금 {manwon(u.deposit)} / 월 {manwon(u.rent)} · 환산 {manwon(u.convertedRent)}</span></span>
+            <span>
+              <span>{u.name} · {u.exclusiveAreaM2}㎡ <strong className="ui-dorm-cost">{manwon(u.convertedRent)}</strong></span>
+              <span className="ui-card-sub">환산 월세 · 보증금 {manwon(u.deposit)} / 월 {manwon(u.rent)}{u.mgmtFee != null ? ` · 관리비 ${manwon(u.mgmtFee)}` : ''}</span>
+            </span>
             {u.floorplanId != null && <button type="button" className="ui-mini" onClick={() => enter(u.floorplanId!, `${h.name} ${u.name}`)}>실내 들어가기</button>}
           </li>
         ))}
@@ -50,11 +54,17 @@ function Calendar({ names }: { names: Map<number, string> }) {
       {[...groups].map(([month, evs]) => (
         <section key={month}>
           <h4>{month.replace('-', '년 ')}월</h4>
-          <ul className="ui-rows">
-            {evs.map((e, i) => (
-              <li key={i}><span>{e.date.slice(5)} · {e.housingName} {EVENT_LABEL[e.type]} <span className="ui-card-sub">{STATUS_LABEL[e.status]}</span></span><strong className="ui-dday">{dday(e.date)}</strong></li>
-            ))}
-          </ul>
+          <ol className="ui-timeline">
+            {evs.map((e, i) => {
+              const dd = dday(e.date);
+              return (
+                <li key={i} className={`ui-tl-item${dd.startsWith('D+') ? ' is-past' : ''}$`}>
+                  <span className="ui-tl-main"><span className="ui-tl-date">{e.date.slice(5)}</span><span>{e.housingName} {EVENT_LABEL[e.type]} <span className="ui-card-sub">{STATUS_LABEL[e.status]}</span></span></span>
+                  <strong className="ui-dday">{dd}</strong>
+                </li>
+              );
+            })}
+          </ol>
         </section>
       ))}
     </div>
@@ -81,9 +91,10 @@ export function HousingPanel() {
           {q.data.map((h: Housing) => (
             <li key={h.id}>
               <button type="button" className="ui-card" onClick={() => { setSel(h.id); go(h); }}>
-                <strong>{h.name}</strong>
                 {h.recruiting && <span className="ui-card-badge" style={{ background: '#3BA55C' }}>모집 중</span>}
-                <span className="ui-card-sub">{h.address}{h.nextEvent ? ` · ${EVENT_LABEL[h.nextEvent.type]} ${dday(h.nextEvent.date)}` : ''}</span>
+                <strong>{h.name}</strong>
+                {h.nextEvent && <span className="ui-dc-rent"><strong className="ui-dday">{dday(h.nextEvent.date)}</strong> <span className="ui-dc-rent-label">{EVENT_LABEL[h.nextEvent.type]}</span></span>}
+                <span className="ui-card-sub">{h.address}</span>
               </button>
             </li>
           ))}

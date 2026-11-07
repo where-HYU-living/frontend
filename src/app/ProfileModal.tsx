@@ -5,6 +5,9 @@ import { BuildingPicker } from './BuildingPicker';
 import campusPlaces from './data/campusPlaces.json';
 import { useSession } from './state/session';
 import { useUi } from './state/ui';
+import { UnitInput } from './forms/Field';
+import { FormSection, StickyActions } from './forms/FormSection';
+import './forms/forms.css';
 
 const won = (man: string) => (man.trim() === '' || !Number.isFinite(Number(man)) || Number(man) < 0 ? null : Math.round(Number(man) * 10000));
 const man = (w: number | null | undefined) => (w == null ? '' : String(w / 10000));
@@ -47,18 +50,24 @@ export function ProfileModal() {
 
   return (
     <div className="ui-modal-back" onMouseDown={close}>
-      <div className="ui-modal glass" role="dialog" aria-label="내 정보" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="ui-modal ui-modal-lg glass" role="dialog" aria-label="내 정보" onMouseDown={(e) => e.stopPropagation()}>
         <h2>내 정보</h2>
         <p className="ui-modal-sub">학과를 고르면 과 건물까지 도보 시간을 보여주고, 예산을 넣으면 초과 여부를 알려줘요. 건너뛰어도 돼요.</p>
+        <FormSection title="1. 소속">
         <DepartmentPicker departments={deps.data ?? []} value={dep === '' ? null : Number(dep)} onChange={(id) => { setDep(id == null ? '' : String(id)); const d = deps.data?.find((x) => x.id === id); if (d) setBuildingIds(d.defaultBuildingIds); }} />
         <BuildingPicker selected={buildingIds} options={options} onChange={setBuildingIds} />
-        <label className="ui-modal-row">월세 상한 <input inputMode="numeric" value={rent} onChange={(e) => setRent(e.target.value)} aria-label="월세 상한(만원)" /> 만원</label>
-        <label className="ui-modal-row">보증금 상한 <input inputMode="numeric" value={deposit} onChange={(e) => setDeposit(e.target.value)} aria-label="보증금 상한(만원)" /> 만원</label>
-        {save.isError && <p className="ui-modal-error" role="alert">저장하지 못했어요. 잠시 뒤 다시 해 보세요.</p>}
-        <div className="ui-modal-actions">
-          <button type="button" className="ghost" onClick={close}>건너뛰기</button>
-          <button type="button" className="primary" disabled={save.isPending} onClick={submit}>저장</button>
-        </div>
+        </FormSection>
+        <FormSection title="2. 예산 (상한)" hint="넘는 집은 초과로 표시해요. 비워 둬도 돼요" grid>
+          <UnitInput label="월세 상한" unit="만원" value={rent} onChange={setRent} ariaLabel="월세 상한(만원)" />
+          <UnitInput label="보증금 상한" unit="만원" value={deposit} onChange={setDeposit} ariaLabel="보증금 상한(만원)" />
+        </FormSection>
+        {save.isError && <p className="ui-field-error" role="alert">저장하지 못했어요. 잠시 뒤 다시 해 보세요.</p>}
+        <StickyActions>
+          <div className="ui-modal-actions">
+            <button type="button" className="ghost" onClick={close}>건너뛰기</button>
+            <button type="button" className="primary" disabled={save.isPending} onClick={submit}>저장</button>
+          </div>
+        </StickyActions>
       </div>
     </div>
   );

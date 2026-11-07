@@ -17,14 +17,14 @@
 - 3D 쪽이 메뉴에 주는 기능은 `useWorld().api`(`landmarks`, `goToLandmark`, `goToPlace`, `setMarkers`, `setBeacons`, `setTimeOfDay`, `setRemotePlayers`, `teleport`, `getPose`, `dispose`)뿐이다. `WorldCanvas` 가 장면이 준비되면 채운다. 기능을 늘리면 `src/main.d.ts` 도 같이 고친다.
 - React `StrictMode` 는 쓰지 않는다 (3D가 두 번 생김). `Player` 는 `dispose()` 로 입력 리스너를 모두 지운다 — 새 입력 리스너는 `Player` 의 `on()` 도우미로 달 것.
 - 구역 파일(`src/zones/*.js`)은 `buildWorld.js` 가 `import.meta.glob('../zones/*.js')` 로 불러온다.
-- 3D 좌표: 원점 = 사자상, x = 동, z = 남 (m). 계약 문서의 ORIGIN(정문 임시값)과 아직 다르다 → 매물 위경도를 붙일 때 맞출 것.
+- 3D 좌표: 원점 = 사자상, x = 동, z = 남 (m). 계약 문서의 ORIGIN(`37.5561486, 127.044341`)과 `src/app/map/geo.ts`·`world.json` 이 모두 같다(확정). 위경도 ↔ 3D 변환은 `geo.ts` 의 `toLocal`/`toLatLng` 만 쓴다.
 
 ## 환경변수 (.env 관리)
 - 로컬 `npm run dev` 는 `.env.development`(공개 값만: 카카오 JS 키·구글 클라이언트 ID·`VITE_API_BASE=http://localhost:8080`)를 읽는다. 배포(Vercel)는 프로젝트 환경변수만 쓴다. `.env`·`.env.local` 은 git 에 안 올라간다 — 개인 설정은 `.env.local`.
 - 비밀 값(구글 클라이언트 보안 비밀번호·토큰·DB 비밀번호)은 어떤 `.env*` 에도 넣지 않는다. `VITE_` 로 시작하는 값은 번들에 들어가 누구나 볼 수 있다.
 
 ## 서버 연결
-- `VITE_API_BASE`(기본 `http://localhost:8080`)로 실서버에 바로 붙는다. 목 서버 없음 — 아직 없는 API(검색·찜·비교 등)는 실패해도 화면이 깨지지 않게 빈 상태/오류 문구로 처리한다.
+- `VITE_API_BASE`(기본 `http://localhost:8080`)로 실서버에 바로 붙는다. 백엔드가 아직 일부 API만 구현했으므로 **`?mock=1`(또는 `VITE_USE_MOCK=true`)로 개발용 목 서버**(`src/mock/`, 계약 전 엔드포인트·메모리 상태·`MOCK` 배지)를 켜서 모든 탭을 볼 수 있다. 목은 동적 import 라 평소 번들에 안 들어간다. 아직 없는 API(검색·찜·비교 등)는 실패해도 화면이 깨지지 않게 빈 상태/오류 문구로 처리한다.
 - 계약 타입은 `src/api/types.ts` 한 곳, 호출은 `src/api/client.ts`(`api<T>()`), 서버 상태는 TanStack Query(`src/app/features/*.ts`), 로그인은 `src/app/state/session.ts`.
 - 로그인: `VITE_GOOGLE_CLIENT_ID` 가 있으면 구글 버튼(`src/app/auth/`)이 뜨고 ID 토큰을 `POST /auth/google` 로 보낸다(도메인 검증은 서버). 없으면 메일 코드 인증만.
 - 금액은 서버가 원, 화면은 만원(`src/lib/money.ts`). `null` 은 "정보 없음"으로 보여주고 0으로 바꾸지 않는다.
@@ -36,8 +36,16 @@
 - 실내 3D: `src/interior/` — `buildInterior`(평면도→벽 조각, 순수 함수)·`InteriorScene`(별도 Canvas). 들어가면 동네 Canvas 는 멈추고(`frameloop never`) 나오면 그 자리 그대로.
 - 멀티플레이: `src/net/` — `worldReducer`·`interpolate`(순수)·`worldSocket`(재접속·10Hz)·`useMultiplayer`(3D 에 `api.setRemotePlayers`). `?solo` 를 붙이면 접속 안 함, `?invite=` 는 접속 후 주소에서 지운다.
 
+## 고도화 기능 위치 (2026-11-07)
+- 폼 부품: `src/app/forms/`(Field·UnitInput·Segmented·ChipSelect·PhotoGrid·FormSection·StickyActions, 환산 월세 `calc.ts`). 새 폼은 이 부품으로 만든다(세로 한 줄 쌓기 금지, 섹션·2열·단위 접미사·하단 고정 버튼).
+- 용의자 파일·판결·수배 전단·비교: `src/app/dossier/`(`DossierCard`·`ExcessGauge`·`WantedFlyer`·`CompareSection`, 순수 로직 `dossierLogic.ts`).
+- 입구·정문·문 앞 실내 진입·가로등: `src/world/`(`campus.ts`·`doors.ts`·`streetlamps.ts`·`worldExtras.js`). 가로등은 품질 프리셋 `streetlamps`(low 에서 끔).
+- 캐릭터 꾸미기: `src/world/avatar.ts` + `src/app/avatar/`. 내 화면에만 적용(서버 계약에 `look` 필드 없음).
+- 실내 3D: `src/interior/`(`Room3D`·`Walker`·`furnish`·`trim`·`pins`). 실내 후기 핀 좌표 규칙은 `pins.ts` 상단 주석(계약과 맞춰야 함).
+
 ## 성능 측정 (캡처 없이 숫자만)
 - `node scripts/perf.mjs "q=med"` — draw call/삼각형/프레임/외부 요청. dev 서버(5173)가 떠 있어야 한다. 기준값은 `scripts/perf-baseline.json`.
+- draw call 200 이하 목표는 폐기했다(더 줄이지 않는다). `perf-baseline.json` 은 회귀 감시용.
 - 텍스처는 `public/tex` 합계 12MB 이하·한 변 1024px(노멀·러프니스 512) 이하 — `npm test` 가 지킨다. 줄이는 도구: `node scripts/shrink-textures.mjs`.
 
 ## 배포 (Vercel)

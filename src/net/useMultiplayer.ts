@@ -3,6 +3,9 @@ import { create } from 'zustand';
 import { EMOTE_SVG } from '../app/icons';
 import { useWorld } from '../app/state/world';
 import { useSession } from '../app/state/session';
+import { useUi } from '../app/state/ui';
+import { useAvatarLook } from '../world/avatarStore';
+import { makeCrowd, peersFromSearch } from './simulate';
 import { connectWorld, type WorldConnection } from './worldSocket';
 import { CHAT_MS, emptyWorld, EMOTE_MS, interpolate, INTERP_DELAY, worldReducer, type ServerMsg, type WorldModel } from './worldReducer';
 
@@ -32,35 +35,53 @@ export function useMultiplayer() {
       return { p, r: heading, a };
     };
     model.current = emptyWorld();
+    const handle = (m: ServerMsg) => {
+      const before = Object.keys(model.current.players).length;
+      model.current = worldReducer(model.current, m, performance.now());
+      if (m.t === 'welcome') {
+        useNet.setState({ selfId: m.selfId });
+        if (m.spawn && (m.spawn.p[0] !== 0 || m.spawn.p[2] !== 0)) api.teleport(m.spawn.p[0], m.spawn.p[2]);
+        if (m.invited) { useNet.setState({ invited: true }); setTimeout(() => useNet.setState({ invited: false }), 5000); }
+      }
+      const count = Object.keys(model.current.players).length;
+      if (count !== before || m.t === 'welcome') useNet.setState({ count }); // 10Hz state 마다 스토어를 건드리지 않는다
+    };
+    // ?peers=N : 소켓 없이 가짜 접속자 N명 (부하 측정용)
+    const peers = peersFromSearch(location.search);
+    let simTimer: ReturnType<typeof setInterval> | undefined;
+    if (peers) {
+      const crowd = makeCrowd(peers);
+      handle(crowd.welcome());
+      const t0 = performance.now();
+      simTimer = setInterval(() => handle(crowd.state((performance.now() - t0) / 1000)), 100);
+      useNet.setState({ status: 'open' });
+    }
     const url = `${wsBase()}/ws/world?nickname=${encodeURIComponent(nickname ?? guestName())}${invite ? `&invite=${encodeURIComponent(invite)}` : ''}`;
-    const conn = connectWorld({
-      url, getPose,
+    const conn = peers ? null : connectWorld({
+      url, getPose, getLook: () => useAvatarLook.getState().look,
       onStatus: (status) => {
         useNet.setState({ status });
         if (status === 'open' && invite) { q.delete('invite'); history.replaceState(null, '', `${location.pathname}${q.toString() ? `?${q}` : ''}${location.hash}`); }
       },
-      onMessage: (m: ServerMsg) => {
-        model.current = worldReducer(model.current, m, performance.now());
-        if (m.t === 'welcome') {
-          useNet.setState({ selfId: m.selfId });
-          if (m.spawn && (m.spawn.p[0] !== 0 || m.spawn.p[2] !== 0)) api.teleport(m.spawn.p[0], m.spawn.p[2]);
-          if (invite) { useNet.setState({ invited: true }); setTimeout(() => useNet.setState({ invited: false }), 5000); }
-        }
-        useNet.setState({ count: Object.keys(model.current.players).length });
-      },
+      onMessage: handle,
     });
     useNet.setState({ conn });
+    const unsubLook = useAvatarLook.subscribe((st, prevSt) => { if (st.look !== prevSt.look) conn?.sendLook(st.look); });
     let raf = 0;
     const loop = () => {
+      raf = requestAnimationFrame(loop);
+      // 실내(동네 장면이 멈춤)나 숨은 탭에서는 보간·갱신을 하지 않는다. 샘플은 계속 쌓이니 돌아오면 바로 따라잡는다
+      if (useUi.getState().indoor || document.hidden) return;
       const now = performance.now();
+      const me = model.current.self;
+      api.setSelfBubble?.({ chat: me?.chat && me.chat.until > now ? me.chat.m : undefined, emote: me?.emote && me.emote.until > now ? EMOTE_SVG[me.emote.e] : undefined });
       api.setRemotePlayers(Object.entries(model.current.players).map(([id, pl]) => {
         const { p, r } = interpolate(pl.samples, now - INTERP_DELAY);
-        return { id, nickname: pl.nickname, x: p[0], z: p[2], r, chat: pl.chat && pl.chat.until > now ? pl.chat.m : undefined, emote: pl.emote && pl.emote.until > now ? EMOTE_SVG[pl.emote.e] : undefined };
+        return { id, nickname: pl.nickname, x: p[0], z: p[2], r, walking: pl.a !== 'idle', look: pl.look, chat: pl.chat && pl.chat.until > now ? pl.chat.m : undefined, emote: pl.emote && pl.emote.until > now ? EMOTE_SVG[pl.emote.e] : undefined };
       }));
-      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); conn.close(); api.setRemotePlayers([]); useNet.setState({ conn: null, status: 'closed', count: 0, selfId: null }); };
+    return () => { unsubLook(); cancelAnimationFrame(raf); clearInterval(simTimer); conn?.close(); api.setRemotePlayers([]); useNet.setState({ conn: null, status: 'closed', count: 0, selfId: null }); };
   }, [api, enabled, nickname]);
 }
 

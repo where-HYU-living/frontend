@@ -1,0 +1,112 @@
+/* 폼 공용 스타일 (U1). 클래스는 ui- 접두사, 변수는 app.css 의 --ui-* 만 쓴다 */
+.ui-form2 { display: flex; flex-direction: column; gap: 18px; font-size: 13px; }
+.ui-form2-intro { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(14, 74, 132, .08); color: var(--ui-ink-2); font-size: 12.5px; line-height: 1.5; }
+.ui-form2-intro b { color: var(--ui-ink); }
+
+/* 섹션 */
+.ui-fsec { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; }
+.ui-fsec-title { margin: 0; padding-bottom: 6px; border-bottom: 1px solid var(--ui-hair); font-size: 12px; font-weight: 700; letter-spacing: .03em; color: var(--ui-ink-2); }
+.ui-fsec-hint { margin: -2px 0 0; font-size: 12px; color: var(--ui-ink-3); }
+.ui-fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 10px; align-items: start; }
+.ui-fstack { display: flex; flex-direction: column; gap: 10px; }
+.ui-fgrid .span2 { grid-column: 1 / -1; }
+
+/* 칸 */
+.ui-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ui-field-label { font-size: 12px; font-weight: 600; color: var(--ui-ink-2); }
+.ui-field-hint, .ui-field-error { margin: 0; font-size: 11.5px; line-height: 1.4; }
+.ui-field-hint { color: var(--ui-ink-3); }
+.ui-field-error { color: #c0392b; }
+.ui-field input:not([type='checkbox']), .ui-field select, .ui-field textarea, .ui-unit {
+  box-sizing: border-box; width: 100%; min-height: 40px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: var(--ui-ink); caret-color: var(--ui-ink); font: inherit;
+}
+.ui-field textarea { padding: 9px 12px; resize: vertical; line-height: 1.5; }
+.ui-field input::placeholder, .ui-field textarea::placeholder { color: var(--ui-ink-3); }
+.ui-field input:focus, .ui-field textarea:focus, .ui-field select:focus { outline: 2px solid #0e4a84; outline-offset: 1px; border-color: #0e4a84; }
+.ui-field.has-error input, .ui-field.has-error .ui-unit, .ui-field.has-error textarea { border-color: #c0392b; }
+
+/* 단위 접미사: 테두리는 .ui-unit 이 가진다 */
+.ui-unit { display: flex; align-items: center; gap: 6px; padding: 0 12px; }
+.ui-unit:focus-within { outline: 2px solid #0e4a84; outline-offset: 1px; border-color: #0e4a84; }
+.ui-field .ui-unit input { flex: 1; min-width: 0; min-height: 38px; width: auto; padding: 0; border: 0; border-radius: 0; background: none; outline: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.ui-field .ui-unit input:focus { outline: 0; }
+.ui-unit-suffix { flex: none; font-size: 12px; font-weight: 600; color: var(--ui-ink-3); }
+
+/* 세그먼트 / 칩 */
+.ui-segmented { display: flex; gap: 3px; padding: 3px; border-radius: 12px; background: var(--ui-hair); }
+.ui-segmented button { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 0 4px; border-radius: 9px; color: var(--ui-ink-2); font: 600 13px inherit; font-family: inherit; white-space: nowrap; }
+.ui-segmented button.on { background: #fff; color: #0e4a84; box-shadow: 0 1px 3px rgba(22, 32, 46, .15); }
+.ui-chipselect { display: flex; flex-wrap: wrap; gap: 6px; }
+.ui-chipselect button { min-height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: var(--ui-ink-2); font: 600 12px inherit; font-family: inherit; }
+.ui-chipselect button.on { border-color: #0e4a84; background: #0e4a84; color: #fff; }
+.ui-field-wide { grid-column: 1 / -1; }
+.ui-field-sublabel { font-size: 12px; font-weight: 600; color: var(--ui-ink-2); }
+
+/* 사진 */
+.ui-photo-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ui-photo { position: relative; display: block; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: var(--ui-hair); }
+.ui-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ui-photo-x { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(22, 32, 46, .72); color: #fff; }
+.ui-photo-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1.5px dashed var(--ui-ink-3); background: transparent; color: var(--ui-ink-2); font-size: 11.5px; font-weight: 600; }
+.ui-photo-add:hover:not(:disabled) { border-color: #0e4a84; color: #0e4a84; }
+.ui-photo-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.ui-photos { display: flex; flex-direction: column; gap: 6px; position: relative; }
+
+/* 즉석 요약 */
+.ui-live { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(14, 74, 132, .45); background: rgba(14, 74, 132, .06); }
+.ui-live-title { font-size: 12px; font-weight: 600; color: var(--ui-ink-2); }
+.ui-live-value { font-size: 20px; font-variant-numeric: tabular-nums; color: #0e4a84; }
+.ui-live-note { flex-basis: 100%; font-size: 11.5px; color: var(--ui-ink-3); }
+
+/* 하단 고정 제출 */
+.ui-sticky { position: sticky; bottom: -18px; z-index: 3; margin: 4px -18px -18px; padding: 12px 18px 16px; display: flex; flex-direction: column; gap: 6px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, .88) 22%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ui-sticky .ui-primary { margin-top: 0; height: 44px; }
+.ui-sticky .ui-primary:disabled { background: #6b7a8c; }
+.ui-sticky-reason { margin: 0; font-size: 12px; color: #b3412b; text-align: center; }
+.ui-sticky-row { display: flex; gap: 8px; }
+.ui-sticky-row .ui-primary { flex: 1; }
+.ui-modal .ui-sticky { bottom: -22px; margin: 4px -22px -22px; padding: 12px 22px 18px; }
+
+/* 모달 */
+.ui-modal { max-height: calc(100vh - 32px); overflow-y: auto; }
+.ui-modal-lg { width: min(400px, calc(100vw - 32px)); gap: 16px; }
+.ui-modal-lg h2 { font-size: 18px; }
+.ui-modal .ui-field input:not([type='checkbox']) { height: auto; }
+.ui-modal .ui-field .ui-unit input { height: auto; border: 0; padding: 0; background: none; }
+
+/* 목록 필터 */
+.ui-filter2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; padding: 12px; border-radius: 12px; border: 1px solid var(--ui-hair); background: rgba(255, 255, 255, .35); font-size: 13px; }
+.ui-filter2 .ui-fgrid { grid-template-columns: repeat(3, 1fr); }
+.ui-filter2 .ui-field input:not([type='checkbox']) { min-height: 36px; }
+.ui-filter2 .ui-field .ui-unit { min-height: 36px; padding: 0 8px; }
+.ui-filter2 .ui-field .ui-unit input { min-height: 34px; }
+.ui-filter2 .ui-segmented button { min-height: 32px; font-size: 12px; }
+.ui-filter2 .ui-check { font-size: 12.5px; color: var(--ui-ink-2); }
+.ui-filter2 .ui-check input { width: 16px; height: 16px; min-height: 0; }
+.ui-filter2-head { display: flex; justify-content: space-between; align-items: center; }
+.ui-filter2-head span { font-size: 12px; font-weight: 700; color: var(--ui-ink-2); letter-spacing: .03em; }
+.ui-filter2-head button { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #0e4a84; }
+
+/* 주소 검색 */
+.ui-addr2 { display: flex; flex-direction: column; gap: 6px; }
+.ui-addr2-picked { margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(47, 166, 106, .12); font-size: 12.5px; }
+.ui-addr2-list { list-style: none; margin: 0; padding: 4px; border-radius: 10px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); max-height: 170px; overflow-y: auto; }
+.ui-addr2-list button { width: 100%; padding: 8px 8px; border-radius: 8px; text-align: left; color: var(--ui-ink); font-size: 13px; }
+.ui-addr2-list button:hover { background: rgba(14, 74, 132, .1); }
+
+/* 알림 일수 */
+.ui-alert-add { display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 640px) {
+  .ui-photo-grid { grid-template-columns: repeat(3, 1fr); }
+  .ui-field input:not([type='checkbox']), .ui-field textarea, .ui-field select { font-size: 16px; } /* iOS 확대 방지 */
+  .ui-segmented { flex-wrap: wrap; }
+  .ui-segmented button { flex: 1 1 28%; }
+  .ui-filter2 .ui-fgrid { grid-template-columns: 1fr 1fr; }
+  .ui-modal-back { align-items: end; }
+  .ui-modal { border-radius: 18px 18px 0 0; width: 100vw; max-height: 92vh; }
+  .ui-modal-lg { width: 100vw; }
+}
+.ui-form2-btn { align-self: end; min-height: 40px; height: auto; border-radius: 10px; font-size: 13px; }

@@ -11,7 +11,9 @@ import { makeSite } from '../site.js';
 import { makeAmphitheater, makeStationExits, makeLabel, makeProps } from '../landmarks.js';
 import { makeLion } from '../landmarks/lion.js';
 import { Player } from '../player.js';
+import { makeCrowdStudent, lookKey } from './crowdStudent.js';
 import { lightAt, starsAt } from './timeOfDay';
+import { makeExtras } from './worldExtras.js';
 
 // 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: R3F WorldCanvas).
 // 반환값의 frame(dt) 를 매 프레임 부르면 플레이어·태양·LOD·미니맵이 갱신된다.
@@ -50,13 +52,17 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   stars.visible = false; stars.frustumCulled = false; stars.renderOrder = -1;
   scene.add(stars);
   // t: 0(낮) ~ 1(밤). 조명·안개·하늘 밝기·별이 같이 부드럽게 바뀐다
+  let extras = null; // 정문·문 마커·가로등 (플레이어가 만들어진 뒤에 생성)
+  let lastT = 0;
   const setTimeOfDay = (t) => {
+    lastT = t;
     const L = lightAt(t);
     sun.intensity = L.sun; sun.color.setHex(L.sunColor); sunDir.set(...L.sunDir).normalize();
     hemi.intensity = L.hemi; scene.environmentIntensity = L.env; scene.backgroundIntensity = L.bg;
     scene.fog.color.setHex(L.fog); scene.fog.density = L.fogDensity;
     renderer.toneMappingExposure = L.exposure;
     starMat.opacity = starsAt(t); stars.visible = starMat.opacity > 0.01;
+    extras?.setNight(t);
   };
   sun.castShadow = true;
   sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
@@ -214,34 +220,64 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     markerGroups.set(group, objs);
   };
 
-  // 다른 접속자 (멀티플레이). React 의 net 쪽이 보간한 위치를 매 프레임 넘긴다
+  // 다른 접속자 (멀티플레이). React 의 net 쪽이 보간한 위치를 매 프레임 넘긴다.
+  // 캐릭터는 정점 색으로 합친 가벼운 모델(src/world/crowdStudent.js, 접속자당 draw call 7). 같은 외형은 지오메트리를 공유한다.
+  // 멀수록 그림자 → 이름표 → 몸 순서로 끈다.
   const remotes = new Map();
-  const remoteMat = new THREE.MeshStandardMaterial({ color: 0xf2994a, roughness: 0.7 });
+  const LOD = { shadowM: 35, labelM: 50, hideM: 180 }; // src/net/lod.ts 와 같은 값
   const setRemotePlayers = (list) => {
     const seen = new Set();
+    const px = player.pos.x, pz = player.pos.z;
     for (const r of list) {
       seen.add(r.id);
       let m = remotes.get(r.id);
       if (!m) {
         const g = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.35, 0.9, 4, 10), remoteMat); body.position.y = 0.8; body.castShadow = true;
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), remoteMat); head.position.y = 1.65;
-        g.add(body, head);
         const el = document.createElement('div'); el.className = 'w3d-nick';
         const tag = new CSS2DObject(el); tag.position.set(0, 2.3, 0); g.add(tag);
         scene.add(g);
-        m = { g, el };
+        m = { g, tag, el, sig: '', model: null, key: '', amp: 0, walking: false };
         remotes.set(r.id, m);
       }
-      const sig = `${r.nickname}|${r.chat || ''}|${r.emote ? 1 : 0}`;
-      if (m.el.dataset.n !== sig) {
-        m.el.dataset.n = sig; m.el.textContent = r.chat ? `${r.nickname}: ${r.chat}` : r.nickname;
-        if (r.emote && !r.chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = r.emote; m.el.appendChild(ic); }
+      const want = lookKey(r.look).key;
+      if (m.key !== want) { // 외형이 바뀌었거나 처음: 모델 교체 (지오메트리는 공유라 싸다)
+        if (m.model) m.g.remove(m.model);
+        m.model = makeCrowdStudent(r.look); m.key = want; m.g.add(m.model);
       }
-      m.g.position.set(r.x, heightAt(r.x, r.z), r.z);
+      const d = Math.hypot(r.x - px, r.z - pz);
+      const visible = d <= LOD.hideM, label = d <= LOD.labelM, shadow = d <= LOD.shadowM;
+      if (m.g.visible !== visible) m.g.visible = visible;
+      if (!visible) continue;
+      m.model.traverse((o) => { if (o.isMesh && o.castShadow !== shadow) o.castShadow = shadow; });
+      if (m.tag.visible !== label) m.tag.visible = label; // 숨긴 CSS2D 는 DOM 갱신을 건너뛴다
+      if (label) {
+        const sig = `${r.nickname}|${r.chat || ''}|${r.emote ? 1 : 0}`;
+        if (m.sig !== sig) {
+          m.sig = sig; m.el.textContent = r.chat ? `${r.nickname}: ${r.chat}` : r.nickname;
+          if (r.emote && !r.chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = r.emote; m.el.appendChild(ic); }
+        }
+      }
+      // 걷기: 팔다리 흔들기 + 살짝 통통 (내 캐릭터와 같은 방식)
+      m.amp += ((r.walking ? 0.7 : 0) - m.amp) * 0.2;
+      const ph = performance.now() * 0.0096 + m.g.id, sw = Math.sin(ph) * m.amp, u = m.model.userData;
+      u.armL.rotation.x = sw; u.armR.rotation.x = -sw; u.legL.rotation.x = -sw; u.legR.rotation.x = sw;
+      m.g.position.set(r.x, heightAt(r.x, r.z) + Math.abs(Math.sin(ph)) * 0.04 * m.amp, r.z);
       m.g.rotation.y = r.r;
     }
     for (const [id, m] of remotes) if (!seen.has(id)) { scene.remove(m.g); m.el.remove(); remotes.delete(id); }
+  };
+
+  // 내 캐릭터 머리 위 말풍선 (서버가 되돌려 준 내 chat/emote)
+  const selfEl = document.createElement('div'); selfEl.className = 'w3d-nick';
+  const selfTag = new CSS2DObject(selfEl); selfTag.position.set(0, 2.3, 0); selfTag.visible = false; player.mesh.add(selfTag);
+  let selfSig = '';
+  const setSelfBubble = ({ chat, emote } = {}) => {
+    const sig = `${chat || ''}|${emote ? 1 : 0}`;
+    if (sig === selfSig) return;
+    selfSig = sig;
+    selfTag.visible = !!(chat || emote);
+    selfEl.textContent = chat || '';
+    if (emote && !chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = emote; selfEl.appendChild(ic); }
   };
 
   // 빛 기둥+깃발 (모집 중인 청년안심주택 강조). React 가 setBeacons 로 전체 교체
@@ -266,6 +302,9 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   const lionHit = (x, z) => Math.hypot(x - lm.lion.p[0], z - lm.lion.p[1]) < 2.1;
   const player = new Player({ scene, camera, dom: domElement, heightAt, collide, bounds: world.bounds });
   player.occluders = [buildings];
+  extras = makeExtras({ Q, scene, camera, world, heightAt, collide, player, bIndex, host: domElement.parentElement || document.body });
+  extras.setNight(lastT);
+  { const off = player.dispose.bind(player); player.dispose = () => { extras.dispose(); off(); }; }
   const spawn = lm.station.p;
   player.teleport(spawn[0] + 4, spawn[1] - 6, lm.lion.p[0], lm.lion.p[1]);
 
@@ -361,6 +400,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   let mmTick = 0, lodTick = 1;
   const frame = (dt) => {
     player.update(dt);
+    extras.frame(dt);
     stars.position.copy(camera.position);
     sun.position.copy(player.pos).addScaledVector(sunDir, 160);
     sun.target.position.copy(player.pos);
@@ -381,8 +421,12 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       goToPlace,
       setMarkers,
       setBeacons,
+      setDoors: (items) => extras.setDoors(items),
+      setGates: (items) => extras.setGates(items),
       setTimeOfDay,
       setRemotePlayers,
+      setSelfBubble,
+      setAppearance: (look) => player.setAppearance(look),
       goToLandmark: (key) => (key === 'hero' ? (heroShot(), true) : goToLandmark(key)),
       teleport: (x, z, faceX, faceZ) => { if (collide(x, z)) return false; player.teleport(x, z, faceX, faceZ); return true; },
       getPose: () => ({ p: [player.pos.x, player.pos.y, player.pos.z], heading: player.heading }),

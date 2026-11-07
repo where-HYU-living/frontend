@@ -13,6 +13,7 @@ import { TransferMarkers } from './TransferMarkers';
 import { ProfileModal } from './ProfileModal';
 import { WorldChat } from './WorldChat';
 import { InteriorScene } from '../interior/InteriorScene';
+import { MockBadge } from '../mock/MockBadge';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
@@ -49,6 +50,7 @@ export function App() {
       <LoginModal />
       <ProfileModal />
       <Loading />
+      <MockBadge />
     </QueryClientProvider>
   );
 }

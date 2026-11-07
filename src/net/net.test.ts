@@ -78,3 +78,61 @@ test('WORLD_FULL stops reconnecting', () => {
   expect(Fake.all).toHaveLength(1);
   expect(status).toContain('full');
 });
+
+import { lodFor, LOD } from './lod';
+import { makeCrowd, peersFromSearch } from './simulate';
+
+test('lod: 멀수록 그림자 → 이름표 → 몸 순서로 꺼진다', () => {
+  expect(lodFor(10)).toEqual({ visible: true, label: true, shadow: true });
+  expect(lodFor(LOD.shadowM + 1)).toEqual({ visible: true, label: true, shadow: false });
+  expect(lodFor(LOD.labelM + 1)).toEqual({ visible: true, label: false, shadow: false });
+  expect(lodFor(LOD.hideM + 1).visible).toBe(false);
+});
+
+test('crowd: welcome 에 n명, state 는 닉네임 없이 n명, 같은 틱 안에서 위치가 달라진다', () => {
+  const c = makeCrowd(30);
+  const w = c.welcome();
+  expect(w.t === 'welcome' && w.players).toHaveLength(30);
+  let m = worldReducer(emptyWorld(), w, 0);
+  m = worldReducer(m, c.state(1), 100);
+  expect(Object.keys(m.players)).toHaveLength(30);
+  expect(m.players.bot0.nickname).toBe('봇1');
+  expect(m.players.bot0.samples).toHaveLength(2);
+});
+
+test('peers 쿼리: 0~100 으로 제한', () => {
+  expect(peersFromSearch('?peers=30')).toBe(30);
+  expect(peersFromSearch('?peers=999')).toBe(100);
+  expect(peersFromSearch('?peers=x')).toBe(0);
+  expect(peersFromSearch('')).toBe(0);
+});
+
+test('look: welcome/join 의 look 을 저장하고, look 메시지로 바꾸며, 깨진 값은 기본으로', () => {
+  let m = worldReducer(emptyWorld(), { t: 'welcome', selfId: 's', spawn: { p: [0, 0, 0], r: 0 }, players: [{ ...P('a'), look: { jacket: 'school2', hair: '#112233', skin: '#f2c9a5' } }] }, 0);
+  expect(m.players.a.look?.jacket).toBe('school2');
+  m = worldReducer(m, { t: 'state', players: [P('a', 3)] }, 10); // state 에는 look 이 없어도 유지
+  expect(m.players.a.look?.jacket).toBe('school2');
+  m = worldReducer(m, { t: 'look', id: 'a', look: { jacket: 'dept-is', hair: '#abcdef', skin: '#fbdcc2' } }, 20);
+  expect(m.players.a.look?.jacket).toBe('dept-is');
+  m = worldReducer(m, { t: 'look', id: 'a', look: { jacket: '<script>', hair: 'red', skin: 1 } }, 30);
+  expect(m.players.a.look).toEqual({ jacket: 'school1', hair: '#2a1d16', skin: '#f2c9a5' });
+});
+
+test('socket: 접속하면 look 을 보내고 sendLook 도 보낸다', () => {
+  const sent: string[] = [];
+  const sock = { send: (s: string) => sent.push(s), close() {}, onopen: null, onclose: null, onmessage: null, readyState: 1 } as unknown as SocketLike & { onopen: () => void };
+  const c = connectWorld({ url: 'x', getPose: () => ({ p: [0, 0, 0], r: 0, a: 'idle' }), getLook: () => ({ jacket: 'school3' }), onMessage() {}, make: () => sock });
+  sock.onopen!();
+  c.sendLook({ jacket: 'school2' });
+  expect(sent.map((x) => JSON.parse(x)).filter((x) => x.t === 'look').map((x) => x.look.jacket)).toEqual(['school3', 'school2']);
+  c.close();
+});
+
+test('내가 보낸 chat/emote 는 self 에 기록된다 (남의 목록에는 안 들어감)', () => {
+  let m = worldReducer(emptyWorld(), { t: 'welcome', selfId: 's', spawn: { p: [0, 0, 0], r: 0 }, players: [P('a')] }, 0);
+  m = worldReducer(m, { t: 'chat', id: 's', m: '안녕' }, 100);
+  m = worldReducer(m, { t: 'emote', id: 's', e: 'wave' }, 100);
+  expect(m.self?.chat).toEqual({ m: '안녕', until: 100 + CHAT_MS });
+  expect(m.self?.emote?.e).toBe('wave');
+  expect(Object.keys(m.players)).toEqual(['a']);
+});

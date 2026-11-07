@@ -5,12 +5,14 @@ export type Quality = {
   treeShadows: boolean;
   ao: 'full' | 'half' | 'off';
   msaa: 0 | 4;
+  /** M2 가로등 인스턴스 메시 (밤길 레이어) */
+  streetlamps: boolean;
 };
 
 const PRESETS: Record<Quality['name'], Quality> = {
-  high: { name: 'high', pixelRatio: 1.5, shadowMap: 2048, treeShadows: true, ao: 'full', msaa: 4 },
-  med: { name: 'med', pixelRatio: 1.25, shadowMap: 1024, treeShadows: false, ao: 'half', msaa: 0 },
-  low: { name: 'low', pixelRatio: 1, shadowMap: 512, treeShadows: false, ao: 'off', msaa: 0 },
+  high: { name: 'high', pixelRatio: 1.5, shadowMap: 2048, treeShadows: true, ao: 'full', msaa: 4, streetlamps: true },
+  med: { name: 'med', pixelRatio: 1.25, shadowMap: 1024, treeShadows: false, ao: 'half', msaa: 0, streetlamps: true },
+  low: { name: 'low', pixelRatio: 1, shadowMap: 512, treeShadows: false, ao: 'off', msaa: 0, streetlamps: false },
 };
 
 export function pickQuality(i: { search: string; dpr: number; cores: number; mobile: boolean }): Quality {

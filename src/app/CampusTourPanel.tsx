@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import places from './data/campusPlaces.json';
 import { filterPlaces, groupPlaces, type Place } from './campusSearch';
 import { useWorld } from './state/world';
+import './dossier/dossier.css';
 
 const ALL = places as Place[];
 

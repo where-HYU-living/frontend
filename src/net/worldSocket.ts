@@ -10,12 +10,15 @@ export const PING_MS = 15000;
 export type WorldConnection = {
   sendEmote(e: 'wave' | 'heart' | 'clap'): void;
   sendChat(m: string): void;
+  /** 내 캐릭터 꾸미기를 알린다 (접속 직후에도 자동으로 한 번 보낸다) */
+  sendLook(look: unknown): void;
   close(): void;
 };
 
 type Opts = {
   url: string;
   getPose: () => Pose;
+  getLook?: () => unknown;
   onMessage: (m: ServerMsg) => void;
   onStatus?: (s: 'connecting' | 'open' | 'closed' | 'full') => void;
   /** 테스트에서 가짜 소켓 주입 */
@@ -38,6 +41,7 @@ export function connectWorld(o: Opts): WorldConnection {
     sock = s;
     s.onopen = () => {
       attempt = 0; last = ''; o.onStatus?.('open');
+      if (o.getLook) send({ t: 'look', look: o.getLook() });
       moveTimer = setInterval(() => {
         const p = o.getPose();
         const key = `${p.p.map((v) => v.toFixed(2))}|${p.r.toFixed(2)}|${p.a}`;
@@ -64,6 +68,7 @@ export function connectWorld(o: Opts): WorldConnection {
 
   return {
     sendEmote: (e) => send({ t: 'emote', e }),
+    sendLook: (look) => send({ t: 'look', look }),
     sendChat: (m) => send({ t: 'chat', m: m.slice(0, 40) }),
     close: () => { closed = true; stop(); clearTimeout(retry); sock?.close(); },
   };
