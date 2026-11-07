@@ -4,7 +4,12 @@ import type { Place } from '../campusSearch';
 import { useUi } from '../state/ui';
 import { useWorld } from '../state/world';
 import { KAKAO_ERRORS, loadKakao } from './loadKakao';
-import { toLatLng } from './geo';
+import { toLatLng, toLocal } from './geo';
+import { useListings, useListingsUi } from '../features/listings';
+import { GRADE_META } from '../../lib/grade';
+import { depositRent, manwon } from '../../lib/money';
+import type { ListingSummary } from '../../api/types';
+import { HeartButton } from '../HeartButton';
 
 const ALL = (places as unknown as Place[]).filter((p) => p.center);
 
@@ -48,6 +53,11 @@ export function KakaoMap() {
   const pins = useRef(new Map<string, HTMLElement>());
   const declutter = useRef<() => void>(() => {});
   const pickedNo = useRef<string | undefined>(undefined);
+  // 매물 핀: 지도 객체는 위 effect 안에 있어 ref 로 꺼내 쓴다
+  const mapRef = useRef<{ kakao: any; map: any; box: { sw: any; ne: any; padLat: number; padLng: number } } | null>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [pickedListing, setPickedListing] = useState<ListingSummary | null>(null);
+  const filters = useListingsUi((s) => s.filters);
+  const listings = useListings(filters).data?.items;
 
   useEffect(() => {
     let dead = false;
@@ -72,7 +82,7 @@ export function KakaoMap() {
           el.innerHTML = '<span class="ui-map-pin-name"></span><span class="ui-map-pin-head"></span>';
           (el.firstChild as HTMLElement).textContent = p.name;
           el.setAttribute('aria-label', `${p.no} ${p.name}`);
-          el.addEventListener('click', (e) => { e.stopPropagation(); setMsg(''); setPicked(p); });
+          el.addEventListener('click', (e) => { e.stopPropagation(); setMsg(''); setPickedListing(null); setPicked(p); });
           pins.current.set(p.no, el);
           items.push({ place: p, pos });
           overlay(pos, el, 1, 1); // 핀 끝이 건물 위치
@@ -100,8 +110,10 @@ export function KakaoMap() {
         map.setMinLevel(MIN_LEVEL);
         // 드래그·줌으로 중심이 캠퍼스에서 멀어지면 되돌린다
         const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
-        const padLat = (ne.getLat() - sw.getLat()) * PAN_MARGIN, padLng = (ne.getLng() - sw.getLng()) * PAN_MARGIN;
+        const box = { sw, ne, padLat: (ne.getLat() - sw.getLat()) * PAN_MARGIN, padLng: (ne.getLng() - sw.getLng()) * PAN_MARGIN };
+        mapRef.current = { kakao, map, box };
         const clamp = () => {
+          const { sw, ne, padLat, padLng } = box;
           const c = map.getCenter();
           const lat = Math.min(Math.max(c.getLat(), sw.getLat() - padLat), ne.getLat() + padLat);
           const lng = Math.min(Math.max(c.getLng(), sw.getLng() - padLng), ne.getLng() + padLng);
@@ -111,12 +123,43 @@ export function KakaoMap() {
         kakao.maps.event.addListener(map, 'idle', () => { clamp(); declutter.current(); });
         kakao.maps.event.addListener(map, 'zoom_changed', () => declutter.current());
         declutter.current();
-        kakao.maps.event.addListener(map, 'click', () => setPicked(null));
+        kakao.maps.event.addListener(map, 'click', () => { setPicked(null); setPickedListing(null); });
         setStatus('ready');
       })
       .catch((e: Error) => { if (!dead) { setError(KAKAO_ERRORS[e.message] ?? e.message); setStatus('error'); } });
-    return () => { dead = true; cleanup.forEach((f) => f()); pins.current.clear(); declutter.current = () => {}; };
+    return () => { dead = true; cleanup.forEach((f) => f()); pins.current.clear(); declutter.current = () => {}; mapRef.current = null; };
   }, [api]);
+
+  // 매물 핀(등급 색). 매물이 캠퍼스 밖에 있으면 보이는 영역과 이동 제한을 매물까지 넓힌다
+  useEffect(() => {
+    const m = mapRef.current;
+    if (status !== 'ready' || !m || !listings?.length) return;
+    const { kakao, map, box } = m;
+    const made: Array<{ setMap(x: null): void }> = [];
+    const nb = new kakao.maps.LatLngBounds();
+    nb.extend(box.sw); nb.extend(box.ne);
+    for (const l of listings) {
+      const pos = new kakao.maps.LatLng(l.lat, l.lng);
+      nb.extend(pos);
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'ui-map-pin ui-map-listing';
+      el.style.setProperty('--pin', GRADE_META[l.grade].color);
+      el.innerHTML = '<span class="ui-map-pin-head"></span>';
+      el.setAttribute('aria-label', `${l.title} ${GRADE_META[l.grade].label}`);
+      el.addEventListener('click', (e) => { e.stopPropagation(); setPicked(null); setPickedListing(l); });
+      made.push(new kakao.maps.CustomOverlay({ map, position: pos, content: el, xAnchor: 0.5, yAnchor: 1, zIndex: 3, clickable: true }));
+    }
+    const sw = nb.getSouthWest(), ne = nb.getNorthEast();
+    if (sw.getLat() < box.sw.getLat() || sw.getLng() < box.sw.getLng() || ne.getLat() > box.ne.getLat() || ne.getLng() > box.ne.getLng()) {
+      map.setMaxLevel(14);
+      map.setBounds(nb);
+      map.setMaxLevel(map.getLevel());
+      box.sw = sw; box.ne = ne;
+      box.padLat = (ne.getLat() - sw.getLat()) * PAN_MARGIN; box.padLng = (ne.getLng() - sw.getLng()) * PAN_MARGIN;
+    }
+    return () => made.forEach((o) => o.setMap(null));
+  }, [listings, status]);
 
   // 고른 핀은 커지고 색이 채워지며 이름이 항상 보인다
   useEffect(() => {
@@ -134,11 +177,34 @@ export function KakaoMap() {
     else setMsg(`${p.name} 앞으로는 갈 수 없어요`);
   };
 
+  const goListing = (l: ListingSummary) => {
+    const [x, z] = toLocal(l.lat, l.lng);
+    useListingsUi.getState().select(l.id);
+    useUi.setState({ tab: 'home', panelOpen: true });
+    if (api?.goToPlace(x, z)) setMapMode('3d');
+    else setMsg('그 집 앞으로는 갈 수 없어요');
+  };
+
   return (
     <div className="ui-map" role="region" aria-label="카카오 지도">
       <div ref={ref} className="ui-map-canvas" />
       {status === 'loading' && <p className="ui-map-note" role="status">지도를 불러오는 중</p>}
       {status === 'error' && <p className="ui-map-note" role="alert">{error}</p>}
+      {pickedListing && (
+        <div className="ui-map-card" role="dialog" aria-label={pickedListing.title}>
+          <div className="ui-map-card-title">
+            <span className="ui-map-card-no" style={{ background: GRADE_META[pickedListing.grade].color }}>{GRADE_META[pickedListing.grade].label}</span>
+            {depositRent(pickedListing.deposit, pickedListing.rent)} · {pickedListing.title}
+          </div>
+          <p className="ui-map-card-msg">환산 {manwon(pickedListing.convertedRent)} · {pickedListing.walkMin == null ? '도보 정보 없음' : `도보 ${pickedListing.walkMin}분`}</p>
+          {msg && <p className="ui-map-card-msg" role="status">{msg}</p>}
+          <div className="ui-map-card-actions">
+            <HeartButton type="LISTING" id={pickedListing.id} favorited={pickedListing.favorited} />
+            <button type="button" className="ui-map-go" onClick={() => goListing(pickedListing)}>3D로 들어가기</button>
+            <button type="button" className="ui-map-close" onClick={() => setPickedListing(null)}>닫기</button>
+          </div>
+        </div>
+      )}
       {picked && (
         <div className="ui-map-card" role="dialog" aria-label={picked.name}>
           <div className="ui-map-card-title"><span className="ui-map-card-no">{picked.no}</span>{picked.name}</div>
