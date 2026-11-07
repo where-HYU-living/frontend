@@ -22,7 +22,7 @@ const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { sta
 let favs: FavoriteItem[] = [];
 let calls: { path: string; method: string }[] = [];
 let postStatus = 200;
-const fav = (type: FavoriteType, targetId: number, o: Partial<FavoriteItem> = {}): FavoriteItem => ({ type, targetId, name: `${type}${targetId}`, lat: 37.56, lng: 127.04, convertedRent: 500000, grade: null, walkMin: 7, createdAt: 'x', ...o });
+const fav = (type: FavoriteType, targetId: number, o: Partial<FavoriteItem> = {}): FavoriteItem => ({ type, targetId, name: `${type}${targetId}`, lat: 37.5561, lng: 127.0443, convertedRent: 500000, grade: null, walkMin: 7, createdAt: 'x', ...o });
 const routes: Record<string, unknown> = {
   '/dorms': [{ id: 1, name: '제1기숙사', lat: 37.55, lng: 127.04, roomTypes: [{ id: 1, name: '2인실', capacity: 2, semesterFee: 1200000, semesterMonths: 4, mealIncluded: false, monthlyCost: 300000, floorplanId: null }] }],
   '/housing': [{ id: 2, name: '왕십리역 청아진', address: '성동구', lat: 37.56, lng: 127.04, recruiting: false, nextEvent: null, subscribed: false }, { id: 3, name: '라봄성동', address: '성동구', lat: 37.57, lng: 127.04, recruiting: true, nextEvent: null, subscribed: false }],

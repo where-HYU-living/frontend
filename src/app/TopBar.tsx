@@ -8,10 +8,16 @@ import { useNotifications } from './features/more';
 import { unreadCount } from './InboxPanel';
 import { useSearch } from './features/search';
 import { useListingsUi } from './features/listings';
-import { toLocal } from './map/geo';
+import { useKakaoPlaces } from './features/kakaoPlaces';
+import { serviceTargetFor } from '../world/serviceArea';
+import { SITES } from '../world/neighborhood';
+import { useGoToPoint } from './goTo';
 import { AvatarButton } from './avatar/AvatarPicker';
 import { InviteButton } from './InviteButton';
 import type { SearchResult } from '../api/types';
+import { toLatLng } from './map/geo';
+
+const siteLatLng = (s: { x: number; z: number }) => { const [lat, lng] = toLatLng(s.x, s.z); return { lat, lng }; };
 
 export function TopBar() {
   const { tab, panelOpen, selectTab, mapMode, setMapMode, timeOfDay, setTimeOfDay } = useUi();
@@ -21,15 +27,22 @@ export function TopBar() {
   const [q, setQ] = useState('');
   const [focused, setFocused] = useState(false);
 
-  // 데이터가 붙기 전까지 검색은 캠퍼스 랜드마크만 찾는다
+  // 검색: 서버(매물·단지·기숙사·양도·주소) + 카카오맵 장소 검색(한양대 주변). 3D 로 걸어갈 수 있는 곳(캠퍼스·집 주변 12곳) 안의 결과만 이동 가능
+  const typed = q.trim().length >= 2;
   const found = useSearch(q).data ?? [];
+  const goToPoint = useGoToPoint();
+  const areaId = useWorld((s) => s.areaId);
+  const kakaoAll = useKakaoPlaces(q);
+  const kakao = kakaoAll.map((k) => ({ ...k, walkable: serviceTargetFor(k.lat, k.lng, areaId ?? 'campus') != null }));
   const pick = (r: SearchResult) => {
     setFocused(false);
     if (r.type === 'LISTING' && r.id != null) { useListingsUi.getState().select(r.id); useUi.setState({ tab: 'home', panelOpen: true }); }
-    const [x, z] = toLocal(r.lat, r.lng);
-    api?.goToPlace(x, z);
+    goToPoint(r);
   };
-  const suggestions = (api?.landmarks ?? []).filter((l) => !q.trim() || l.name.includes(q.trim()));
+  // 입력 전에는 우리 서비스의 집 주변 12곳, 입력하면 이름이 맞는 캠퍼스 랜드마크도 같이
+  const q1 = q.trim();
+  const sites = SITES.filter((s) => !q1 || s.name.includes(q1) || s.address.includes(q1));
+  const landmarks = q1 ? (api?.landmarks ?? []).filter((l) => l.key !== 'hero' && l.name.includes(q1)) : [];
 
   return (
     <header className="topbar">
@@ -46,17 +59,31 @@ export function TopBar() {
             aria-label="검색"
           />
         </label>
-        {focused && (suggestions.length > 0 || found.length > 0) && (
+        {focused && (sites.length > 0 || landmarks.length > 0 || found.length > 0 || kakao.length > 0) && (
           <ul className="suggest glass" role="listbox" aria-label="검색 결과">
             {found.map((r) => (
               <li key={`${r.type}${r.id ?? r.name}`}>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(r)}>{r.name}{r.address ? ` · ${r.address}` : ''}</button>
               </li>
             ))}
-            {suggestions.map((l) => (
+            {typed && kakao.map((k) => (
+              <li key={`k${k.id}`}>
+                <button type="button" disabled={!k.walkable} onMouseDown={(e) => e.preventDefault()} onClick={() => { if (goToPoint(k)) setFocused(false); }} title={k.walkable ? '3D 로 가기' : '3D 로 걸어볼 수 있는 곳(캠퍼스·집 주변 12곳) 밖이에요'}>
+                  {k.name}{k.address ? ` · ${k.address}` : ''}{k.walkable ? '' : ' (3D 지원 지역 밖)'}
+                </button>
+              </li>
+            ))}
+            {landmarks.map((l) => (
               <li key={l.key}>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { api?.goToLandmark(l.key); setFocused(false); }}>
                   {l.name}
+                </button>
+              </li>
+            ))}
+            {sites.map((s) => (
+              <li key={s.id}>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { goToPoint(siteLatLng(s)); setFocused(false); }}>
+                  {s.name}<span className="ui-suggest-tag">{s.kind === 'housing' ? '청년안심주택' : '매물'}</span>
                 </button>
               </li>
             ))}

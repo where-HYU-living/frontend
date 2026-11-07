@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { visiblePlaces } from '../data/hiddenBuildings';
 import type { Place } from '../campusSearch';
 import { useUi } from '../state/ui';
+import { useGoToPoint } from '../goTo';
 import { useWorld } from '../state/world';
 import { KAKAO_ERRORS, loadKakao } from './loadKakao';
 import { toLatLng, toLocal } from './geo';
@@ -46,6 +47,7 @@ export function KakaoMap() {
   const ref = useRef<HTMLDivElement>(null);
   const api = useWorld((s) => s.api);
   const setMapMode = useUi((s) => s.setMapMode);
+  const goToPoint = useGoToPoint();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState('');
   const [picked, setPicked] = useState<Place | null>(null);
@@ -178,10 +180,9 @@ export function KakaoMap() {
   };
 
   const goListing = (l: ListingSummary) => {
-    const [x, z] = toLocal(l.lat, l.lng);
     useListingsUi.getState().select(l.id);
     useUi.setState({ tab: 'home', panelOpen: true });
-    if (api?.goToPlace(x, z)) setMapMode('3d');
+    if (goToPoint(l)) setMapMode('3d');
     else setMsg('그 집 앞으로는 갈 수 없어요');
   };
 

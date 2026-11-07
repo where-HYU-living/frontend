@@ -9,11 +9,11 @@ import { toLocal } from './map/geo';
 import { ApiError } from '../api/client';
 import type { Dorm } from '../api/types';
 import './dossier/dossier.css';
+import { useGoToPoint } from './goTo';
 import './venue.css';
 
 export function useGoTo() {
-  const api = useWorld((s) => s.api);
-  return (p: { lat: number; lng: number }) => { const [x, z] = toLocal(p.lat, p.lng); return api?.goToPlace(x, z) ?? false; };
+  return useGoToPoint();
 }
 
 export function DormPanel() {

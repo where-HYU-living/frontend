@@ -11,6 +11,7 @@ import { NO_FILTERS, useListings, useListingsUi } from './features/listings';
 import { ListingDetailView } from './ListingDetailView';
 import { Field, UnitInput } from './forms/Field';
 import './forms/forms.css';
+import { useGoToPoint } from './goTo';
 import './venue.css';
 import { DossierCard } from './dossier/DossierCard';
 import { HeartButton } from './HeartButton';
@@ -21,8 +22,7 @@ const GRADES: Grade[] = ['FAIR', 'SLIGHTLY_HIGH', 'HIGH', 'CULPRIT', 'PENDING'];
 
 /** 3D 에서 그 집 근처로 이동 */
 export function useGoToListing() {
-  const api = useWorld((s) => s.api);
-  return (l: Pick<ListingSummary, 'lat' | 'lng'>) => { const [x, z] = toLocal(l.lat, l.lng); return api?.goToPlace(x, z) ?? false; };
+  return useGoToPoint();
 }
 
 type Filters = Parameters<typeof useListings>[0];

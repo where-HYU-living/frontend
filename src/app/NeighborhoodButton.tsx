@@ -27,6 +27,8 @@ export function NeighborhoodHud() {
   const area = useArea((s) => s.area);
   const leave = useArea((s) => s.leave);
   const consumeReturn = useArea((s) => s.consumeReturn);
+  const consumeGoto = useArea((s) => s.consumeGoto);
+  const pendingGoto = useArea((s) => s.pendingGoto);
   const api = useWorld((s) => s.api);
   const areaId = useWorld((s) => s.areaId);
   const enterIndoor = useUi((s) => s.enterIndoor);
@@ -35,10 +37,20 @@ export function NeighborhoodHud() {
   const meta = id ? siteMeta(id) : null;
 
   useEffect(() => {
-    if (!api || id || areaId !== 'campus') return; // 캠퍼스 월드가 실제로 준비된 뒤에만 (바뀌는 중의 옛 api 는 건너뜀)
+    if (!api || id || areaId !== "campus" || useArea.getState().pendingGoto) return; // 캠퍼스 월드가 실제로 준비된 뒤에만 (바뀌는 중의 옛 api 는 건너뜀)
     const p = consumeReturn();
     if (p) api.teleport(p.x, p.z);
   }, [api, id, areaId, consumeReturn]);
+
+  // 검색 결과로 이동: 그 월드가 준비되면 해당 자리로 옮긴다 (이미 그 월드면 바로)
+  useEffect(() => {
+    if (!api || !areaId || !pendingGoto) return;
+    const g = consumeGoto(areaId);
+    if (!g) return;
+    const m = siteMeta(areaId);
+    if (m && Math.hypot(g.x - m.x, g.z - m.z) < 30) return; // 동네에 막 들어갔고 집 근처면 기본 자리(집 앞)에서 시작
+    if (!api.goToPlace(g.x, g.z)) api.teleport(g.x, g.z);
+  }, [api, areaId, pendingGoto, consumeGoto]);
 
   useEffect(() => {
     if (!api || !meta || areaId !== meta.id) return;

@@ -10,9 +10,13 @@ type AreaState = {
   returnPose: Pose | null;
   /** 돌아온 뒤 캠퍼스 월드가 준비되면 옮겨 줄 위치 */
   pendingReturn: Pose | null;
+  /** 월드가 바뀐 뒤(또는 이미 그 월드일 때) 옮겨 줄 위치 — 검색 결과로 이동할 때 쓴다 */
+  pendingGoto: { area: string; x: number; z: number } | null;
   enter: (site: SiteId, from: Pose | null) => void;
   leave: () => void;
   consumeReturn: () => Pose | null;
+  goTo: (area: string, x: number, z: number, from?: Pose | null) => void;
+  consumeGoto: (area: string) => { x: number; z: number } | null;
 };
 
 /** ?area=l6 (디버그·공유용): 해당 동네로 바로 열기 */
@@ -22,10 +26,19 @@ const initialArea = (): Area => {
 };
 
 export const useArea = create<AreaState>((set, get) => ({
-  area: initialArea(), returnPose: null, pendingReturn: null,
+  area: initialArea(), returnPose: null, pendingReturn: null, pendingGoto: null,
   enter: (site, from) => set((s) => ({ area: { site }, returnPose: typeof s.area === 'string' ? from : s.returnPose })),
   leave: () => set((s) => ({ area: 'campus', pendingReturn: s.returnPose, returnPose: null })),
   consumeReturn: () => { const p = get().pendingReturn; if (p) set({ pendingReturn: null }); return p; },
+  /** 'campus' 또는 동네 id 의 (x,z) 로 간다. 다른 월드면 월드를 바꾸고, 도착하면 옮긴다 */
+  goTo: (area, x, z, from = null) => {
+    const cur = siteOf(get().area) ?? 'campus';
+    set({ pendingGoto: { area, x, z } });
+    if (cur === area) return;
+    if (area === 'campus') set({ area: 'campus', pendingReturn: null, returnPose: null });
+    else get().enter(area, from);
+  },
+  consumeGoto: (area) => { const g = get().pendingGoto; if (!g || g.area !== area) return null; set({ pendingGoto: null }); return { x: g.x, z: g.z }; },
 }));
 
 export const siteOf = (a: Area): SiteId | null => (typeof a === 'string' ? null : a.site);

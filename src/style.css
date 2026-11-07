@@ -70,3 +70,6 @@ body { font-family: 'Pretendard', system-ui, -apple-system, sans-serif; color: v
 .w3d-ico svg { width: 13px; height: 13px; }
 .w3d-nick .w3d-ico { margin: 0 0 0 4px; }
 .w3d-nick .w3d-ico svg { width: 16px; height: 16px; background: #fff; border-radius: 50%; padding: 2px; box-sizing: content-box; }
+
+.suggest button:disabled { opacity: .55; cursor: default; }
+.suggest .ui-suggest-tag { margin-left: 8px; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: rgba(14,74,132,.12); color: #0e4a84; }
