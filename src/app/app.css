@@ -21,7 +21,8 @@
 .ui-layer { position: fixed; inset: 0; z-index: 10; pointer-events: none; color: var(--ui-ink); font-size: 14px; line-height: 1.5; }
 .ui-layer > *, .topbar > * { pointer-events: auto; }
 .ui-layer button, .ui-layer input { font: inherit; color: inherit; }
-.ui-layer button { border: 0; background: none; cursor: pointer; }
+/* 버튼 초기화는 :where 로 우선순위 0 — .glass 같은 배경 클래스가 이기게 한다 (예전엔 이 규칙이 .glass 버튼의 배경을 지워서 밤에 안 보였음) */
+:where(.ui-layer) button { border: 0; background: none; cursor: pointer; }
 .ui-layer button:disabled { cursor: default; opacity: 0.55; }
 .ui-layer :focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
 
@@ -46,6 +47,7 @@
 .tabs { display: flex; flex: none; height: 42px; padding: 4px; border-radius: 12px; }
 .tabs button { padding: 0 14px; border-radius: 8px; color: var(--ui-ink-2); font-weight: 500; white-space: nowrap; }
 .tabs button[aria-selected='true'] { background: var(--ui-glass-strong); color: var(--ui-ink); font-weight: 650; box-shadow: 0 1px 3px rgba(22, 32, 46, 0.12); }
+.textbtn, .iconbtn, .reopen { color: var(--ui-ink); }
 .textbtn { flex: none; height: 42px; padding: 0 16px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
 .iconbtn { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; }
 
