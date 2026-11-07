@@ -13,6 +13,9 @@ export const TABS: { id: Tab; label: string }[] = [
 
 type UiState = {
   tab: Tab;
+  /** '3d' = 걸어다니는 화면, '2d' = 카카오 지도 */
+  mapMode: '3d' | '2d';
+  setMapMode: (m: '3d' | '2d') => void;
   panelOpen: boolean;
   /** 탭을 누르면 그 탭 패널을 연다. 이미 열린 같은 탭을 다시 누르면 접는다 */
   selectTab: (tab: Tab) => void;
@@ -22,6 +25,8 @@ type UiState = {
 export const useUi = create<UiState>((set, get) => ({
   tab: 'home',
   panelOpen: false,
+  mapMode: '3d',
+  setMapMode: (mapMode) => set({ mapMode }),
   selectTab: (tab) => {
     const s = get();
     set(s.panelOpen && s.tab === tab ? { panelOpen: false } : { tab, panelOpen: true });

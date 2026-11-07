@@ -91,3 +91,31 @@
   #minimap { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .loading-bar span { transition: none; } }
+
+/* 카카오맵 층: 3D(z0)·미니맵(z5) 위, 메뉴 층(z10) 아래 */
+.ui-map { position: fixed; inset: 0; z-index: 6; background: #e8eef3; color: var(--ui-ink); }
+.ui-map-canvas { position: absolute; inset: 0; }
+.ui-map-note { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; padding: 12px 18px; max-width: 80%; text-align: center; border-radius: 12px; background: var(--ui-glass-strong); }
+.ui-map-card { position: absolute; z-index: 2; left: 50%; bottom: 28px; transform: translateX(-50%); width: min(340px, calc(100% - 32px)); padding: 14px 16px; border-radius: 14px; background: #fff; box-shadow: 0 8px 28px rgba(22, 32, 46, .22); }
+.ui-map-card-title { font-size: 16px; font-weight: 700; }
+.ui-map-card-no { margin-right: 8px; font-size: 13px; font-weight: 600; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+.ui-map-card-msg { margin: 6px 0 0; font-size: 13px; color: #b3412b; }
+.ui-map-card-actions { display: flex; gap: 8px; margin-top: 12px; }
+.ui-map-card-actions button { height: 38px; padding: 0 14px; border: 0; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
+.ui-map-go { flex: 1; background: #0e4a84; color: #fff; }
+.ui-map-close { background: var(--ui-hair); color: var(--ui-ink); }
+.ui-map :focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
+
+/* 지도 핀: 물방울 모양 (끝이 건물 위치). 확대(.ui-map-names)하면 위에 건물 이름 말풍선 */
+.ui-map-pin { --pin: #0e4a84; position: relative; display: block; width: 24px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; }
+.ui-map-pin--dorm { --pin: #d96f12; }
+.ui-map-pin-head { position: absolute; left: 2px; top: 0; width: 20px; height: 20px; box-sizing: border-box; border: 2px solid #fff; border-radius: 50% 50% 50% 0; background: var(--pin); transform: translateY(2px) rotate(-45deg); transform-origin: 50% 50%; box-shadow: 0 2px 5px rgba(22, 32, 46, .35); transition: transform .12s ease; }
+.ui-map-pin-head::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; }
+.ui-map-pin:hover .ui-map-pin-head { transform: translateY(0) rotate(-45deg) scale(1.15); }
+.ui-map-pin-name { display: none; position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 2px; padding: 4px 9px; border-radius: 12px; background: #fff; color: var(--ui-ink); font: 600 12px/16px inherit; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 5px rgba(22, 32, 46, .3); pointer-events: none; }
+.ui-map-names .ui-map-pin:not(.is-name-hidden) .ui-map-pin-name { display: block; }
+.ui-map-pin.is-picked .ui-map-pin-head { transform: translateY(-2px) rotate(-45deg) scale(1.35); }
+.ui-map-pin.is-picked .ui-map-pin-name { display: block; background: var(--pin); color: #fff; margin-bottom: 8px; }
+.ui-map-me { width: 16px; height: 16px; border-radius: 50%; background: #2fa66a; border: 3px solid #fff; box-shadow: 0 0 0 0 rgba(47, 166, 106, .5); animation: ui-map-pulse 1.8s ease-out infinite; }
+@keyframes ui-map-pulse { to { box-shadow: 0 0 0 14px rgba(47, 166, 106, 0); } }
+@media (prefers-reduced-motion: reduce) { .ui-map-me { animation: none; } .ui-map-pin-head { transition: none; } }

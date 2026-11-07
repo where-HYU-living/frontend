@@ -8,6 +8,7 @@ import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { detectQuality, type Quality } from '../quality';
 import { useWorld } from '../app/state/world';
+import { useUi } from '../app/state/ui';
 import { buildWorld, type BuiltWorld } from './buildWorld.js';
 import { handleContextLost } from './contextLoss';
 
@@ -88,13 +89,14 @@ function Post({ Q }: { Q: Quality }) {
 /** 3D 층. 장면이 준비되면 WorldApi 를 useWorld 에 채운다. */
 export function WorldCanvas() {
   const Q = useMemo(detectQuality, []);
+  const mapMode = useUi((s) => s.mapMode); // 지도를 보는 동안은 3D 를 그리지 않는다 (GPU 절약)
   return (
     <Canvas
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       dpr={[1, Q.pixelRatio]}
       shadows={{ type: THREE.PCFSoftShadowMap }}
       camera={{ fov: 55, near: 0.3, far: 3000 }}
-      frameloop="always"
+      frameloop={mapMode === '2d' ? 'never' : 'always'}
       onCreated={({ gl }) => {
         gl.outputColorSpace = THREE.SRGBColorSpace;
         gl.toneMapping = THREE.ACESFilmicToneMapping;

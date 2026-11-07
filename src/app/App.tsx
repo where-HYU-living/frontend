@@ -2,6 +2,8 @@ import { WorldLayer } from './WorldLayer';
 import { TopBar } from './TopBar';
 import { SidePanel } from './SidePanel';
 import { useWorld } from './state/world';
+import { useUi } from './state/ui';
+import { KakaoMap } from './map/KakaoMap';
 
 function Loading() {
   const { status, progress, error } = useWorld();
@@ -18,12 +20,14 @@ function Loading() {
 }
 
 export function App() {
+  const mapMode = useUi((s) => s.mapMode);
   return (
     <>
       <WorldLayer />
+      {mapMode === '2d' && <KakaoMap />}
       <div className="ui-layer">
         <TopBar />
-        <SidePanel />
+        {mapMode === '3d' && <SidePanel />}
       </div>
       <Loading />
     </>

@@ -4,37 +4,53 @@ import * as THREE from 'three';
 function makeStudent() {
   const g = new THREE.Group();
   const skin = new THREE.MeshStandardMaterial({ color: 0xf2c9a5, roughness: 0.7 });
-  const jacket = new THREE.MeshStandardMaterial({ color: 0x0e4a84, roughness: 0.75 });
+  const jacket = new THREE.MeshStandardMaterial({ color: 0x141f3c, roughness: 0.85 });
   const sleeve = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.8 });
-  const pants = new THREE.MeshStandardMaterial({ color: 0x2d2f36, roughness: 0.85 });
+  const pants = new THREE.MeshStandardMaterial({ color: 0x3b64a0, roughness: 0.9 }); // 청바지
   const hair = new THREE.MeshStandardMaterial({ color: 0x2a1d16, roughness: 0.6 });
   const shoe = new THREE.MeshStandardMaterial({ color: 0xf5f5f0, roughness: 0.6 });
-  const bag = new THREE.MeshStandardMaterial({ color: 0xc98a3c, roughness: 0.8 });
 
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.32, 6, 14), jacket);
   torso.position.y = 0.92;
-  // 등판 HYU 글자
-  const c = document.createElement('canvas'); c.width = 256; c.height = 128;
-  const cg = c.getContext('2d'); cg.fillStyle = '#f3efe6'; cg.font = 'bold 80px Pretendard, sans-serif'; cg.textAlign = 'center'; cg.textBaseline = 'middle'; cg.fillText('HYU', 128, 68);
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  const letters = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.17), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.8 }));
-  letters.position.set(0, 1.0, -0.28); letters.rotation.y = Math.PI;
+  // 등판: 아치형 HANYANG / UNIV. / 사자 / Since 1939
+  const W = 512, H = 435;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const cg = c.getContext('2d'); cg.fillStyle = '#f3efe6'; cg.strokeStyle = '#f3efe6'; cg.textAlign = 'center'; cg.textBaseline = 'middle';
+  cg.font = '900 74px Pretendard, Arial Black, sans-serif';
+  const word = 'HANYANG', R = 250, span = 1.5, cx = W / 2, cy = 300;
+  for (let i = 0; i < word.length; i++) {
+    const a = -span / 2 + (span * (i + 0.5)) / word.length;
+    cg.save(); cg.translate(cx + Math.sin(a) * R, cy - Math.cos(a) * R); cg.rotate(a); cg.fillText(word[i], 0, 0); cg.restore();
+  }
+  cg.font = '900 64px Pretendard, Arial Black, sans-serif'; cg.fillText('UNIV.', cx, 112);
+  // 사자 머리 (단순화)
+  cg.lineWidth = 5; cg.beginPath(); cg.arc(cx, 235, 52, 0, Math.PI * 2); cg.stroke();
+  cg.lineWidth = 3; for (let k = 0; k < 14; k++) { const t = (k / 14) * Math.PI * 2; cg.beginPath(); cg.moveTo(cx + Math.cos(t) * 52, 235 + Math.sin(t) * 52); cg.lineTo(cx + Math.cos(t) * 70, 235 + Math.sin(t) * 70); cg.stroke(); }
+  cg.beginPath(); cg.arc(cx - 18, 228, 6, 0, Math.PI * 2); cg.arc(cx + 18, 228, 6, 0, Math.PI * 2); cg.fill();
+  cg.beginPath(); cg.moveTo(cx - 10, 250); cg.lineTo(cx + 10, 250); cg.lineTo(cx, 262); cg.closePath(); cg.fill();
+  cg.font = 'italic 34px Georgia, serif'; cg.fillText('Since 1939', cx, 340);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const arc = 0.42 / 0.272;
+  const letters = new THREE.Mesh(new THREE.CylinderGeometry(0.273, 0.273, 0.36, 24, 1, true, Math.PI - arc / 2, arc), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.85, side: THREE.FrontSide }));
+  letters.position.y = 0.96;
+  // 흰 줄 들어간 리브 (목깃·밑단)
+  const rib = (r, y) => { const g2 = new THREE.Group(); const t = new THREE.Mesh(new THREE.TorusGeometry(r, 0.03, 8, 24), jacket); t.rotation.x = Math.PI / 2; const w = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 6, 24), sleeve); w.rotation.x = Math.PI / 2; w.position.y = 0.0; w.scale.set(1.02, 1.02, 1); g2.add(t, w); g2.position.y = y; return g2; };
+  const collar = rib(0.2, 1.3), hem = rib(0.215, 0.66);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 24, 18), skin);
   head.position.y = 1.55;
   const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.36, 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
   hairCap.position.y = 1.58; hairCap.rotation.x = -0.25;
   const eyes = [-1, 1].map((s) => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshStandardMaterial({ color: 0x1b1410 })); e.position.set(0.11 * s, 1.55, 0.31); return e; });
-  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.18), bag);
-  pack.position.set(0, 0.98, -0.32);
 
   const limb = (r, len, mat) => { const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), mat); m.position.y = -len / 2 - r * 0.5; const pivot = new THREE.Group(); pivot.add(m); return pivot; };
   const armL = limb(0.085, 0.36, sleeve), armR = limb(0.085, 0.36, sleeve);
   armL.position.set(-0.33, 1.18, 0); armR.position.set(0.33, 1.18, 0);
+  const cuffMat = jacket; for (const a of [armL, armR]) { const cf = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.07, 12), cuffMat); cf.position.y = -0.4; a.add(cf); }
   const legL = limb(0.1, 0.34, pants), legR = limb(0.1, 0.34, pants);
   legL.position.set(-0.13, 0.62, 0); legR.position.set(0.13, 0.62, 0);
   for (const l of [legL, legR]) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.09, 0.26), shoe); s.position.set(0, -0.6, 0.04); l.add(s); }
-  g.add(torso, letters, head, hairCap, ...eyes, pack, armL, armR, legL, legR);
+  g.add(torso, letters, collar, hem, head, hairCap, ...eyes, armL, armR, legL, legR);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   g.userData = { armL, armR, legL, legR, head };
   return g;
