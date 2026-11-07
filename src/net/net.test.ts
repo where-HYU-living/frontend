@@ -136,3 +136,28 @@ test('내가 보낸 chat/emote 는 self 에 기록된다 (남의 목록에는 �
   expect(m.self?.emote?.e).toBe('wave');
   expect(Object.keys(m.players)).toEqual(['a']);
 });
+
+test('끊김(drop) 뒤 자동 재접속, close() 뒤에는 재접속하지 않음 (3-5)', () => {
+  const status: string[] = [];
+  const c = connectWorld({ url: 'x', getPose: () => ({ p: [0, 0, 0], r: 0, a: 'idle' }), onMessage: () => {}, onStatus: (s) => status.push(s), make: () => new Fake() });
+  Fake.all[0].open();
+  c.drop();
+  vi.advanceTimersByTime(1000);
+  expect(Fake.all).toHaveLength(2);
+  Fake.all[1].open();
+  expect(status.slice(-1)[0]).toBe('open');
+  c.close();
+  vi.advanceTimersByTime(20000);
+  expect(Fake.all).toHaveLength(2);
+});
+
+test('월드 전환 중(getPose 가 같은 값)에는 move 를 보내지 않는다 (3-5)', () => {
+  let x = 0;
+  const s = new Fake();
+  connectWorld({ url: 'x', getPose: () => ({ p: [x, 0, 0], r: 0, a: 'idle' }), onMessage: () => {}, make: () => s });
+  s.open();
+  vi.advanceTimersByTime(100); x = 400; // 동네로 넘어가 새 자리
+  vi.advanceTimersByTime(500);          // 바꾸는 동안 같은 값
+  const moves = s.sent.filter((m) => m.includes('"move"')).map((m) => JSON.parse(m).p[0]);
+  expect(moves).toEqual([0, 400]);
+});

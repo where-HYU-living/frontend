@@ -13,6 +13,8 @@ export type WorldConnection = {
   /** 내 캐릭터 꾸미기를 알린다 (접속 직후에도 자동으로 한 번 보낸다) */
   sendLook(look: unknown): void;
   close(): void;
+  /** 연결만 끊어 본다 (자동 재접속 확인용 — 점검 스크립트) */
+  drop(): void;
 };
 
 type Opts = {
@@ -71,5 +73,6 @@ export function connectWorld(o: Opts): WorldConnection {
     sendLook: (look) => send({ t: 'look', look }),
     sendChat: (m) => send({ t: 'chat', m: m.slice(0, 40) }),
     close: () => { closed = true; stop(); clearTimeout(retry); sock?.close(); },
+    drop: () => { sock?.close(); },
   };
 }
