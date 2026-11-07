@@ -55,10 +55,9 @@ export function AvatarPicker({ look, onChange, deptName }: { look: Appearance; o
   );
 }
 
-/** 상단바 버튼 + 팝오버. 저장된 외형은 월드가 준비되면 자동으로 적용 */
-export function AvatarButton() {
+/** 저장된 외형을 월드가 준비되면 적용하고, 바꾸면 저장·공유한다 (상단바 '⋯' 메뉴가 쓴다) */
+export function useAvatarState() {
   const api = useWorld((s) => s.api);
-  const [open, setOpen] = useState(false);
   const [look, setLook] = useState<Appearance>(() => loadAppearance());
   const profile = useProfile().data;
   const deps = useDepartments().data;
@@ -66,7 +65,13 @@ export function AvatarButton() {
 
   useEffect(() => { api?.setAppearance?.(look); }, [api, look]);
   const change = (a: Appearance) => { setLook(a); saveAppearance(a); useAvatarLook.setState({ look: a }); };
+  return { look, change, deptName };
+}
 
+/** 단독 버튼 + 팝오버 (예전 상단바 방식, 다른 화면에서 재사용) */
+export function AvatarButton() {
+  const [open, setOpen] = useState(false);
+  const { look, change, deptName } = useAvatarState();
   return (
     <div className="ui-avatar-wrap">
       <button className="iconbtn glass" type="button" aria-label="캐릭터 꾸미기" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
