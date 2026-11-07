@@ -1,6 +1,5 @@
 import { beforeAll, expect, test } from 'vitest';
 import * as THREE from 'three';
-// @ts-expect-error JS module
 import { Player } from './player.js';
 
 beforeAll(() => {
