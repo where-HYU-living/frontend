@@ -46,7 +46,7 @@ export async function makeLion(p, heightAt) {
   g.add(lion);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   g.position.set(p[0], y0 - 0.05, p[1]);
-  g.rotation.y = Math.PI / 2; // 남쪽(역 방향)을 바라봄
+  g.rotation.y = -Math.PI / 2; // 남쪽(+z, 역 방향)을 바라봄 (사자 앞쪽이 로컬 +x)
   return g;
 }
 

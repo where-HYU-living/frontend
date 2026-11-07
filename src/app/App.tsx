@@ -11,7 +11,7 @@ function Loading() {
   return (
     <div className="loading" role="status">
       <div className="loading-card glass">
-        <div className="loading-title">찾았다</div>
+        <div className="loading-title">어디서사냥</div>
         <div className="loading-sub">{status === 'error' ? `불러오지 못했어요: ${error}` : '한양대 서울캠퍼스를 불러오는 중'}</div>
         {status !== 'error' && <div className="loading-bar"><span style={{ width: `${Math.round(progress * 100)}%` }} /></div>}
       </div>

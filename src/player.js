@@ -11,31 +11,39 @@ function makeStudent() {
   const shoe = new THREE.MeshStandardMaterial({ color: 0xf5f5f0, roughness: 0.6 });
 
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.32, 6, 14), jacket);
-  torso.position.y = 0.92;
+  torso.position.y = 0.92; torso.scale.set(1.12, 1, 1.0);
   // 등판: 아치형 HANYANG / UNIV. / 사자 / Since 1939
-  const W = 512, H = 435;
+  const W = 512, H = 512;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const cg = c.getContext('2d'); cg.fillStyle = '#f3efe6'; cg.strokeStyle = '#f3efe6'; cg.textAlign = 'center'; cg.textBaseline = 'middle';
-  cg.font = '900 74px Pretendard, Arial Black, sans-serif';
-  const word = 'HANYANG', R = 250, span = 1.5, cx = W / 2, cy = 300;
+  cg.font = '900 96px Pretendard, Arial Black, sans-serif';
+  const word = 'HANYANG', R = 290, span = 1.75, cx = W / 2, cy = 345;
   for (let i = 0; i < word.length; i++) {
     const a = -span / 2 + (span * (i + 0.5)) / word.length;
     cg.save(); cg.translate(cx + Math.sin(a) * R, cy - Math.cos(a) * R); cg.rotate(a); cg.fillText(word[i], 0, 0); cg.restore();
   }
-  cg.font = '900 64px Pretendard, Arial Black, sans-serif'; cg.fillText('UNIV.', cx, 112);
-  // 사자 머리 (단순화)
-  cg.lineWidth = 5; cg.beginPath(); cg.arc(cx, 235, 52, 0, Math.PI * 2); cg.stroke();
-  cg.lineWidth = 3; for (let k = 0; k < 14; k++) { const t = (k / 14) * Math.PI * 2; cg.beginPath(); cg.moveTo(cx + Math.cos(t) * 52, 235 + Math.sin(t) * 52); cg.lineTo(cx + Math.cos(t) * 70, 235 + Math.sin(t) * 70); cg.stroke(); }
-  cg.beginPath(); cg.arc(cx - 18, 228, 6, 0, Math.PI * 2); cg.arc(cx + 18, 228, 6, 0, Math.PI * 2); cg.fill();
-  cg.beginPath(); cg.moveTo(cx - 10, 250); cg.lineTo(cx + 10, 250); cg.lineTo(cx, 262); cg.closePath(); cg.fill();
-  cg.font = 'italic 34px Georgia, serif'; cg.fillText('Since 1939', cx, 340);
+  cg.font = '900 88px Pretendard, Arial Black, sans-serif'; cg.fillText('UNIV.', cx, 170);
+  // 사자: 참고 이미지(public/tex/lion-patch.png)를 불러와 등판에 합성
+  const lionImg = new Image();
+  lionImg.onload = () => { cg.drawImage(lionImg, cx - 105, 218, 210, 186); tex.needsUpdate = true; };
+  lionImg.src = `${import.meta.env.BASE_URL}tex/lion-patch.png`;
+  cg.font = 'italic 44px Georgia, serif'; cg.fillText('Since 1939', cx, 458);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-  const arc = 0.42 / 0.272;
-  const letters = new THREE.Mesh(new THREE.CylinderGeometry(0.273, 0.273, 0.36, 24, 1, true, Math.PI - arc / 2, arc), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.85, side: THREE.FrontSide }));
-  letters.position.y = 0.96;
+  const arc = 0.56 / 0.272;
+  const letters = new THREE.Mesh(new THREE.CylinderGeometry(0.273, 0.273, 0.54, 24, 1, true, Math.PI - arc / 2, arc), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.85, side: THREE.FrontSide }));
+  letters.position.y = 0.95; letters.scale.set(1.12, 1, 1);
   // 흰 줄 들어간 리브 (목깃·밑단)
   const rib = (r, y) => { const g2 = new THREE.Group(); const t = new THREE.Mesh(new THREE.TorusGeometry(r, 0.03, 8, 24), jacket); t.rotation.x = Math.PI / 2; const w = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 6, 24), sleeve); w.rotation.x = Math.PI / 2; w.position.y = 0.0; w.scale.set(1.02, 1.02, 1); g2.add(t, w); g2.position.y = y; return g2; };
-  const collar = rib(0.2, 1.3), hem = rib(0.215, 0.66);
+  // 앞판: 왼가슴 H 패치 + 단추
+  const hc = document.createElement('canvas'); hc.width = 128; hc.height = 128;
+  const hg = hc.getContext('2d'); hg.fillStyle = '#f3efe6'; hg.fillRect(8, 8, 112, 112); hg.fillStyle = '#141f3c'; hg.font = '900 100px Pretendard, Arial Black, sans-serif'; hg.textAlign = 'center'; hg.textBaseline = 'middle'; hg.fillText('H', 64, 70);
+  const htex = new THREE.CanvasTexture(hc); htex.colorSpace = THREE.SRGBColorSpace;
+  const harc = 0.13 / 0.272;
+  const hPatch = new THREE.Mesh(new THREE.CylinderGeometry(0.274, 0.274, 0.13, 12, 1, true, -harc / 2, harc), new THREE.MeshStandardMaterial({ map: htex, roughness: 0.85 }));
+  hPatch.position.y = 1.08; hPatch.rotation.y = 0.5; hPatch.scale.set(1.12, 1, 1);
+  const btnMat = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.5 });
+  const buttons = [1.14, 1.0, 0.86, 0.72].map((y) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), btnMat); b.position.set(0, y, 0.272 * 1.0 + 0.004); return b; });
+  const collar = rib(0.21, 1.3), hem = rib(0.235, 0.66);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 24, 18), skin);
   head.position.y = 1.55;
@@ -44,13 +52,18 @@ function makeStudent() {
   const eyes = [-1, 1].map((s) => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshStandardMaterial({ color: 0x1b1410 })); e.position.set(0.11 * s, 1.55, 0.31); return e; });
 
   const limb = (r, len, mat) => { const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), mat); m.position.y = -len / 2 - r * 0.5; const pivot = new THREE.Group(); pivot.add(m); return pivot; };
-  const armL = limb(0.085, 0.36, sleeve), armR = limb(0.085, 0.36, sleeve);
-  armL.position.set(-0.33, 1.18, 0); armR.position.set(0.33, 1.18, 0);
-  const cuffMat = jacket; for (const a of [armL, armR]) { const cf = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.07, 12), cuffMat); cf.position.y = -0.4; a.add(cf); }
-  const legL = limb(0.1, 0.34, pants), legR = limb(0.1, 0.34, pants);
+  const armL = limb(0.105, 0.36, sleeve), armR = limb(0.105, 0.36, sleeve);
+  armL.position.set(-0.36, 1.18, 0); armR.position.set(0.36, 1.18, 0);
+  const cuffMat = jacket; for (const a of [armL, armR]) { const cf = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, 12), cuffMat); cf.position.y = -0.4; a.add(cf); }
+  const legL = limb(0.1, 0.38, pants), legR = limb(0.1, 0.38, pants);
   legL.position.set(-0.13, 0.62, 0); legR.position.set(0.13, 0.62, 0);
-  for (const l of [legL, legR]) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.09, 0.26), shoe); s.position.set(0, -0.6, 0.04); l.add(s); }
-  g.add(torso, letters, collar, hem, head, hairCap, ...eyes, armL, armR, legL, legR);
+  const sole = new THREE.MeshStandardMaterial({ color: 0xd8d6cf, roughness: 0.8 });
+  for (const l of [legL, legR]) {
+    const s = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), shoe); s.scale.set(0.115, 0.075, 0.18); s.position.set(0, -0.545, 0.06);
+    const so = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.03, 0.34), sole); so.position.set(0, -0.605, 0.06);
+    l.add(s, so);
+  }
+  g.add(torso, letters, hPatch, ...buttons, collar, hem, head, hairCap, ...eyes, armL, armR, legL, legR);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   g.userData = { armL, armR, legL, legR, head };
   return g;
