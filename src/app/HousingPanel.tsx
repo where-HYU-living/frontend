@@ -12,6 +12,8 @@ import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
 import { NeighborhoodButton } from './NeighborhoodButton';
 import type { Housing } from '../api/types';
+import { useMyHome } from './features/more';
+import { convertedRentWon } from './forms/calc';
 import './dossier/dossier.css';
 import './venue.css';
 
@@ -20,9 +22,17 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   const sub = useSubscribe(id);
   const enter = useUi((s) => s.enterIndoor);
   const requireLogin = useSession((s) => s.requireLogin);
+  const home = useMyHome().data;
   if (q.isLoading) return <p className="empty">불러오는 중…</p>;
   if (!q.data) return <div><BackButton onClick={onBack} /><p className="empty">단지 정보를 불러오지 못했어요.</p></div>;
   const h = q.data;
+  // I19: 내 집(등록돼 있으면) 대비 월·2년 차이. 양수면 이 단지가 더 쌈
+  const mine = home ? convertedRentWon(home.deposit, home.rent, home.mgmtFee) : null;
+  const vsMine = (conv: number) => {
+    if (mine == null) return null;
+    const d = mine - conv;
+    return d === 0 ? '내 집과 같아요' : `내 집보다 월 ${manwon(Math.abs(d))} ${d > 0 ? '싸요' : '비싸요'} (2년 ${manwon(Math.abs(d) * 24)})`;
+  };
   return (
     <div className="ui-detail">
       <BackButton onClick={onBack} />
@@ -41,7 +51,7 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
       <ul className="ui-v-units">
         {h.unitTypes.map((u) => (
           <UnitCard key={u.id} name={u.name} chip={`${u.exclusiveAreaM2}㎡`} priceLabel="환산 월세" price={manwon(u.convertedRent)}
-            facts={[{ label: '보증금', value: manwon(u.deposit) }, { label: '월세', value: manwon(u.rent) }, { label: '관리비', value: u.mgmtFee != null ? manwon(u.mgmtFee) : '-' }]}
+            facts={[{ label: '보증금', value: manwon(u.deposit) }, { label: '월세', value: manwon(u.rent) }, { label: '관리비', value: u.mgmtFee != null ? manwon(u.mgmtFee) : '-' }, ...(vsMine(u.convertedRent) ? [{ label: '내 집 대비', value: vsMine(u.convertedRent)! }] : [])]}
             floorplanId={u.floorplanId} onEnter={() => enter(u.floorplanId!, `${h.name} ${u.name}`)} />
         ))}
         {h.unitTypes.length === 0 && <li className="ui-card-sub">주택형 정보가 아직 없어요.</li>}
