@@ -1,21 +1,25 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useWorld } from './state/world';
 import { visiblePlaces } from './data/hiddenBuildings';
 import { filterPlaces, groupPlaces, type Place } from './campusSearch';
-import { useWorld } from './state/world';
+import { useGoToCampus } from './goTo';
 import './dossier/dossier.css';
 
 const ALL = visiblePlaces;
 
 /** 캠퍼스 투어: 건물 이름(또는 번호)으로 찾아서 누르면 3D에서 그 건물 앞으로 이동 */
 export function CampusTourPanel() {
-  const api = useWorld((s) => s.api);
+  const goToCampus = useGoToCampus();
   const [q, setQ] = useState('');
   const [msg, setMsg] = useState('');
+  const areaId = useWorld((s) => s.areaId);
+  useEffect(() => setMsg(''), [areaId]); // 캠퍼스에 도착하면 '이동하는 중' 안내를 지운다
   const groups = useMemo(() => groupPlaces(filterPlaces(ALL, q)), [q]);
 
   const go = (p: Place) => {
-    if (!p.center || !api) return;
-    setMsg(api.goToPlace(p.center[0], p.center[1]) ? '' : `${p.name} 앞으로는 갈 수 없어요`);
+    if (!p.center) return;
+    const r = goToCampus(p.center[0], p.center[1]);
+    setMsg(r === 'switching' ? '캠퍼스로 이동하는 중…' : r ? '' : `${p.name} 앞으로는 갈 수 없어요`);
   };
 
   return (

@@ -15,6 +15,7 @@ import { Player } from '../player.js';
 import { makeCrowdStudent, lookKey } from './crowdStudent.js';
 import { lightAt, starsAt } from './timeOfDay';
 import { makeExtras } from './worldExtras.js';
+import { pickLabels } from './labelCull';
 
 // 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: R3F WorldCanvas).
 // 반환값의 frame(dt) 를 매 프레임 부르면 플레이어·태양·LOD·미니맵이 갱신된다.
@@ -210,6 +211,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   // 말풍선 (React 가 setMarkers 로 그룹별 목록을 넘김: 매물/기숙사/단지 …). 클릭하면 onClick, 멀면 숨김
   const markerGroups = new Map();
   const MARKER_NEAR = 60; // 플레이어에서 수평 거리 (m). 이보다 멀면 말풍선을 숨긴다
+  const GROUP_PRIO = { home: 3, mybuilding: 3, gate: 2 }; // 겹치면 먼저 자리를 차지하는 그룹 (랜드마크 이름표는 1, 나머지 0)
   const setMarkers = (items, group = 'listing') => {
     for (const o of markerGroups.get(group) || []) { scene.remove(o); o.element.remove(); }
     const objs = [];
@@ -420,8 +422,31 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     mg.restore();
   };
 
+  // 이름표·말풍선 거르기: 가까운 것만(거리) · 최대 개수 · 화면 겹침 (src/world/labelCull.ts).
+  // CSS2DRenderer 가 매 프레임 style.display 를 덮어쓰므로 반드시 object.visible 로 숨긴다 (예전 display 방식은 R3F 이식 뒤 무효였음)
+  const cullV = new THREE.Vector3();
+  const cullLabels = (ppx, ppz) => {
+    const W = domElement.clientWidth || innerWidth, H = domElement.clientHeight || innerHeight;
+    const objs = [], cands = [];
+    const add = (o, near, prio) => {
+      const d = Math.hypot(o.position.x - ppx, o.position.z - ppz);
+      let sx = null, sy = null;
+      if (d <= near) {
+        cullV.copy(o.position).project(camera);
+        if (cullV.z >= -1 && cullV.z <= 1) { sx = (cullV.x + 1) / 2 * W; sy = (1 - cullV.y) / 2 * H; }
+      }
+      const el = o.element;
+      if (el.offsetWidth) { o.userData.w = el.offsetWidth; o.userData.h = el.offsetHeight; } // 숨기면 0 이 되므로 보일 때 크기를 기억
+      objs.push(o); cands.push({ d, near, sx, sy, w: o.userData.w || 90, h: o.userData.h || 28, prio });
+    };
+    for (const l of labels) add(l, LABEL_NEAR, 1);
+    for (const [g, list] of markerGroups) for (const o of list) add(o, MARKER_NEAR, GROUP_PRIO[g] ?? 0);
+    const show = pickLabels(cands, { w: W, h: H });
+    for (let i = 0; i < objs.length; i++) if (objs[i].visible !== show[i]) objs[i].visible = show[i];
+  };
+
   progress(1, 'labels+player');
-  let mmTick = 0, lodTick = 1;
+  let mmTick = 0, lodTick = 1, cullTick = 1;
   const frame = (dt) => {
     player.update(dt);
     extras.frame(dt);
@@ -429,8 +454,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     sun.position.copy(player.pos).addScaledVector(sunDir, 160);
     sun.target.position.copy(player.pos);
     const ppx = player.pos.x, ppz = player.pos.z;
-    for (const l of labels) l.element.style.display = Math.hypot(l.position.x - ppx, l.position.z - ppz) < LABEL_NEAR ? '' : 'none';
-    for (const objs of markerGroups.values()) for (const o of objs) o.element.style.display = Math.hypot(o.position.x - ppx, o.position.z - ppz) < MARKER_NEAR ? '' : 'none';
+    if ((cullTick += dt) > 0.1) { cullTick = 0; cullLabels(ppx, ppz); }
     if ((lodTick += dt) > 0.25) { lodTick = 0; trees.update(camera.position); }
     if ((mmTick += dt) > 0.1) { mmTick = 0; drawMinimap(); }
   };

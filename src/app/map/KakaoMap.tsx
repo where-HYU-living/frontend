@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { visiblePlaces } from '../data/hiddenBuildings';
 import type { Place } from '../campusSearch';
 import { useUi } from '../state/ui';
-import { useGoToPoint } from '../goTo';
+import { useGoToCampus, useGoToPoint } from '../goTo';
 import { useWorld } from '../state/world';
 import { KAKAO_ERRORS, loadKakao } from './loadKakao';
 import { toLatLng, toLocal } from './geo';
@@ -48,6 +48,7 @@ export function KakaoMap() {
   const api = useWorld((s) => s.api);
   const setMapMode = useUi((s) => s.setMapMode);
   const goToPoint = useGoToPoint();
+  const goToCampus = useGoToCampus();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState('');
   const [picked, setPicked] = useState<Place | null>(null);
@@ -174,8 +175,8 @@ export function KakaoMap() {
   }, [picked, status]);
 
   const go = (p: Place) => {
-    if (!api || !p.center) return;
-    if (api.goToPlace(p.center[0], p.center[1])) setMapMode('3d');
+    if (!p.center) return;
+    if (goToCampus(p.center[0], p.center[1])) setMapMode('3d');
     else setMsg(`${p.name} 앞으로는 갈 수 없어요`);
   };
 

@@ -20,4 +20,18 @@ export function useGoToPoint() {
     return true;
   };
 }
+
+/**
+ * 캠퍼스 3D 좌표(x,z)로 이동 (캠퍼스 투어·지도의 캠퍼스 건물 핀). 지금 동네 월드에 있으면 캠퍼스 월드로 바꾼 뒤 도착하면 옮긴다.
+ * 동네 월드의 api.goToPlace 에 캠퍼스 좌표를 넘기면 그 조각 안에서 빈자리를 못 찾아 아무 일도 안 일어났다(3-1 B).
+ * @returns 바로 옮겼으면 true, 월드를 바꾸는 중이면 'switching', 갈 수 없으면 false
+ */
+export function useGoToCampus() {
+  const api = useWorld((s) => s.api);
+  const areaId = useWorld((s) => s.areaId);
+  return (x: number, z: number): boolean | 'switching' => {
+    if ((areaId ?? 'campus') !== 'campus') { useArea.getState().goTo('campus', x, z); return 'switching'; }
+    return api?.goToPlace(x, z) ?? false;
+  };
+}
 export { siteOf };
