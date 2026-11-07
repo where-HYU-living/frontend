@@ -4,9 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>어디서사냥 · 한양대</title>
+    <meta name="description" content="어디서사냥은 한양대 신입생이 3D 동네를 걸으며 기숙사·청년안심주택·자취방을 확인하고 적정 월세와 비교해 볼 수 있는 첫 집 찾기 서비스입니다." />
+    <style>
+      /* 정적 푸터: JS 없이도 보이고(검색·인증 크롤러), 앱 위에서는 작은 글씨로만 */
+      #legal { position: fixed; left: 0; right: 0; bottom: 4px; z-index: 3; text-align: center; font: 11px/1.4 system-ui, 'Apple SD Gothic Neo', sans-serif; color: rgba(255, 255, 255, .85); text-shadow: 0 1px 2px rgba(0, 0, 0, .6); pointer-events: none; padding: 0 8px; }
+      #legal a { color: inherit; text-decoration: underline; pointer-events: auto; }
+      @media (max-width: 760px) { #legal span { display: none; } }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <footer id="legal"><span>어디서사냥 · 한양대 신입생을 위한 3D 첫 집 찾기 서비스 · </span><a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">서비스 약관</a></footer>
     <script type="module" src="/src/app/main.tsx"></script>
   </body>
 </html>
