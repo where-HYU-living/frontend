@@ -50,7 +50,7 @@ export function AvatarPicker({ look, onChange, deptName }: { look: Appearance; o
         {mineId != null && <button type="button" onClick={() => pickJacket(mineId)}>내 학과 잠바 입기</button>}
         <button type="button" onClick={() => onChange({ ...DEFAULT_APPEARANCE })}>기본으로</button>
       </div>
-      <p className="ui-avatar-note">내 화면의 내 캐릭터에만 보여요. 다른 접속자에게는 아직 보이지 않아요.</p>
+      <p className="ui-avatar-note">같은 월드에 있는 다른 접속자에게도 바로 보여요.</p>
     </div>
   );
 }

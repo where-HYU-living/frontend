@@ -38,12 +38,13 @@ export function ListingsPanel() {
 
   const set = (patch: Partial<typeof filters>) => setFilters({ ...filters, ...patch });
   const toggle = (g: Grade) => set({ grades: filters.grades.includes(g) ? filters.grades.filter((x) => x !== g) : [...filters.grades, g] });
-  const dirty = filters.maxRentMan !== '' || filters.maxDepositMan !== '' || filters.grades.length > 0 || filters.maxWalkMin !== '' || filters.roomType !== '';
+  const dirty = filters.maxRentMan !== '' || filters.maxDepositMan !== '' || filters.maxMgmtMan !== '' || filters.grades.length > 0 || filters.maxWalkMin !== '' || filters.roomType !== '';
   const items = q.data?.items ?? [];
-  const activeCount = [filters.maxRentMan, filters.maxDepositMan, filters.maxWalkMin, filters.roomType].filter((v) => v !== '').length + (filters.grades.length ? 1 : 0);
+  const activeCount = [filters.maxRentMan, filters.maxDepositMan, filters.maxMgmtMan, filters.maxWalkMin, filters.roomType].filter((v) => v !== '').length + (filters.grades.length ? 1 : 0);
   const summary = [
     filters.maxRentMan !== '' && `월세 ${filters.maxRentMan}만 이하`,
     filters.maxDepositMan !== '' && `보증금 ${filters.maxDepositMan}만 이하`,
+    filters.maxMgmtMan !== '' && `관리비 ${filters.maxMgmtMan}만 이하`,
     filters.maxWalkMin !== '' && `도보 ${filters.maxWalkMin}분 이내`,
     filters.roomType !== '' && (ROOM_FILTER.find(([v]) => v === filters.roomType)?.[1] ?? ''),
   ].filter((x): x is string => !!x);
@@ -70,6 +71,7 @@ export function ListingsPanel() {
             <div className="ui-fgrid">
               <UnitInput label="월세" unit="만" value={filters.maxRentMan} onChange={(v) => set({ maxRentMan: v })} placeholder="제한 없음" ariaLabel="월세 상한(만원)" />
               <UnitInput label="보증금" unit="만" value={filters.maxDepositMan} onChange={(v) => set({ maxDepositMan: v })} placeholder="제한 없음" ariaLabel="보증금 상한(만원)" />
+              <UnitInput label="관리비" unit="만" value={filters.maxMgmtMan} onChange={(v) => set({ maxMgmtMan: v })} placeholder="제한 없음" ariaLabel="관리비 상한(만원)" />
               <UnitInput label="내 과 건물까지 도보" unit="분" value={filters.maxWalkMin} onChange={(v) => set({ maxWalkMin: v })} placeholder="제한 없음" ariaLabel="도보 시간 상한(분)" />
               <Field label="방 구조">
                 {(id) => <select id={id} value={filters.roomType} onChange={(e) => set({ roomType: e.target.value as Filters['roomType'] })} aria-label="방 구조">{ROOM_FILTER.map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select>}

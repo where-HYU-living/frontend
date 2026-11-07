@@ -4,12 +4,12 @@ import { manwon } from '../lib/money';
 import { GRADE_META } from '../lib/grade';
 import type { AddressResult, MyHome } from '../api/types';
 import { AddressPicker } from './AddressPicker';
-import { ITEM_LABEL, manToWon, thisMonth, useAlertActions, useAlerts, useMyHome, useReport, useSaveHome, useSavePayment, useSaveUtility, validDaysBefore } from './features/more';
+import { ITEM_LABEL, manToWon, thisMonth, useAlertActions, useAlerts, useMyHome, usePayments, useReport, useSaveHome, useSavePayment, useSaveUtility, useUtilities, validDaysBefore } from './features/more';
 import { useSession } from './state/session';
 import { ChipSelect } from './forms/Segmented';
 import { Field, UnitInput } from './forms/Field';
 import { FormSection, LiveSummary, StickyActions } from './forms/FormSection';
-import { convertedRentWon, isPositive, missingReason, wonToManText } from './forms/calc';
+import { CONVERSION_NOTE, convertedRentWon, isPositive, missingReason, wonToManText } from './forms/calc';
 import './forms/forms.css';
 
 function HomeForm({ onDone }: { onDone: () => void }) {
@@ -41,7 +41,7 @@ function HomeForm({ onDone }: { onDone: () => void }) {
         <UnitInput label="월세" unit="만원" value={f.rent} onChange={put('rent')} ariaLabel="월세(만원)" onBlur={touch('rent')} error={touched.rent && !checks.rent ? '숫자로 적어 주세요' : null} />
         <UnitInput label="관리비" unit="만원" value={f.mgmt} onChange={put('mgmt')} ariaLabel="관리비(만원)" placeholder="선택" hint="모르면 비워 두세요" />
         <UnitInput label="면적" unit="㎡" inputMode="decimal" value={f.area} onChange={put('area')} ariaLabel="면적(㎡)" onBlur={touch('area')} error={touched.area && !checks.area ? '0보다 큰 숫자' : null} />
-        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : '월세 + 관리비 + 보증금 × 6% ÷ 12'} /></div>
+        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : CONVERSION_NOTE} /></div>
       </FormSection>
       <FormSection title="3. 계약 기간" grid>
         <Field label="계약 시작">{(id) => <input id={id} type="date" value={f.start} onChange={(e) => put('start')(e.target.value)} aria-label="계약 시작" />}</Field>
@@ -99,6 +99,31 @@ function Monthly({ month }: { month: string }) {
   );
 }
 
+/** H2·H3: 지금까지 남긴 월세·공과금 기록 (최신 달부터) */
+function History({ onPick }: { onPick: (month: string) => void }) {
+  const pay = usePayments().data ?? [];
+  const util = useUtilities().data ?? [];
+  const months = [...new Set([...pay.map((p) => p.month), ...util.map((u) => u.month)])].sort().reverse().slice(0, 12);
+  if (months.length === 0) return null;
+  return (
+    <section aria-label="지난 기록">
+      <h4>지난 기록</h4>
+      <ul className="ui-rows">
+        {months.map((m) => {
+          const p = pay.find((x) => x.month === m), u = util.find((x) => x.month === m);
+          const utilSum = u ? [u.electricity, u.gas, u.water, u.internet].reduce<number>((a, v) => a + (v ?? 0), 0) : null;
+          return (
+            <li key={m}>
+              <button type="button" className="ui-link" onClick={() => onPick(m)}>{m}</button>
+              <span>월세 {p ? manwon(p.amount) : '기록 없음'} · 공과금 {utilSum == null ? '기록 없음' : manwon(utilSum)}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 function Alerts() {
   const q = useAlerts();
   const { add, toggle, remove } = useAlertActions();
@@ -130,7 +155,7 @@ export function MyHomePanel() {
   const openLogin = useSession((s) => s.openLogin);
   const home = useMyHome();
   const [editing, setEditing] = useState(false);
-  const month = thisMonth();
+  const [month, setMonth] = useState(thisMonth());
   if (!token) return <div><p className="empty">로그인하면 내 집의 월세와 공과금을 기록할 수 있어요.</p><button type="button" className="ui-primary" onClick={openLogin}>로그인</button></div>;
   if (home.isLoading) return <p className="empty">불러오는 중…</p>;
   if (home.isError) return <p className="empty">내 집 정보를 불러오지 못했어요.</p>;
@@ -141,8 +166,10 @@ export function MyHomePanel() {
       <h3>{h.address}</h3>
       <p className="ui-card-sub">보증금 {manwon(h.deposit)} / 월세 {manwon(h.rent)} / 관리비 {h.mgmtFee == null ? '정보 없음' : manwon(h.mgmtFee)} · 계약 {h.contractStart} ~ {h.contractEnd}</p>
       <button type="button" className="ui-back" onClick={() => setEditing(true)}>수정</button>
+      <Field label="기록·리포트 달">{(id) => <input id={id} type="month" value={month} max={thisMonth()} onChange={(e) => e.target.value && setMonth(e.target.value)} aria-label="기록·리포트 달" />}</Field>
       <ReportCard month={month} />
-      <Monthly month={month} />
+      <Monthly key={month} month={month} />
+      <History onPick={setMonth} />
       <Alerts />
     </div>
   );

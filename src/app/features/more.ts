@@ -37,7 +37,8 @@ export const useMyHome = () => {
 export const useSaveHome = () => { const qc = useQueryClient(); return useMutation({ mutationFn: (b: MyHome) => api<MyHome>('/me/home', { method: 'PUT', body: b }), onSuccess: () => inval(qc, 'home', 'report') }); };
 export const usePayments = () => { const token = useToken(); return useQuery({ queryKey: ['payments', token], enabled: !!token, retry: false, queryFn: () => api<Payment[]>('/me/payments') }); };
 export const useSavePayment = () => { const qc = useQueryClient(); return useMutation({ mutationFn: (b: Payment) => api('/me/payments', { method: 'POST', body: b }), onSuccess: () => inval(qc, 'payments', 'report') }); };
-export const useSaveUtility = () => { const qc = useQueryClient(); return useMutation({ mutationFn: (b: Utility) => api('/me/utilities', { method: 'POST', body: b }), onSuccess: () => inval(qc, 'report') }); };
+export const useUtilities = () => { const token = useToken(); return useQuery({ queryKey: ['utilities', token], enabled: !!token, retry: false, queryFn: () => api<Utility[]>('/me/utilities') }); };
+export const useSaveUtility = () => { const qc = useQueryClient(); return useMutation({ mutationFn: (b: Utility) => api('/me/utilities', { method: 'POST', body: b }), onSuccess: () => inval(qc, 'report', 'utilities') }); };
 export const useReport = (month: string, enabled: boolean) => { const token = useToken(); return useQuery({ queryKey: ['report', month, token], enabled: !!token && enabled, retry: false, queryFn: () => api<Report>('/me/report', { query: { month } }) }); };
 export const useAlerts = () => { const token = useToken(); return useQuery({ queryKey: ['alerts', token], enabled: !!token, retry: false, queryFn: () => api<HomeAlert[]>('/me/home/alerts') }); };
 export function useAlertActions() {
@@ -67,6 +68,7 @@ export function useTransferActions() {
   const done = () => inval(qc, 'transfers', 'transfer');
   return {
     create: useMutation({ mutationFn: (b: TransferBody) => api<TransferDetail>('/transfers', { method: 'POST', body: b }), onSuccess: done }),
+    update: useMutation({ mutationFn: ({ id, body }: { id: number; body: TransferBody }) => api<TransferDetail>(`/transfers/${id}`, { method: 'PUT', body }), onSuccess: done }),
     finish: useMutation({ mutationFn: (id: number) => api(`/transfers/${id}/status`, { method: 'PATCH', body: { status: 'DONE' } }), onSuccess: done }),
   };
 }

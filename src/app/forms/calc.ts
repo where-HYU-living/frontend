@@ -1,9 +1,13 @@
 /** 폼 계산 순수 함수 (화면과 분리해 테스트) */
 
-/** 환산 월세(원) = 월세 + 관리비 + 보증금 × 0.06 ÷ 12. 월세·보증금 중 하나라도 없으면 null, 관리비는 없으면 0 */
+/** 서버 판정과 같은 전월세전환율 (backend `pricing.conversion-rate`, price-check 응답 conversionRate) */
+export const CONVERSION_RATE = 0.046;
+export const CONVERSION_NOTE = '월세 + 관리비 + 보증금 × 4.6% ÷ 12';
+
+/** 환산 월세(원) = 월세 + 관리비 + 보증금 × 전환율 ÷ 12. 월세·보증금 중 하나라도 없으면 null, 관리비는 없으면 0 */
 export function convertedRentWon(depositWon: number | null, rentWon: number | null, mgmtWon: number | null): number | null {
   if (depositWon == null || rentWon == null) return null;
-  return Math.round(rentWon + (mgmtWon ?? 0) + (depositWon * 0.06) / 12);
+  return Math.round(rentWon + (mgmtWon ?? 0) + (depositWon * CONVERSION_RATE) / 12);
 }
 
 /** 원 → "62.5만원" 같은 즉석 요약용 문구 */
