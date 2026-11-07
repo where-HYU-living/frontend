@@ -1,3 +1,4 @@
+import 'pretendard/dist/web/static/pretendard.css';
 import { createRoot } from 'react-dom/client';
 import '../style.css'; // 3D 쪽 스타일 (라벨·조이스틱·미니맵)
 import './app.css';
