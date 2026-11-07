@@ -15,17 +15,19 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { makeAmphitheater, makeStationExits, makeLabel, makeProps } from './landmarks.js';
 import { makeLion } from './landmarks/lion.js';
 import { Player } from './player.js';
+import { detectQuality } from './quality.ts';
 
 // 3D 장면 진입점. React 메뉴 층(src/app)이 initWorld(container)로 불러 쓴다.
 // 화면 요소 중 3D가 직접 쓰는 것: #minimap(canvas), #joystick, #attrib (React가 깔아 둠, 없으면 건너뜀)
 // 타입 선언: src/main.d.ts
 export async function initWorld(app, { onProgress = () => {} } = {}) {
+const Q = detectQuality();
 const T0 = performance.now(), marks = [];
 const progress = (p, tag) => { onProgress(p); if (tag) marks.push([tag, Math.round(performance.now() - T0)]); };
 
 // ---- 렌더러
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); // 성능: 레티나 2배 → 1.5배
+renderer.setPixelRatio(Math.min(devicePixelRatio, Q.pixelRatio)); // 성능: 품질 프리셋(src/quality.ts)
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -48,7 +50,7 @@ scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff1dc, 3.0);
 const sunDir = new THREE.Vector3(-0.62, 0.66, 0.42).normalize();
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
 Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 400 });
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.04;
@@ -62,7 +64,7 @@ const onResize = () => {
 };
 addEventListener('resize', onResize);
 
-return bootScene({ renderer, labelRenderer, scene, camera, sun, sunDir, onResize, marks, progress });
+return bootScene({ Q, renderer, labelRenderer, scene, camera, sun, sunDir, onResize, marks, progress });
 }
 
 function flatten(t, [cx, cz], r, fall) {
@@ -76,7 +78,7 @@ function flatten(t, [cx, cz], r, fall) {
   }
 }
 
-async function bootScene({ renderer, labelRenderer, scene, camera, sun, sunDir, onResize, marks, progress }) {
+async function bootScene({ Q, renderer, labelRenderer, scene, camera, sun, sunDir, onResize, marks, progress }) {
   const world = await (await fetch('/world.json')).json();
   progress(0.1, 'world');
   // 사자상 앞 잔디밭은 실제로 평평함 → 거친 지형 데이터를 그 주변만 평평하게
@@ -183,7 +185,7 @@ async function bootScene({ renderer, labelRenderer, scene, camera, sun, sunDir, 
   const blockIdx = {
     hit: (x, z, pad) => bIndex.hit(x, z, pad) || Math.hypot(x - plaza.p[0], z - plaza.p[1]) < plaza.r + 1 || pointInPoly(x, z, amphB.pts) || pointInPoly(x, z, plazaPoly) || hero.clear.some((q) => pointInPoly(x, z, q)) || zones.some((zn) => (zn.clear || []).some((q) => pointInPoly(x, z, q))),
   };
-  const trees = await makeTrees(world, heightAt, blockIdx, roadIdx, scene);
+  const trees = await makeTrees(world, heightAt, blockIdx, roadIdx, scene, Q);
   progress(0.9, 'trees');
 
   // 라벨
@@ -323,7 +325,7 @@ async function bootScene({ renderer, labelRenderer, scene, camera, sun, sunDir, 
   });
   console.table(marks);
   window.__ready = true;
-  window.__proto = { marks, zones, world, player, trees, renderer, scene, camera, heroShot };
+  window.__proto = { Q, marks, zones, world, player, trees, renderer, scene, camera, heroShot };
   console.log(`trees: ${trees.count}, buildings: ${buildings.children.length}`);
 
   // React 메뉴 층이 쓰는 API (타입: src/main.d.ts)

@@ -354,7 +354,7 @@ const SPECIES = ['broad', 'broad2', 'zelkova', 'ginkgo', 'cherry', 'pine'];
 // 실제 크기 배율 [최소, 폭]
 const SCALE = { broad: [0.9, 0.4], broad2: [0.9, 0.4], zelkova: [0.95, 0.3], ginkgo: [0.9, 0.35], cherry: [0.9, 0.3], pine: [0.85, 0.45] };
 
-export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene) {
+export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene, quality = { treeShadows: true }) {
   const R = rng(20261107);
   const { minX, maxX, minZ, maxZ } = world.bounds;
   const inside = (x, z) => x > minX + 4 && x < maxX - 4 && z > minZ + 4 && z < maxZ - 4;
@@ -493,7 +493,8 @@ export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene
       treeSpots.push({ x, z, kind: kind === 'broad2' ? 'broad' : kind });
     });
     mesh.computeBoundingSphere();
-    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.castShadow = quality.treeShadows;
+    mesh.receiveShadow = true;
     group.add(mesh);
   }
 
