@@ -349,6 +349,7 @@ function buildSpecies(kind, seed) {
 }
 
 // ───────── 배치 ─────────
+const TREE_CUT = 0.2;
 const SPECIES = ['broad', 'broad2', 'zelkova', 'ginkgo', 'cherry', 'pine'];
 // 실제 크기 배율 [최소, 폭]
 const SCALE = { broad: [0.9, 0.4], broad2: [0.9, 0.4], zelkova: [0.95, 0.3], ginkgo: [0.9, 0.35], cherry: [0.9, 0.3], pine: [0.85, 0.45] };
@@ -469,6 +470,10 @@ export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene
   group.name = 'trees';
   const treeSpots = [];
   const buckets = new Map();
+  // 성능: 나무 20% 솎기 (별도 난수라 나머지 배치는 그대로)
+  const thin = rng(31337);
+  const kept = spots.filter(() => thin() >= TREE_CUT);
+  spots.length = 0; spots.push(...kept);
   for (const s of spots) {
     const k = s[2] + '|' + Math.floor(s[0] / CELL) + ',' + Math.floor(s[1] / CELL);
     if (!buckets.has(k)) buckets.set(k, []);
