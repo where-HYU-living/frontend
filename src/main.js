@@ -298,14 +298,17 @@ async function bootScene({ Q, renderer, labelRenderer, scene, camera, sun, sunDi
   // ---- 후처리: 주변광 차폐(GTAO) — 건물 모서리·처마·계단 틈에 자연스러운 그늘
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const ao = new GTAOPass(scene, camera, innerWidth, innerHeight);
+  const aoScale = Q.ao === 'half' ? 0.5 : 1;
+  const ao = new GTAOPass(scene, camera, innerWidth * aoScale, innerHeight * aoScale);
   ao.updateGtaoMaterial({ radius: 1.2, distanceExponent: 1.5, thickness: 2, scale: 1.1 });
   ao.blendIntensity = 0.85;
   composer.addPass(ao);
+  const fitAO = () => ao.setSize(innerWidth * renderer.getPixelRatio() * aoScale, innerHeight * renderer.getPixelRatio() * aoScale); // addPass/setSize 가 전체 크기로 되돌리므로 매번 다시 맞춤
+  fitAO();
   composer.addPass(new OutputPass());
-  const onComposerResize = () => composer.setSize(innerWidth, innerHeight);
+  const onComposerResize = () => { composer.setSize(innerWidth, innerHeight); fitAO(); };
   addEventListener('resize', onComposerResize);
-  const useAO = !/noao/.test(location.search);
+  const useAO = Q.ao !== 'off' && !/noao/.test(location.search);
 
   // ---- 루프
   const clock = new THREE.Clock();
