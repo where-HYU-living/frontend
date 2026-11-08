@@ -1,4 +1,4 @@
-import type { Grade, PriceCheck } from '../api/types';
+import type { AiEstimate, Grade, PriceCheck } from '../api/types';
 import { CONVERSION_RATE } from '../app/forms/calc';
 
 /** 계약 2-1장 등급 경계 */
@@ -36,7 +36,9 @@ export function buildPriceCheck(input: {
   contractMonths: number;
   market: MarketSample | null;
   budget?: { rentCap: number | null; depositCap: number | null } | null;
+  aiEstimate?: AiEstimate | null;
 }): PriceCheck {
+  const aiEstimate = input.aiEstimate ?? null;
   const converted = convertedRent(input.rent, input.mgmtFee, input.deposit);
   const b = input.budget ?? null;
   const budget: PriceCheck['budget'] = b
@@ -51,7 +53,7 @@ export function buildPriceCheck(input: {
     return {
       convertedRent: converted, fairRent: null, monthlyExcess: null, contractMonths: input.contractMonths, totalExcess: null, excessRate: null,
       grade: 'PENDING', conversionRate: CONVERSION_RATE,
-      sample: { count: 0, scope: 'NONE', dongs: [], areaMinM2: null, areaMaxM2: null, from: null, to: null }, budget,
+      sample: { count: 0, scope: 'NONE', dongs: [], areaMinM2: null, areaMaxM2: null, from: null, to: null }, budget, aiEstimate,
     };
   }
   const { fairRent, sample } = input.market;
@@ -59,6 +61,6 @@ export function buildPriceCheck(input: {
   const excessRate = excessRateOf(converted, fairRent);
   return {
     convertedRent: converted, fairRent, monthlyExcess, contractMonths: input.contractMonths, totalExcess: monthlyExcess * input.contractMonths,
-    excessRate, grade: gradeOf(excessRate), conversionRate: CONVERSION_RATE, sample, budget,
+    excessRate, grade: gradeOf(excessRate), conversionRate: CONVERSION_RATE, sample, budget, aiEstimate,
   };
 }

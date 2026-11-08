@@ -14,6 +14,7 @@ export function VerdictCard({ pc, fallbackGrade, loggedIn, failed }: { pc: Price
   const judged = !!pc && pc.grade !== 'PENDING' && pc.fairRent != null;
   const budget = budgetLine(pc?.budget);
   const evidence = evidenceLine(pc?.sample);
+  const ai = pc?.aiEstimate ?? null;
   return (
     <section className={`ui-verdict tone-${grade}`} style={{ borderColor: g.color }} aria-label="판결">
       <div className="ui-verdict-head">
@@ -30,12 +31,14 @@ export function VerdictCard({ pc, fallbackGrade, loggedIn, failed }: { pc: Price
       {judged && (
         <dl className="ui-verdict-mini">
           <dt>적정 월세</dt><dd>{manwon(pc.fairRent)}</dd>
+          {ai && (<><dt>AI 적정가</dt><dd>{manwon(ai.fairRent)}<small className="ui-ai-range">{manwon(ai.low)}~{manwon(ai.high)}</small></dd></>)}
           <dt>월 초과액</dt><dd>{manwon(pc.monthlyExcess)}</dd>
           {pc.excessRate != null && (<><dt>적정가 대비</dt><dd>{excessRateLabel(pc.excessRate)}</dd></>)}
           {pc.totalExcess != null && pc.totalExcess <= 0 && (<><dt>{span} 초과액</dt><dd>{manwon(pc.totalExcess)}</dd></>)}
         </dl>
       )}
       {pc && pc.grade === 'PENDING' && <p className="ui-card-sub">환산 월세 {manwon(pc.convertedRent)} · 비교할 거래가 부족해 판정을 보류했어요.</p>}
+      {!judged && ai && <p className="ui-card-sub">AI 적정가 {manwon(ai.fairRent)} (적정 범위 {manwon(ai.low)}~{manwon(ai.high)})</p>}
       {evidence && <p className="ui-evidence">근거: {evidence}</p>}
       {budget && <p className={`ui-budget${budget.over ? ' is-over ui-over' : ''}`}>{budget.text}</p>}
       {!loggedIn && <p className="ui-card-sub">로그인하고 예산을 정하면 예산 대비도 보여줘요.</p>}
