@@ -6,7 +6,7 @@ import { useFloorPlan } from '../app/features/catalog';
 import { useSession } from '../app/state/session';
 import { useUi } from '../app/state/ui';
 import { ArrowLeft } from 'lucide-react';
-import { detectQuality } from '../quality';
+import { useGfx } from '../gfx';
 import { buildInterior } from './buildInterior';
 import { makeInput } from './input';
 import { InteriorPost, RoomLabels } from './InteriorPost';
@@ -23,7 +23,7 @@ import type { FloorPlan } from '../api/types';
 import './interior.css';
 
 function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: FloorPlan; title: string; floorplanId: number; start?: { x: number; z: number; yaw: number }; invited?: boolean; onExit: () => void }) {
-  const Q = useMemo(detectQuality, []);
+  const Q = useGfx((s) => s.Q);
   const time = useUi((s) => s.timeOfDay);
   const setTime = useUi((s) => s.setTimeOfDay);
   const built = useMemo(() => buildInterior(plan), [plan]);
@@ -65,9 +65,9 @@ function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: Fl
     <>
       <Canvas
         camera={{ fov: 70, near: 0.05, far: 120 }}
-        dpr={[1, Q.pixelRatio]}
-        shadows={Q.name === 'low' ? false : { type: THREE.PCFSoftShadowMap }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        dpr={[Q.minPixelRatio, Q.pixelRatio]}
+        shadows={Q.name === 'low' || !Q.shadows ? false : { type: THREE.PCFSoftShadowMap }}
+        gl={{ antialias: Q.antialias, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => { gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1; }}
       >
         <color attach="background" args={['#cfd8e3']} />

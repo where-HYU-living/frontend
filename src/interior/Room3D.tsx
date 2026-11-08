@@ -48,7 +48,7 @@ function Sun({ room, Q, time }: { room: RoomScene; Q: Quality; time: number }) {
   const half = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * 0.8 + 1.4;
   const light = useMemo(() => {
     const l = new THREE.DirectionalLight();
-    l.castShadow = Q.name !== 'low';
+    l.castShadow = Q.name !== 'low' && Q.shadows;
     l.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
     Object.assign(l.shadow.camera, { left: -half, right: half, top: half, bottom: -half, near: 0.5, far: 90 });
     l.shadow.camera.updateProjectionMatrix();

@@ -14,6 +14,7 @@ import { SITES } from '../world/neighborhood';
 import { useGoToPoint } from './goTo';
 import { AvatarPicker, useAvatarState } from './avatar/AvatarPicker';
 import { InviteButton } from './InviteButton';
+import { GfxSettings } from './GfxSettings';
 import type { SearchResult } from '../api/types';
 import { toLatLng } from './map/geo';
 import { useMapFocus } from './map/mapFocus';
@@ -196,6 +197,7 @@ export function TopBar() {
               <PopItem icon={<Shirt size={16} aria-hidden="true" />} onClick={() => pop.setOpen('avatar')}>캐릭터 꾸미기</PopItem>
               <li><InviteButton className="ui-tb-item" /></li>
             </ul>
+            <GfxSettings />
           </div>
         )}
         {pop.open === 'avatar' && <AvatarPicker look={avatar.look} onChange={avatar.change} deptName={avatar.deptName} />}

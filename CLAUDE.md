@@ -2,7 +2,10 @@
 
 화면은 두 층이다.
 - **3D 층**: R3F `<Canvas>` (`src/world/WorldCanvas.tsx`). 장면 내용은 `src/world/buildWorld.js` 가 만들고, 후처리(GTAO)·라벨은 `WorldCanvas` 안의 `Post` 가 그린다. 타입은 `src/main.d.ts`(WorldApi)·`src/world/buildWorld.d.ts`. 스타일은 `src/style.css`.
-- **품질 프리셋**: `src/quality.ts` (`?q=high|med|low`, 없으면 기기에 맞춰 자동). 픽셀비·그림자 크기·나무 그림자·GTAO·MSAA 를 정한다. 새 무거운 효과는 프리셋에 넣어서 끌 수 있게 할 것.
+- **품질 프리셋**: `src/quality.ts` (`?q=high|med|low|min`, 없으면 기기에 맞춰 자동). 픽셀비·그림자·나무 그림자·GTAO·MSAA·캔버스 안티에일리어싱·하늘 환경광·시야 끝·지형 셰이더를 정한다. 새 무거운 효과는 프리셋에 넣어서 끌 수 있게 할 것.
+  - 상태는 `src/gfx.ts`(`useGfx`): 주소 `?q=` → 사용자가 고른 값(더 보기 > 그래픽, localStorage `chatatda.gfx`) → 자동(그래픽 장치: 가속 꺼짐=SwiftShader 면 `min`, 인텔 내장 그래픽이면 `low`). 자동일 때만 `FpsGuard`(WorldCanvas)가 24fps 아래면 한 단계씩 낮추고 같은 장치면 다음 접속에도 기억한다.
+  - 품질 변경은 월드를 다시 만들지 않고 `buildWorld` 의 `applyQuality(Q)` 로 바꾼다. 캔버스 안티에일리어싱·가로등만 다음 접속부터.
+  - 점검: `node scripts/gfx-check.mjs` (GPU 자동·실행 중 전환·가속 꺼짐 감지·자동 낮추기).
 - **메뉴 층 (React+TS)**: `src/app/`. 스타일은 `src/app/app.css`. 3D API는 `useWorld().api` 로만 부른다.
 
 ## CSS 이름이 겹치지 않게 (중요)
@@ -26,7 +29,7 @@
 ## 서버 연결
 - `VITE_API_BASE`(기본 `http://localhost:8080`)로 실서버에 바로 붙는다. 백엔드가 아직 일부 API만 구현했으므로 **`?mock=1`(또는 `VITE_USE_MOCK=true`)로 개발용 목 서버**(`src/mock/`, 계약 전 엔드포인트·메모리 상태·`MOCK` 배지)를 켜서 모든 탭을 볼 수 있다. 목은 동적 import 라 평소 번들에 안 들어간다. 아직 없는 API(검색·찜·비교 등)는 실패해도 화면이 깨지지 않게 빈 상태/오류 문구로 처리한다.
 - 계약 타입은 `src/api/types.ts` 한 곳, 호출은 `src/api/client.ts`(`api<T>()`), 서버 상태는 TanStack Query(`src/app/features/*.ts`), 로그인은 `src/app/state/session.ts`.
-- 로그인: `VITE_GOOGLE_CLIENT_ID` 가 있으면 구글 버튼(`src/app/auth/`)이 뜨고 ID 토큰을 `POST /auth/google` 로 보낸다(도메인 검증은 서버). 없으면 메일 코드 인증만.
+- 로그인: `VITE_GOOGLE_CLIENT_ID` 가 있으면 구글 버튼(`src/app/auth/`)이 뜨고 ID 토큰을 `POST /auth/google` 로 보낸다(도메인 검증은 서버). 화면 로그인은 구글뿐이다(키가 없으면 '로그인을 쓸 수 없어요' 안내). 메일 코드 인증(`/auth/email/*`)은 서버에만 남겨 둔다 — `final-qa.mjs`·백엔드 테스트가 그 길로 로그인한다.
 - 금액은 서버가 원, 화면은 만원(`src/lib/money.ts`). `null` 은 "정보 없음"으로 보여주고 0으로 바꾸지 않는다.
 
 ## 기능 위치

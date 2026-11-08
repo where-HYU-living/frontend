@@ -10,7 +10,10 @@ export function disposeScene(scene: THREE.Scene): { geometries: number; material
     if (el && typeof el.remove === 'function') el.remove();
     const m = o as THREE.Mesh;
     if (m.geometry) geos.add(m.geometry);
-    const ms = m.material ? (Array.isArray(m.material) ? m.material : [m.material]) : [];
+    // 품질에 따라 바꿔 끼우는 지오메트리·재질(예: 가벼운 지형)은 장면에 안 걸려 있어도 같이 해제
+    const also = (o.userData?.disposeAlso as (THREE.BufferGeometry | THREE.Material)[] | undefined) ?? [];
+    for (const a of also) if ((a as THREE.BufferGeometry).isBufferGeometry) geos.add(a as THREE.BufferGeometry);
+    const ms = [...(m.material ? (Array.isArray(m.material) ? m.material : [m.material]) : []), ...also.filter((a): a is THREE.Material => (a as THREE.Material).isMaterial)];
     for (const mt of ms) {
       mats.add(mt);
       for (const v of Object.values(mt)) if (v && (v as THREE.Texture).isTexture) texs.add(v as THREE.Texture);
@@ -26,6 +29,7 @@ export function disposeScene(scene: THREE.Scene): { geometries: number; material
   geos.forEach((g) => g.dispose()); mats.forEach((m) => m.dispose()); texs.forEach((t) => t.dispose());
   lights.forEach((l) => l.dispose());
   (scene.userData.envRT as THREE.WebGLRenderTarget | undefined)?.dispose(); delete scene.userData.envRT; // PMREM 결과(렌더 타깃)
+  (scene.userData.skyBg as THREE.Texture | undefined)?.dispose(); delete scene.userData.skyBg; // 하늘 사진 (품질 최저에선 배경에서 빠져 있음)
   scene.environment?.dispose?.(); (scene.background as THREE.Texture | null)?.dispose?.(); scene.background = null; scene.environment = null; scene.fog = null;
   return { geometries: geos.size, materials: mats.size, textures: texs.size };
 }
