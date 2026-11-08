@@ -50,7 +50,7 @@ function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: Fl
 
   const target = useIndoorTarget(floorplanId);
   const reviews = useIndoorReviews(target);
-  const pins = useMemo(() => pinnedReviews(reviews.data?.items, plan), [reviews.data, plan]);
+  const pins = useMemo(() => pinnedReviews(reviews.data?.items, plan, floorplanId), [reviews.data, plan, floorplanId]);
   const selected = pins.find((r) => r.id === selectedId) ?? null;
 
   const onLongPress = useCallback((pin: Pin) => {
@@ -87,7 +87,7 @@ function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: Fl
         onExit={onExit} onJump={goTo} onPickPoint={pickPoint} quiet={!!draft || !!selected}
       />
       <Joystick input={input} />
-      <PinPanel target={target} draft={draft} selected={selected} onClearDraft={() => setDraft(null)} onClearSelected={() => setSelectedId(null)} />
+      <PinPanel target={target} floorplanId={floorplanId} draft={draft} selected={selected} onClearDraft={() => setDraft(null)} onClearSelected={() => setSelectedId(null)} />
     </>
   );
 }

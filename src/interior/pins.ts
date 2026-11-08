@@ -30,9 +30,13 @@ export function isPinInPlan(pin: readonly number[] | null | undefined, plan: Flo
   return pin[0] >= b.minX - m && pin[0] <= b.maxX + m && pin[2] >= b.minY - m && pin[2] <= b.maxY + m && pin[1] >= -0.1 && pin[1] <= plan.ceilingHeight + 0.1;
 }
 
-/** 후기 중 이 평면도에 찍힌 핀 후기만 */
-export function pinnedReviews(reviews: Review[] | undefined, plan: FloorPlan): (Review & { pin: Pin })[] {
-  return (reviews ?? []).filter((r): r is Review & { pin: Pin } => isPinInPlan(r.pin, plan));
+/**
+ * 후기 중 이 평면도에 찍힌 핀 후기만. 같은 단지·기숙사에 방(평면도)이 여러 개라 floorplanId 가 지금 방과 다른 핀은 뺀다.
+ * floorplanId 가 없는 예전 핀은 어느 방인지 몰라서 좌표가 방 안에 들어오는지로만 거른다.
+ */
+export function pinnedReviews(reviews: Review[] | undefined, plan: FloorPlan, floorplanId?: number): (Review & { pin: Pin })[] {
+  return (reviews ?? []).filter((r): r is Review & { pin: Pin } =>
+    isPinInPlan(r.pin, plan) && (r.floorplanId == null || floorplanId == null || r.floorplanId === floorplanId));
 }
 
 export const LONG_PRESS_MS = 550;

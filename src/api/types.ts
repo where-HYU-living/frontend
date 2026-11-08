@@ -135,7 +135,9 @@ export type AppNotification = { id: number; type: 'HOUSING_DDAY' | 'CONTRACT_EXP
 
 export type ReviewScores = { noise: number; light: number; bugs: number; landlord: number; depositReturn: number };
 export type ReviewTargetType = 'LISTING' | 'HOUSING' | 'DORM';
-export type Review = { id: number; rating: number; scores: ReviewScores; text: string; pin: [number, number, number] | null; authorNickname: string; createdAt: string };
+export type Review = { id: number; rating: number; scores: ReviewScores; text: string; pin: [number, number, number] | null;
+  /** 핀을 찍은 평면도(방) 번호. 실내에서는 지금 방과 같은 것만 그린다 (계약 v1.8). 핀 없는 후기·예전 핀은 null */
+  floorplanId?: number | null; authorNickname: string; createdAt: string };
 export type ReviewList = { average: number | null; count: number; items: Review[] };
 
 export type MyHome = { address: string; dong: string; lat: number; lng: number; deposit: number; rent: number; mgmtFee: number | null; areaM2: number; contractStart: string; contractEnd: string };

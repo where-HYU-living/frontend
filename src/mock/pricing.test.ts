@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 import { buildPriceCheck, convertedRent, excessRateOf, gradeOf } from './pricing';
 
-test('환산 월세 = 월세 + 관리비 + 보증금×0.06÷12', () => {
-  expect(convertedRent(550000, 80000, 10000000)).toBe(680000);
+test('환산 월세 = 월세 + 관리비 + 보증금×0.046÷12', () => {
+  expect(convertedRent(550000, 80000, 10000000)).toBe(668333);
   expect(convertedRent(500000, null, 0)).toBe(500000);
 });
 
@@ -36,7 +36,7 @@ test('예산 초과분 계산', () => {
     market: { fairRent: 548000, sample: { count: 23, scope: 'DONG', dongs: ['행당동'], areaMinM2: 12.6, areaMaxM2: 23.4, from: '2025-11', to: '2026-10' } },
     budget: { rentCap: 600000, depositCap: 5000000, },
   });
-  expect(pc.convertedRent).toBe(750000);
-  expect(pc.budget).toEqual({ rentCap: 600000, depositCap: 5000000, overRent: 150000, overDeposit: 5000000 });
-  expect(pc.totalExcess).toBe((750000 - 548000) * 24);
+  expect(pc.convertedRent).toBe(738333);
+  expect(pc.budget).toEqual({ rentCap: 600000, depositCap: 5000000, overRent: 138333, overDeposit: 5000000 });
+  expect(pc.totalExcess).toBe((738333 - 548000) * 24);
 });

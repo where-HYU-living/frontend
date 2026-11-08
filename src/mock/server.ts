@@ -376,7 +376,7 @@ route('GET', '/reviews', (c) => {
 });
 route('POST', '/reviews', (c) => {
   requireAuth(c);
-  const { targetType, targetId, rating, scores, text = '', pin = null } = c.body ?? {};
+  const { targetType, targetId, rating, scores, text = '', pin = null, floorplanId = null } = c.body ?? {};
   const errs: Record<string, string> = {};
   if (!['LISTING', 'HOUSING', 'DORM'].includes(targetType) || typeof targetId !== 'number') errs.targetType = '후기 대상을 확인해 주세요.';
   if (!int15(rating)) errs.rating = '별점은 1~5 정수예요.';
@@ -384,7 +384,7 @@ route('POST', '/reviews', (c) => {
   for (const k of keys) if (!int15(scores?.[k])) errs[`scores.${k}`] = '1~5 정수예요.';
   if (typeof text !== 'string' || text.length > 500) errs.text = '500자 이하로 써 주세요.';
   if (Object.keys(errs).length) throw bad(errs);
-  const r: StoredReview = { id: db.nextId.review++, targetType, targetId, rating, scores, text, pin, authorNickname: db.user.nickname, createdAt: nowIso() };
+  const r: StoredReview = { id: db.nextId.review++, targetType, targetId, rating, scores, text, pin, floorplanId, authorNickname: db.user.nickname, createdAt: nowIso() };
   db.reviews.push(r);
   const { targetType: _t, targetId: _i, ...out } = r;
   return ok(out, 201);

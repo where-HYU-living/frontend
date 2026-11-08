@@ -9,7 +9,7 @@ import { useSession } from './state/session';
 import { ChipSelect } from './forms/Segmented';
 import { Field, UnitInput } from './forms/Field';
 import { FormSection, LiveSummary, StickyActions } from './forms/FormSection';
-import { convertedRentWon, isPositive, missingReason, wonToManText } from './forms/calc';
+import { CONVERSION_RATE_TEXT, convertedRentWon, isPositive, missingReason, wonToManText } from './forms/calc';
 import './forms/forms.css';
 
 function HomeForm({ onDone }: { onDone: () => void }) {
@@ -41,7 +41,7 @@ function HomeForm({ onDone }: { onDone: () => void }) {
         <UnitInput label="월세" unit="만원" value={f.rent} onChange={put('rent')} ariaLabel="월세(만원)" onBlur={touch('rent')} error={touched.rent && !checks.rent ? '숫자로 적어 주세요' : null} />
         <UnitInput label="관리비" unit="만원" value={f.mgmt} onChange={put('mgmt')} ariaLabel="관리비(만원)" placeholder="선택" hint="모르면 비워 두세요" />
         <UnitInput label="면적" unit="㎡" inputMode="decimal" value={f.area} onChange={put('area')} ariaLabel="면적(㎡)" onBlur={touch('area')} error={touched.area && !checks.area ? '0보다 큰 숫자' : null} />
-        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : '월세 + 관리비 + 보증금 × 6% ÷ 12'} /></div>
+        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : `월세 + 관리비 + 보증금 × ${CONVERSION_RATE_TEXT} ÷ 12`} /></div>
       </FormSection>
       <FormSection title="3. 계약 기간" grid>
         <Field label="계약 시작">{(id) => <input id={id} type="date" value={f.start} onChange={(e) => put('start')(e.target.value)} aria-label="계약 시작" />}</Field>

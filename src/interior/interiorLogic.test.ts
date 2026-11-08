@@ -45,6 +45,9 @@ test('pins: coordinate convention, bounds, filtering', () => {
   const r = (id: number, pin: Review['pin']): Review => ({ id, rating: 4, scores: { noise: 4, light: 4, bugs: 4, landlord: 4, depositReturn: 4 }, text: '', pin, authorNickname: 'a', createdAt: 'x' });
   expect(pinnedReviews([r(1, null), r(2, [1, 1, 1]), r(3, [50, 1, 1])], fp).map((x) => x.id)).toEqual([2]);
   expect(pinnedReviews(undefined, fp)).toEqual([]);
+  const inRoom = (id: number, floorplanId: number | null): Review => ({ ...r(id, [1, 1, 1]), floorplanId });
+  // 같은 단지 다른 방(평면도 4)에서 찍은 핀은 빼고, 이 방(3)과 방 번호 없는 예전 핀만
+  expect(pinnedReviews([inRoom(1, 3), inRoom(2, 4), inRoom(3, null)], fp, 3).map((x) => x.id)).toEqual([1, 3]);
 });
 
 test('classifyPress', () => {

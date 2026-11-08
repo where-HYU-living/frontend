@@ -14,7 +14,7 @@ import { ChipSelect, Segmented } from './forms/Segmented';
 import { Field, UnitInput } from './forms/Field';
 import { FormSection, LiveSummary, StickyActions } from './forms/FormSection';
 import { PhotoGrid } from './forms/PhotoGrid';
-import { convertedRentWon, isPositive, isPositiveInt, missingReason, wonToManText } from './forms/calc';
+import { CONVERSION_RATE_TEXT, convertedRentWon, isPositive, isPositiveInt, missingReason, wonToManText } from './forms/calc';
 import './forms/forms.css';
 import { useGoTo } from './DormPanel';
 
@@ -80,7 +80,7 @@ function Form({ onDone }: { onDone: () => void }) {
         <UnitInput label="보증금" unit="만원" value={f.deposit} onChange={put('deposit')} ariaLabel="보증금(만원)" onBlur={touch('deposit')} error={err('deposit', '숫자로 적어 주세요')} />
         <UnitInput label="월세" unit="만원" value={f.rent} onChange={put('rent')} ariaLabel="월세(만원)" onBlur={touch('rent')} error={err('rent', '숫자로 적어 주세요')} />
         <UnitInput label="관리비" unit="만원" value={f.mgmt} onChange={put('mgmt')} ariaLabel="관리비(만원)" placeholder="선택" hint="모르면 비워 두세요" className="span2" />
-        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : '월세 + 관리비 + 보증금 × 6% ÷ 12'} /></div>
+        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : `월세 + 관리비 + 보증금 × ${CONVERSION_RATE_TEXT} ÷ 12`} /></div>
       </FormSection>
 
       <FormSection title="4. 방 정보" grid>

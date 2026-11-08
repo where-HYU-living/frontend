@@ -16,8 +16,8 @@ function Stars({ value, onChange, label }: { value: number; onChange: (n: number
   );
 }
 
-/** 후기 입력 폼. pin 이 있으면 실내 3D 의 그 위치에 붙는 핀 후기 (POST /reviews 의 pin = [x,y,z]) */
-export function ReviewForm({ targetType, targetId, pin = null, onDone, onCancel }: { targetType: ReviewTargetType; targetId: number; pin?: [number, number, number] | null; onDone: () => void; onCancel: () => void }) {
+/** 후기 입력 폼. pin 이 있으면 실내 3D 의 그 위치에 붙는 핀 후기 (POST /reviews 의 pin = [x,y,z], floorplanId = 핀을 찍은 방) */
+export function ReviewForm({ targetType, targetId, pin = null, floorplanId = null, onDone, onCancel }: { targetType: ReviewTargetType; targetId: number; pin?: [number, number, number] | null; floorplanId?: number | null; onDone: () => void; onCancel: () => void }) {
   const add = useAddReview(targetType, targetId);
   const [rating, setRating] = useState(0);
   const [scores, setScores] = useState<Partial<ReviewScores>>({});
@@ -25,7 +25,7 @@ export function ReviewForm({ targetType, targetId, pin = null, onDone, onCancel 
   const err = validateReview(rating, scores, text);
   const submit = () => {
     if (err) return;
-    add.mutate({ rating, scores: scores as ReviewScores, text, pin }, { onSuccess: onDone });
+    add.mutate({ rating, scores: scores as ReviewScores, text, pin, floorplanId: pin ? floorplanId : null }, { onSuccess: onDone });
   };
   return (
     <div className="ui-review-form">

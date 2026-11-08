@@ -1,8 +1,9 @@
 import type { Grade, PriceCheck } from '../api/types';
+import { CONVERSION_RATE } from '../app/forms/calc';
 
 /** 계약 2-1장 등급 경계 */
 export const GRADE_BOUNDS = { fair: 0.1, slight: 0.25, high: 0.5 } as const;
-export const CONVERSION_RATE = 0.06;
+export { CONVERSION_RATE };
 
 /** 환산 월세 = 월세 + 관리비 + 보증금 × 환산율 ÷ 12 (원, 반올림) */
 export function convertedRent(rent: number, mgmtFee: number | null, deposit: number, rate: number = CONVERSION_RATE): number {
