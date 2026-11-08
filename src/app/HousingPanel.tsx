@@ -39,7 +39,7 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
       <BackButton onClick={onBack} />
       <div className="ui-v-title"><h3>{h.name}</h3><HeartButton type="HOUSING" id={h.id} name={h.name} /></div>
       <p className="ui-v-addr">{h.address}</p>
-      <NeighborhoodButton kind="housing" id={h.id} />
+      <NeighborhoodButton kind="housing" id={h.id} lat={h.lat} lng={h.lng} name={h.name} />
       <ul className="ui-v-chips">
         <li className="ui-v-chip-li"><WalkLink walkMin={h.walkMin} from={{ lat: h.lat, lng: h.lng, name: h.name }} className="ui-v-chip ui-walk-link" /></li>
         {h.contact && <InfoChip icon={<Phone size={14} aria-hidden="true" />}>입주지원센터 {h.contact}</InfoChip>}

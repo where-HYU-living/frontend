@@ -13,7 +13,12 @@
 /* 3D 층 */
 #world { position: fixed; inset: 0; z-index: 0; }
 #world canvas { display: block; touch-action: none; }
-#minimap { top: auto; bottom: 16px; right: 16px; position: fixed; width: 188px; height: 149px; z-index: 5; }
+/* 미니맵: 동그란 창, 내 위치가 가운데. 올리면 살짝 커지고 위에 '두 번 누르면 이동' 안내가 뜬다 */
+#minimap { top: auto; bottom: 22px; right: 16px; position: fixed; width: 168px; height: 168px; z-index: 5; border-radius: 50%; border: 0; background: none; cursor: pointer; box-shadow: 0 6px 22px rgba(22, 32, 46, .32); transition: transform .18s ease, box-shadow .18s ease; }
+#minimap:hover { transform: scale(1.04); box-shadow: 0 8px 28px rgba(22, 32, 46, .4); }
+#minimap-hint { position: fixed; right: 100px; bottom: 200px; z-index: 5; width: max-content; padding: 5px 11px; border-radius: 999px; background: rgba(22, 32, 46, .78); color: #fff; font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0; transform: translate(50%, 4px); transition: opacity .15s ease, transform .15s ease; }
+#minimap-hint:empty { display: none; }
+#minimap-hint.is-on { opacity: 1; transform: translate(50%, 0); }
 #attrib { position: fixed; bottom: 4px; right: 16px; font-size: 10px; color: rgba(255, 255, 255, 0.6); pointer-events: none; z-index: 5; }
 #joystick { position: fixed; z-index: 5; }
 
@@ -123,9 +128,9 @@
   .ui-tb-account .ui-tb-name, .ui-tb-account svg + svg { display: none; }
   .topbar .grow { display: none; }
   .ui-panel { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 55%; border-radius: 16px 16px 0 0; }
-  #minimap { display: none; }
+  #minimap, #minimap-hint { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .loading-bar span, .ui-loadblock { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .loading-bar span, .ui-loadblock, #minimap, #minimap-hint { transition: none; } }
 
 /* 카카오맵 층: 3D(z0)·미니맵(z5) 위, 메뉴 층(z10) 아래 */
 .ui-map { position: fixed; inset: 0; z-index: 6; background: #e8eef3; color: var(--ui-ink); }
@@ -241,6 +246,12 @@
 .ui-chat-row button { height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--ui-glass-strong); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
 .ui-chat-row input { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); font: inherit; }
 .ui-chat-note { color: #0e4a84; font-weight: 600; }
+/* 실내(방 투어) 위에 뜰 때: 실내 층(z30) 위, 조금 좁게. 가운데 방 바로가기 줄과 겹치지 않게 그 줄 폭을 줄인다 */
+.ui-chat.is-indoor { z-index: 31; width: 260px; bottom: 20px; }
+.ui-chat-sub { color: var(--ui-ink-3); font-weight: 500; }
+.ui-chat-mine { color: var(--ui-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 761px) { .ui-interior .ui-tour-rail { max-width: calc(100vw - 600px); } }
+@media (max-width: 760px) { .ui-chat.is-indoor { left: auto; right: 10px; bottom: 28px; width: calc(100vw - 160px); } }
 
 /* 후기·내 집·양도·알림 */
 .ui-form { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }

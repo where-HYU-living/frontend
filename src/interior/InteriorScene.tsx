@@ -19,6 +19,8 @@ import { Room3D } from './Room3D';
 import { buildRoomScene } from './roomScene';
 import { useIndoorReviews, useIndoorTarget } from './useIndoorReviews';
 import { Walker } from './Walker';
+import { IndoorPeers } from './IndoorPeers';
+import { indoorPresence } from '../net/presence';
 import type { FloorPlan } from '../api/types';
 import './interior.css';
 
@@ -29,7 +31,7 @@ function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: Fl
   const built = useMemo(() => buildInterior(plan), [plan]);
   const room = useMemo(() => buildRoomScene(plan), [plan]);
   const input = useMemo(() => makeInput(), []);
-  const pickRef = useRef<THREE.Group>(null), pinRef = useRef<THREE.Group>(null), labelsRef = useRef<HTMLDivElement>(null);
+  const pickRef = useRef<THREE.Group>(null), pinRef = useRef<THREE.Group>(null), labelsRef = useRef<HTMLDivElement>(null), peerLabelsRef = useRef<HTMLDivElement>(null);
   const [showFurniture, setShowFurniture] = useState(true);
   const [draft, setDraft] = useState<Pin | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -44,6 +46,11 @@ function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: Fl
     const spot = landingSpot(plan, allSolid, start);
     if (spot) input.goto = { ...spot, snap: true };
   }, [start, plan, allSolid, input]);
+  // 멀티플레이: 실내에 있는 동안 내 위치(이 도면 좌표 + 방 id)를 보낸다. 나가면(언마운트) 바깥 위치로 돌아간다
+  useEffect(() => {
+    indoorPresence.read = () => ({ room: floorplanId, x: input.pose.x, z: input.pose.z, y: room.floorAt(input.pose.x, input.pose.z), yaw: input.pose.yaw });
+    return () => { indoorPresence.read = null; };
+  }, [floorplanId, input, room]);
   const goTo = useCallback((to: { x: number; z: number; yaw: number }) => { input.goto = to; }, [input]);
   const pickPoint = useCallback((x: number, z: number) => { const spot = nearestFree(plan, allSolid, x, z); if (spot) input.goto = { x: spot[0], z: spot[1], yaw: input.pose.yaw }; }, [plan, allSolid, input]);
   const anchors = useMemo(() => room.info.lamps.map((l) => ({ x: l.x, y: plan.ceilingHeight - 0.35, z: l.z })), [room, plan]);
@@ -74,11 +81,13 @@ function Loaded({ plan, title, floorplanId, start, invited, onExit }: { plan: Fl
         <Room3D plan={plan} room={room} showFurniture={showFurniture} pins={pins} selectedPin={selectedId} draft={draft} Q={Q} time={time} pickRef={pickRef} pinRef={pinRef} />
         <Walker plan={plan} built={built} input={input} colliders={colliders} floorAt={room.floorAt} pickRef={pickRef} pinRef={pinRef} onLongPress={onLongPress} onPickPin={onPickPin} />
         <RoomLabels anchors={anchors} containerRef={labelsRef} occluders={pickRef} />
+        <IndoorPeers room={floorplanId} labelsRef={peerLabelsRef} occluders={pickRef} />
         <InteriorPost Q={Q} />
       </Canvas>
       <div ref={labelsRef} className="ui-in-labels" aria-hidden="true">
         {room.info.lamps.map((l, i) => (<span key={i} className="ui-in-label">{l.name} · {l.area.toFixed(1)}㎡</span>))}
       </div>
+      <div ref={peerLabelsRef} className="ui-in-labels" aria-hidden="true" />
       <div className="ui-in-cross" aria-hidden="true" />
       <TourHud
         title={title} floorplanId={floorplanId} invited={invited} plan={plan} input={input} pins={pins.map((p) => p.pin)} jumps={jumps}

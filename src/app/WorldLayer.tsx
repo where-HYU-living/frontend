@@ -6,7 +6,8 @@ export function WorldLayer() {
   return (
     <>
       <div id="world"><WorldCanvas /></div>
-      <canvas id="minimap" width={220} height={174} title="미니맵을 누르면 그 위치로 이동해요" />
+      <canvas id="minimap" width={352} height={352} aria-label="미니맵. 두 번 누르면 그 자리로 이동해요" />
+      <div id="minimap-hint" aria-live="polite" />
       <div id="joystick"><div id="joystick-knob" /></div>
       <div id="attrib" />
       <GfxNotice />

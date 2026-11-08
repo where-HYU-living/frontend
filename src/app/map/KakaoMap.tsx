@@ -19,6 +19,7 @@ import { SITES } from '../../world/neighborhood';
 import { CAMPUS_BOX, serviceTargetFor } from '../../world/serviceArea';
 import { distLabel, planLanding } from '../../world/landing';
 import { useRoute } from '../route/useRoute';
+import { isVisitKind, siteFor, useVisit } from '../visit';
 
 const ALL = visiblePlaces.filter((p) => p.center);
 
@@ -73,12 +74,12 @@ export function pickVisibleLabels(items: { key: string; name: string; x: number;
 }
 
 /** 정보 카드의 '가까운 매물·건물' (3D 좌표 거리, m) */
-export type NearItem = { key: string; name: string; sub: string; d: number; lat: number; lng: number; kind: string; listing?: ListingSummary };
+export type NearItem = { key: string; name: string; sub: string; d: number; lat: number; lng: number; kind: string; id?: number; listing?: ListingSummary };
 export function nearestItems(t: { lat: number; lng: number }, listings: ListingSummary[], housing: { id: number; name: string; lat: number; lng: number }[], n = 4, maxM = 1500): NearItem[] {
   const [x, z] = toLocal(t.lat, t.lng);
   const out: NearItem[] = [];
   for (const l of listings) { const [lx, lz] = toLocal(l.lat, l.lng); out.push({ key: `l${l.id}`, name: l.title, sub: `매물 · ${GRADE_META[l.grade].label}`, d: Math.hypot(lx - x, lz - z), lat: l.lat, lng: l.lng, kind: 'LISTING', listing: l }); }
-  for (const h of housing) { const [hx, hz] = toLocal(h.lat, h.lng); out.push({ key: `h${h.id}`, name: h.name, sub: '청년안심주택', d: Math.hypot(hx - x, hz - z), lat: h.lat, lng: h.lng, kind: 'HOUSING' }); }
+  for (const h of housing) { const [hx, hz] = toLocal(h.lat, h.lng); out.push({ key: `h${h.id}`, name: h.name, sub: '청년안심주택', d: Math.hypot(hx - x, hz - z), lat: h.lat, lng: h.lng, kind: 'HOUSING', id: h.id }); }
   for (const p of ALL) { const [lat, lng] = toLatLng(p.center![0], p.center![1]); out.push({ key: `b${p.no}`, name: p.name, sub: '캠퍼스 건물', d: Math.hypot(p.center![0] - x, p.center![1] - z), lat, lng, kind: 'BUILDING' }); }
   return out.filter((o) => o.d > 5 && o.d <= maxM).sort((a, b) => a.d - b.d).slice(0, n);
 }
@@ -94,6 +95,7 @@ export function KakaoMap() {
   const areaId = useWorld((s) => s.areaId);
   const setMapMode = useUi((s) => s.setMapMode);
   const landAt = useLandAt();
+  const visit = useVisit();
   const goToCampus = useGoToCampus();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState('');
@@ -230,9 +232,9 @@ export function KakaoMap() {
     };
     const focus = (t: MapTarget) => { setPicked(null); setPickedListing(null); useMapFocus.getState().focus(t); };
     if (layers.listings) for (const l of listings ?? []) pin(l.lat, l.lng, GRADE_META[l.grade].color, `${l.title} ${GRADE_META[l.grade].label}`, () => { setPicked(null); useMapFocus.getState().clear(); setPickedListing(l); });
-    if (layers.housing && showHousing) for (const h of housing ?? []) pin(h.lat, h.lng, '#2f9e57', `청년안심주택 ${h.name}`, () => focus({ name: h.name, address: h.address, lat: h.lat, lng: h.lng, kind: 'HOUSING' }), 'ui-map-housing');
-    if (layers.dorms) for (const d of dorms ?? []) pin(d.lat, d.lng, '#7048e8', `기숙사 ${d.name}`, () => focus({ name: d.name, address: null, lat: d.lat, lng: d.lng, kind: 'DORM' }), 'ui-map-dorm');
-    if (layers.transfers) for (const t of (transfers ?? []).filter((x) => x.status === 'OPEN')) pin(t.lat, t.lng, GRADE_META[t.grade].color, `양도 ${t.title} ${GRADE_META[t.grade].label}`, () => focus({ name: `양도 · ${t.title}`, address: null, lat: t.lat, lng: t.lng, kind: 'TRANSFER' }), 'ui-map-transfer');
+    if (layers.housing && showHousing) for (const h of housing ?? []) pin(h.lat, h.lng, '#2f9e57', `청년안심주택 ${h.name}`, () => focus({ name: h.name, address: h.address, lat: h.lat, lng: h.lng, kind: 'HOUSING', id: h.id }), 'ui-map-housing');
+    if (layers.dorms) for (const d of dorms ?? []) pin(d.lat, d.lng, '#7048e8', `기숙사 ${d.name}`, () => focus({ name: d.name, address: null, lat: d.lat, lng: d.lng, kind: 'DORM', id: d.id }), 'ui-map-dorm');
+    if (layers.transfers) for (const t of (transfers ?? []).filter((x) => x.status === 'OPEN')) pin(t.lat, t.lng, GRADE_META[t.grade].color, `양도 ${t.title} ${GRADE_META[t.grade].label}`, () => focus({ name: `양도 · ${t.title}`, address: null, lat: t.lat, lng: t.lng, kind: 'TRANSFER', id: t.id }), 'ui-map-transfer');
     return () => made.forEach((o) => o.setMap(null));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings, housing, dorms, transfers, showHousing, status, tab]);
@@ -308,10 +310,11 @@ export function KakaoMap() {
     setMapMode('3d');
   };
 
-  const goListing = (l: ListingSummary) => {
-    useListingsUi.getState().select(l.id);
-    useUi.setState({ tab: 'home', panelOpen: true });
-    land({ lat: l.lat, lng: l.lng, name: l.title });
+  /** 집 핀(매물·단지·기숙사·양도)은 상세 패널의 '주변 걸어보기'와 같은 길로 간다 */
+  const goListing = (l: ListingSummary) => visit({ kind: 'LISTING', id: l.id, lat: l.lat, lng: l.lng, name: l.title });
+  const goTarget = (t: MapTarget) => {
+    if (t.id != null && isVisitKind(t.kind)) visit({ kind: t.kind, id: t.id, lat: t.lat, lng: t.lng, name: t.name });
+    else land(t);
   };
 
   return (
@@ -321,8 +324,8 @@ export function KakaoMap() {
       {status === 'error' && <p className="ui-map-note" role="alert">{error}</p>}
       {status === 'ready' && <p className="ui-map-legend glass"><i className="is-campus" aria-hidden="true" />캠퍼스 <i className="is-listing" aria-hidden="true" />매물 동네 <i className="is-housing" aria-hidden="true" />청년안심주택 동네 · 점선 안은 3D 로 걸어볼 수 있어요</p>}
       {target && <TargetCard t={target} listings={listings ?? []} housing={housing ?? []} areaId={areaId}
-        onGo={() => land(target)} onClose={() => useMapFocus.getState().clear()}
-        onNear={(n) => { if (n.listing) { useMapFocus.getState().clear(); setPickedListing(n.listing); } else useMapFocus.getState().focus({ name: n.name, address: null, lat: n.lat, lng: n.lng, kind: n.kind }); }} />}
+        onGo={() => goTarget(target)} onClose={() => useMapFocus.getState().clear()}
+        onNear={(n) => { if (n.listing) { useMapFocus.getState().clear(); setPickedListing(n.listing); } else useMapFocus.getState().focus({ name: n.name, address: null, lat: n.lat, lng: n.lng, kind: n.kind, id: n.id }); }} />}
       {pickedListing && (
         <div className="ui-map-card" role="dialog" aria-label={pickedListing.title}>
           <div className="ui-map-card-title">
@@ -357,15 +360,17 @@ const KIND_LABEL: Record<string, string> = { LISTING: '매물', HOUSING: '청년
 /** 검색으로 고른 곳의 정보 카드: 이름·주소·서비스 안/밖·가까운 매물/건물·[3D로 가기] */
 function TargetCard({ t, listings, housing, areaId, onGo, onClose, onNear }: { t: MapTarget; listings: ListingSummary[]; housing: { id: number; name: string; lat: number; lng: number }[]; areaId: string | null; onGo: () => void; onClose: () => void; onNear: (n: NearItem) => void }) {
   const cur = (areaId ?? 'campus') as 'campus';
-  const inside = serviceTargetFor(t.lat, t.lng, cur) != null;
+  const site = t.id != null && isVisitKind(t.kind) ? siteFor(t.kind, t.id) : null; // 동네 조각이 있는 집이면 그 동네로 간다 (useVisit)
+  const inside = site != null || serviceTargetFor(t.lat, t.lng, cur) != null;
   const plan = planLanding(t.lat, t.lng, cur);
+  const worldName = (site && SITES.find((x) => x.id === site)?.name) || plan.worldName;
   const near = nearestItems(t, listings, housing);
   return (
     <div className="ui-map-card" role="dialog" aria-label={`${t.name} 정보`}>
       <div className="ui-map-card-title">{t.kind && KIND_LABEL[t.kind] && <span className="ui-map-card-no">{KIND_LABEL[t.kind]}</span>}{t.name}</div>
       {t.address && <p className="ui-map-card-sub">{t.address}</p>}
       <p className={`ui-map-card-svc ${inside ? 'is-in' : 'is-out'}`} role="status">
-        {inside ? `3D 로 걸어볼 수 있어요 · ${plan.worldName}` : `3D 지원 지역 밖이에요 · 가장 가까운 ${plan.worldName}까지 ${distLabel(plan.distM)}`}
+        {inside ? `3D 로 걸어볼 수 있어요 · ${worldName}` : `3D 지원 지역 밖이에요 · 가장 가까운 ${plan.worldName}까지 ${distLabel(plan.distM)}`}
       </p>
       {near.length > 0 && (
         <ul className="ui-map-near" aria-label="가까운 집·건물">

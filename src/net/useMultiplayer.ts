@@ -9,12 +9,13 @@ import { useSession } from '../app/state/session';
 import { useUi } from '../app/state/ui';
 import { useAvatarLook } from '../world/avatarStore';
 import { makeCrowd, peersFromSearch } from './simulate';
-import { connectWorld, type WorldConnection } from './worldSocket';
-import { CHAT_MS, emptyWorld, EMOTE_MS, interpolate, INTERP_DELAY, worldReducer, type ServerMsg, type WorldModel } from './worldReducer';
+import { connectWorld, type Pose, type WorldConnection } from './worldSocket';
+import { headingOfYaw, indoorPresence, netModel, peersIn } from './presence';
+import { CHAT_MS, emptyWorld, EMOTE_MS, interpolate, INTERP_DELAY, worldReducer, type ServerMsg } from './worldReducer';
 
 export type NetStatus = 'connecting' | 'open' | 'closed' | 'full';
-type NetUi = { status: NetStatus; selfId: string | null; count: number; conn: WorldConnection | null; /** 초대 링크로 들어와 초대한 사람 옆으로 이동했을 때 true (잠깐 안내) */ invited: boolean };
-export const useNet = create<NetUi>(() => ({ status: 'closed', selfId: null, count: 0, conn: null, invited: false }));
+type NetUi = { status: NetStatus; selfId: string | null; count: number; /** 내가 실내에 있을 때 같은 방에 있는 다른 사람 수 */ roomCount: number; conn: WorldConnection | null; /** 초대 링크로 들어와 초대한 사람 옆으로 이동했을 때 true (잠깐 안내) */ invited: boolean };
+export const useNet = create<NetUi>(() => ({ status: 'closed', selfId: null, count: 0, roomCount: 0, conn: null, invited: false }));
 
 const wsBase = () => ((import.meta.env.VITE_API_BASE as string | undefined) ?? 'http://localhost:8080').replace(/^http/, 'ws').replace(/\/$/, '');
 const guestName = () => { try { const k = 'chatatda.nick'; let n = sessionStorage.getItem(k); if (!n) { n = `손님${Math.floor(1000 + Math.random() * 9000)}`; sessionStorage.setItem(k, n); } return n; } catch { return '손님'; } };
@@ -31,7 +32,7 @@ export function useMultiplayer() {
   const [ready, setReady] = useState(false);
   useEffect(() => { if (api) setReady(true); }, [api]);
   const nickname = useSession((s) => s.nickname);
-  const model = useRef<WorldModel>(emptyWorld());
+  const model = netModel; // 실내 화면(IndoorPeers)도 같은 모델을 읽는다
   const [soloFlag] = useState(() => /[?&]solo\b/.test(location.search)); // ?solo 로 혼자 보기
   const enabled = !soloFlag;
 
@@ -41,14 +42,27 @@ export function useMultiplayer() {
     if (!ready || !enabled) return;
     const q = new URLSearchParams(location.search);
     const invite = q.get('invite');
-    let prev: number[] | null = null, a: 'idle' | 'walk' = 'idle', lastPose = { p: [0, 0, 0] as [number, number, number], r: 0, a: 'idle' as 'idle' | 'walk' };
-    const getPose = () => {
-      const w = apiRef.current;
-      if (!w) return lastPose; // 월드를 바꾸는 중: 같은 값을 돌려 move 를 보내지 않는다
-      const { p, heading } = w.getPose();
-      a = prev && Math.hypot(p[0] - prev[0], p[2] - prev[2]) > 0.02 && Math.hypot(p[0] - prev[0], p[2] - prev[2]) < 30 ? 'walk' : 'idle';
+    let prev: number[] | null = null, prevRoom: number | null = null, lastPose: Pose = { p: [0, 0, 0], r: 0, a: 'idle' };
+    const walkOf = (p: number[], room: number | null): 'idle' | 'walk' => {
+      if (room !== prevRoom) { prevRoom = room; prev = null; } // 방을 오가면 좌표계가 바뀐다 (순간이동을 걷기로 보지 않게)
+      const d = prev ? Math.hypot(p[0] - prev[0], p[2] - prev[2]) : 0;
       prev = p;
-      lastPose = { p, r: heading, a };
+      return d > 0.02 && d < 30 ? 'walk' : 'idle';
+    };
+    const getPose = (): Pose => {
+      // 실내(방 투어) 중이면 그 방 좌표 + room 을 보낸다. 다른 사람 화면에서는 바깥에서 사라지고 같은 방 안에 나타난다
+      const ind = indoorPresence.read?.();
+      if (ind) {
+        const p: [number, number, number] = [ind.x, ind.y, ind.z];
+        lastPose = { p, r: headingOfYaw(ind.yaw), a: walkOf(p, ind.room), room: ind.room };
+        return lastPose;
+      }
+      const w = apiRef.current;
+      // 월드를 바꾸는 중(api 없음): 마지막 값 그대로(방 안이었으면 방 안 그대로) — 실내 좌표를 room 없이 보내면 바깥 사자상 근처에 나타난다
+      if (!w) return lastPose;
+      // 실내 도면을 불러오는 중이면 바깥에서 들어가기 직전 자리를 보낸다 (바깥 장면은 멈춰 있어 그대로다)
+      const { p, heading } = w.getPose();
+      lastPose = { p, r: heading, a: walkOf(p, null) };
       return lastPose;
     };
     let welcomed = false;
@@ -60,13 +74,25 @@ export function useMultiplayer() {
       if (m.t === 'welcome') {
         useNet.setState({ selfId: m.selfId });
         // 초대 스폰은 처음 접속 때만 (재접속 때 다시 초대한 사람 옆으로 끌려가지 않게)
-        if (!welcomed && m.invited && m.spawn && (m.spawn.p[0] !== 0 || m.spawn.p[2] !== 0)) placeAt(m.spawn.p[0], m.spawn.p[2]);
+        if (!welcomed && m.invited && m.spawn?.room != null) {
+          // 초대한 사람이 방 안에 있다 → 그 방으로 들어가 옆에 선다 (설 자리는 실내 화면이 벽·가구를 피해 고른다)
+          const [x, , z] = m.spawn.p;
+          useUi.getState().enterIndoor(m.spawn.room, '초대받은 방', { start: { x, z, yaw: m.spawn.r - Math.PI }, invited: true });
+        } else if (!welcomed && m.invited && m.spawn && (m.spawn.p[0] !== 0 || m.spawn.p[2] !== 0)) placeAt(m.spawn.p[0], m.spawn.p[2]);
         if (!welcomed && m.invited) { useNet.setState({ invited: true }); setTimeout(() => useNet.setState({ invited: false }), 5000); }
         welcomed = true;
       }
-      const count = Object.keys(model.current.players).length;
-      if (count !== before || m.t === 'welcome') useNet.setState({ count }); // 10Hz state 마다 스토어를 건드리지 않는다
+      recount(m.t === 'welcome' || Object.keys(model.current.players).length !== before);
     };
+    /** 접속 인원·같은 방 인원. 바뀌었을 때만 스토어를 건드린다 (10Hz state 마다 리렌더하지 않게) */
+    const recount = (force = false) => {
+      const count = Object.keys(model.current.players).length;
+      const myRoom = indoorPresence.read?.().room ?? null;
+      const roomCount = myRoom == null ? 0 : peersIn(model.current.players, myRoom).length;
+      const st = useNet.getState();
+      if (force || count !== st.count || roomCount !== st.roomCount) useNet.setState({ count, roomCount });
+    };
+    const recountTimer = setInterval(recount, 500); // 내가 방에 들어가고 나온 것은 메시지가 없어도 반영
     // 초대한 사람이 동네 월드에 있으면 그 동네로 월드를 바꿔서 옆에 선다 (캠퍼스 월드에서 그 좌표로 가면 월드 밖 들판)
     const placeAt = (x: number, z: number) => {
       const cur = useWorld.getState().areaId ?? 'campus';
@@ -105,13 +131,13 @@ export function useMultiplayer() {
       const now = performance.now();
       const me = model.current.self;
       api.setSelfBubble?.({ chat: me?.chat && me.chat.until > now ? me.chat.m : undefined, emote: me?.emote && me.emote.until > now ? EMOTE_SVG[me.emote.e] : undefined });
-      api.setRemotePlayers(Object.entries(model.current.players).map(([id, pl]) => {
+      api.setRemotePlayers(peersIn(model.current.players, null).map(([id, pl]) => { // 방 안에 있는 사람은 바깥에 그리지 않는다
         const { p, r } = interpolate(pl.samples, now - INTERP_DELAY);
         return { id, nickname: pl.nickname, x: p[0], z: p[2], r, walking: pl.a !== 'idle', look: pl.look, chat: pl.chat && pl.chat.until > now ? pl.chat.m : undefined, emote: pl.emote && pl.emote.until > now ? EMOTE_SVG[pl.emote.e] : undefined };
       }));
     };
     raf = requestAnimationFrame(loop);
-    return () => { unsubLook(); cancelAnimationFrame(raf); clearInterval(simTimer); conn?.close(); apiRef.current?.setRemotePlayers([]); useNet.setState({ conn: null, status: 'closed', count: 0, selfId: null }); };
+    return () => { unsubLook(); cancelAnimationFrame(raf); clearInterval(simTimer); clearInterval(recountTimer); conn?.close(); apiRef.current?.setRemotePlayers([]); useNet.setState({ conn: null, status: 'closed', count: 0, roomCount: 0, selfId: null }); };
   }, [ready, enabled, nickname]);
 }
 

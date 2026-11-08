@@ -38,6 +38,7 @@
 - 3D 부가 표시는 `WorldEffects` 한 곳(시간대 조명 `api.setTimeOfDay`·내 과 건물·선택한 집 주변 시설·모집 중 단지 빛 기둥 `api.setBeacons`). 시간대는 상단바 슬라이더(왼쪽 낮 ~ 오른쪽 밤, `useUi.timeOfDay` 0~1)이고 `src/world/timeOfDay.ts` 의 `lightAt`(보간)·`starsAt`(별)·`clockLabel`(시각)을 쓴다. 아이콘은 모두 `lucide-react`, 3D 말풍선처럼 DOM 에 직접 넣는 곳은 `src/app/icons.tsx` 의 SVG 문자열을 쓴다.
 - 실내 3D: `src/interior/` — `buildInterior`(평면도→벽 조각, 순수 함수)·`InteriorScene`(별도 Canvas). 들어가면 동네 Canvas 는 멈추고(`frameloop never`) 나오면 그 자리 그대로.
 - 멀티플레이: `src/net/` — `worldReducer`·`interpolate`(순수)·`worldSocket`(재접속·10Hz)·`useMultiplayer`(3D 에 `api.setRemotePlayers`). `?solo` 를 붙이면 접속 안 함, `?invite=` 는 접속 후 주소에서 지운다.
+  - 실내(방 투어)도 같은 소켓: `move` 에 `room`(도면 id)을 실어 보낸다(`net/presence.ts` 의 `indoorPresence` 를 `InteriorScene` 이 건다). 바깥은 `room` 없는 사람만, 실내는 같은 `room` 인 사람만 그린다(`peersIn`, 실내는 `interior/IndoorPeers`). 방을 오가면 보간 샘플을 새로 시작. 점검: `node scripts/mp-check.mjs`.
 
 ## 고도화 기능 위치 (2026-11-07)
 - 폼 부품: `src/app/forms/`(Field·UnitInput·Segmented·ChipSelect·PhotoGrid·FormSection·StickyActions, 환산 월세 `calc.ts`). 새 폼은 이 부품으로 만든다(세로 한 줄 쌓기 금지, 섹션·2열·단위 접미사·하단 고정 버튼).
