@@ -13,6 +13,7 @@ import { FLOORPLANS } from './fixtures/floorplans';
 import { HOUSING, makeAnnouncements, unitWithConverted } from './fixtures/housing';
 import { LISTINGS } from './fixtures/listings';
 import { marketFor } from './fixtures/market';
+import { AI_RENT } from './fixtures/aiRent';
 
 export class HttpError extends Error {
   constructor(public status: number, public code: string, message: string, public details: unknown = null) { super(message); }
@@ -83,7 +84,7 @@ const listing = (id: number) => LISTINGS.find((l) => l.id === id) ?? (() => { th
 const budgetOrNull = (authed: boolean) => (authed ? db.profile.budget : null);
 
 function listingPriceCheck(l: ListingDetail, authed: boolean) {
-  return buildPriceCheck({ rent: l.rent, mgmtFee: l.mgmtFee, deposit: l.deposit, contractMonths: 24, market: marketFor(l.dong, l.areaM2), budget: budgetOrNull(authed) });
+  return buildPriceCheck({ rent: l.rent, mgmtFee: l.mgmtFee, deposit: l.deposit, contractMonths: 24, market: marketFor(l.dong, l.areaM2), budget: budgetOrNull(authed), aiEstimate: AI_RENT[l.id] ?? null });
 }
 
 const cheapestUnit = (h: (typeof HOUSING)[number]) => h.units.map(unitWithConverted).sort((a, b) => a.convertedRent - b.convertedRent)[0];

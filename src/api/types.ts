@@ -46,7 +46,11 @@ export type PriceCheck = {
   conversionRate: number;
   sample: { count: number; scope: 'DONG' | 'ADJACENT' | 'NONE'; dongs: string[]; areaMinM2: number | null; areaMaxM2: number | null; from: string | null; to: string | null };
   budget: { rentCap: number | null; depositCap: number | null; overRent: number | null; overDeposit: number | null } | null;
+  /** AI 적정가 (원/월, fairRent 와 같은 환산 기준). 룰 기반 판정과 별개로 옆에 보여 준다. 매물만, 없으면 null */
+  aiEstimate: AiEstimate | null;
 };
+
+export type AiEstimate = { fairRent: number; low: number; high: number };
 
 export type Alternative = { type: FavoriteType; id: number; name: string; convertedRent: number; monthlyDiff: number; twoYearDiff: number; walkMin: number | null };
 
