@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { WorldLayer } from './WorldLayer';
 import { TopBar } from './TopBar';
 import { SidePanel } from './SidePanel';
@@ -35,7 +35,28 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
 
 function Loading() {
   const { status, progress, error } = useWorld();
+  // 키보드(Tab·Enter)로 메뉴 버튼을 누르는 길도 막는다 (React 18 은 inert 속성을 몰라서 직접 건다)
+  useEffect(() => {
+    const layer = document.querySelector<HTMLElement>('.ui-layer');
+    if (!layer || status !== 'loading') return;
+    layer.inert = true;
+    return () => { layer.inert = false; };
+  }, [status]);
   if (status === 'ready') return null;
+  // 불러오는 동안에도 3D 가 사자상 앞에서 그려지므로 화면을 가리지 않고 아래쪽에 작은 진행 막대만 띄운다.
+  // 다만 투명한 막으로 클릭·터치를 모두 받아서, 다 불러오기 전에는 이동(검색·길찾기·월드 전환 포함)을 못 하게 한다
+  if (status !== 'error') {
+    const pct = Math.round(progress * 100);
+    return (
+      // 시작 화면(사자상 앞, progress 0.5)이 다 지어지기 전에는 안개색으로 가렸다가 페이드로 걷는다 → 바닥부터 올라오는 모습이 안 보인다
+      <div className={`ui-loadblock${progress < 0.5 ? ' is-veiled' : ''}`} role="status" aria-label={`캠퍼스를 불러오는 중 ${pct}%`} onPointerDown={(e) => e.preventDefault()}>
+        <div className="ui-loadpill glass">
+          <span className="ui-loadpill-text">불러오는 중 {pct}%</span>
+          <div className="loading-bar"><span style={{ width: `${pct}%` }} /></div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="loading" role="status">
       <div className="loading-card glass">

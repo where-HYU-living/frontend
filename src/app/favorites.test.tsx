@@ -169,7 +169,7 @@ test('찜 목록: 종류별 개수 필터, 카드에서 바로 취소, 누르면
   await waitFor(() => expect(screen.queryByText('LISTING7')).toBeNull()); // 취소하면 목록에서 사라진다
 });
 
-test('찜 목록에서 자취방을 누르면 집 찾기 탭에서 그 매물 상세를 연다', async () => {
+test('찜 목록에서 자취방을 누르면 매물 찾기 탭에서 그 매물 상세를 연다', async () => {
   favs = [fav('LISTING', 7)];
   renderWithClient(<FavoritesPanel />);
   fireEvent.click(await screen.findByText('LISTING7'));

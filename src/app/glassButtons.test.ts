@@ -10,7 +10,7 @@ test('button reset has zero specificity so .glass buttons keep their glass backg
 
 test('glass buttons set their own text color so they stay readable on a dark sky', () => {
   const css = readFileSync('src/app/app.css', 'utf8');
-  expect(css).toMatch(/\.textbtn, \.iconbtn, \.reopen \{ color: var\(--ui-ink\); \}/);
+  expect(css).toMatch(/\.textbtn, \.iconbtn \{ color: var\(--ui-ink\); \}/);
 });
 
 test('map switch button and clock have fixed widths so the top bar does not shift when text changes', () => {

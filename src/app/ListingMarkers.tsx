@@ -8,7 +8,7 @@ import { depositRent } from '../lib/money';
 import { useFavoriteLookup } from './features/favorites';
 import { useListings, useListingsUi } from './features/listings';
 
-/** 매물 목록을 3D 말풍선(등급 색)으로 올린다. 클릭하면 집 찾기 탭에서 그 매물 상세를 연다 */
+/** 매물 목록을 3D 말풍선(등급 색)으로 올린다. 클릭하면 매물 찾기 탭에서 그 매물 상세를 연다 */
 export function ListingMarkers() {
   const api = useWorld((s) => s.api);
   const filters = useListingsUi((s) => s.filters);

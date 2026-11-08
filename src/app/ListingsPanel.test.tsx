@@ -54,11 +54,10 @@ test('guest heart click opens login and sends no request', () => {
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-test('login rejects non-hanyang mail with a friendly message', async () => {
+test('login shows only Google sign-in, no mail code form', () => {
   useSession.setState({ loginOpen: true });
-  fetchMock.mockResolvedValue(json({ code: 'INVALID_EMAIL_DOMAIN', message: 'x' }, 400));
   renderWithClient(<LoginModal />);
-  fireEvent.change(screen.getByLabelText('학교 메일'), { target: { value: 'a@gmail.com' } });
-  fireEvent.click(screen.getByText('인증 코드 받기'));
-  expect(await screen.findByText(/한양대 메일\(@hanyang.ac.kr\)만 가능해요/)).toBeTruthy();
+  expect(screen.queryByLabelText('학교 메일')).toBeNull();
+  expect(screen.queryByText('인증 코드 받기')).toBeNull();
+  expect(screen.queryByText(/메일로 인증/)).toBeNull();
 });

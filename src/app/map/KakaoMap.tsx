@@ -7,7 +7,9 @@ import { useWorld } from '../state/world';
 import { KAKAO_ERRORS, loadKakao } from './loadKakao';
 import { toLatLng, toLocal } from './geo';
 import { useListings, useListingsUi } from '../features/listings';
-import { useHousingList } from '../features/catalog';
+import { useDorms, useHousingList } from '../features/catalog';
+import { useTransfers } from '../features/more';
+import type { Tab } from '../state/ui';
 import { GRADE_META, inkFor } from '../../lib/grade';
 import { depositRent, manwon } from '../../lib/money';
 import type { ListingSummary } from '../../api/types';
@@ -19,6 +21,23 @@ import { distLabel, planLanding } from '../../world/landing';
 import { useRoute } from '../route/useRoute';
 
 const ALL = visiblePlaces.filter((p) => p.center);
+
+export type MapLayers = { campus: boolean; listings: boolean; housing: boolean; dorms: boolean; transfers: boolean };
+/**
+ * 지도에서 지금 탭에 맞는 핀만 보인다 (탭이 곧 필터).
+ * 지도에 올릴 게 없는 탭(내 집 기록·찜·알림)은 예전처럼 캠퍼스 건물·매물·단지를 모두 보여 준다.
+ */
+export function mapLayers(tab: Tab): MapLayers {
+  const none = { campus: false, listings: false, housing: false, dorms: false, transfers: false };
+  switch (tab) {
+    case 'home': return { ...none, listings: true };
+    case 'tour': return { ...none, campus: true };
+    case 'dorm': return { ...none, dorms: true };
+    case 'housing': return { ...none, housing: true };
+    case 'transfer': return { ...none, transfers: true };
+    default: return { ...none, campus: true, listings: true, housing: true };
+  }
+}
 
 /** 이 확대 단계(카카오 level, 작을수록 확대) 이하에서만 건물 이름을 띄운다 */
 const NAME_LEVEL = 3;
@@ -89,7 +108,12 @@ export function KakaoMap() {
   const filters = useListingsUi((s) => s.filters);
   const listings = useListings(filters).data?.items;
   const housing = useHousingList().data;
+  const dorms = useDorms().data;
+  const transfers = useTransfers().data?.items;
   const showHousing = useUi((s) => s.showHousing);
+  const tab = useUi((s) => s.tab);
+  const layers = mapLayers(tab);
+  const campusOn = useRef(layers.campus); // 지도 effect(한 번 만듦) 안의 이름 배치가 읽는다
   const target = useMapFocus((s) => s.target);
   const seq = useMapFocus((s) => s.seq);
   const route = useRoute((s) => s.route);
@@ -147,7 +171,7 @@ export function KakaoMap() {
         declutter.current = () => {
           const named = map.getLevel() <= NAME_LEVEL;
           ref.current?.classList.toggle('ui-map-names', named);
-          if (!named) return;
+          if (!named || !campusOn.current) return; // 캠퍼스 핀이 숨어 있으면 이름 자리 계산도 안 한다
           const proj = map.getProjection();
           const pts = items.map(({ place, pos }) => { const pt = proj.containerPointFromCoords(pos); return { key: place.no, name: place.name, x: pt.x, y: pt.y }; });
           const shown = pickVisibleLabels(pts, pickedNo.current);
@@ -204,10 +228,23 @@ export function KakaoMap() {
       el.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
       made.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(lat, lng), content: el, xAnchor: 0.5, yAnchor: 1, zIndex: 3, clickable: true }));
     };
-    for (const l of listings ?? []) pin(l.lat, l.lng, GRADE_META[l.grade].color, `${l.title} ${GRADE_META[l.grade].label}`, () => { setPicked(null); useMapFocus.getState().clear(); setPickedListing(l); });
-    if (showHousing) for (const h of housing ?? []) pin(h.lat, h.lng, '#2f9e57', `청년안심주택 ${h.name}`, () => { setPicked(null); setPickedListing(null); useMapFocus.getState().focus({ name: h.name, address: h.address, lat: h.lat, lng: h.lng, kind: 'HOUSING' }); }, 'ui-map-housing');
+    const focus = (t: MapTarget) => { setPicked(null); setPickedListing(null); useMapFocus.getState().focus(t); };
+    if (layers.listings) for (const l of listings ?? []) pin(l.lat, l.lng, GRADE_META[l.grade].color, `${l.title} ${GRADE_META[l.grade].label}`, () => { setPicked(null); useMapFocus.getState().clear(); setPickedListing(l); });
+    if (layers.housing && showHousing) for (const h of housing ?? []) pin(h.lat, h.lng, '#2f9e57', `청년안심주택 ${h.name}`, () => focus({ name: h.name, address: h.address, lat: h.lat, lng: h.lng, kind: 'HOUSING' }), 'ui-map-housing');
+    if (layers.dorms) for (const d of dorms ?? []) pin(d.lat, d.lng, '#7048e8', `기숙사 ${d.name}`, () => focus({ name: d.name, address: null, lat: d.lat, lng: d.lng, kind: 'DORM' }), 'ui-map-dorm');
+    if (layers.transfers) for (const t of (transfers ?? []).filter((x) => x.status === 'OPEN')) pin(t.lat, t.lng, GRADE_META[t.grade].color, `양도 ${t.title} ${GRADE_META[t.grade].label}`, () => focus({ name: `양도 · ${t.title}`, address: null, lat: t.lat, lng: t.lng, kind: 'TRANSFER' }), 'ui-map-transfer');
     return () => made.forEach((o) => o.setMap(null));
-  }, [listings, housing, showHousing, status]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listings, housing, dorms, transfers, showHousing, status, tab]);
+
+  // 캠퍼스 건물 핀은 지도를 만들 때 한 번 깔아 두고, 탭에 따라 보이기만 바꾼다
+  useEffect(() => {
+    campusOn.current = layers.campus;
+    pins.current.forEach((el) => { el.style.display = layers.campus ? '' : 'none'; });
+    if (layers.campus) declutter.current();
+    setPicked(null); setPickedListing(null); // 다른 탭의 핀 카드는 닫는다
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, status]);
 
   // 검색 결과·고른 곳: 그 자리로 이동·확대하고 마커를 꽂는다
   useEffect(() => {
