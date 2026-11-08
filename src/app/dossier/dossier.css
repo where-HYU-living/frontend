@@ -43,7 +43,8 @@
 .ui-tl-main { display: flex; flex-direction: column; }
 .ui-tl-date { font-size: 11px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
 
-/* 공고 캘린더 (월 달력) */
+/* 공고 캘린더 (월 달력). 날짜 고르기 달력은 forms.css 의 .ui-dcal-* (예전엔 이름이 같아 그 폭 292px 이 여기에도 걸려 패널 폭과 어긋났다) */
+.ui-cal { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 14px; background: #fff; box-shadow: 0 1px 3px rgba(22, 32, 46, .08), 0 0 0 1px rgba(22, 32, 46, .06); }
 .ui-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .ui-cal-head strong { font-size: 15px; }
 .ui-cal-nav { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ui-ink); cursor: pointer; }

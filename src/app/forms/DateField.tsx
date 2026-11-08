@@ -59,18 +59,18 @@ function Calendar({ value, min, max, onPick, onClose, quick, label }: { value: s
   const go = (months: number) => setFocus(clamp(addMonths(focus, months)));
 
   return (
-    <div className="ui-cal" role="dialog" aria-label={`${label} 달력`} onKeyDown={key}>
-      <div className="ui-cal-head">
-        <button type="button" className="ui-cal-nav" aria-label={view === 'days' ? '1년 전' : '1년 전'} onClick={() => go(-12)}><ChevronsLeft size={16} aria-hidden="true" /></button>
-        {view === 'days' && <button type="button" className="ui-cal-nav" aria-label="이전 달" onClick={() => go(-1)}><ChevronLeft size={16} aria-hidden="true" /></button>}
-        <button type="button" className="ui-cal-title" aria-live="polite" onClick={() => setView(view === 'days' ? 'months' : 'days')} title={view === 'days' ? '달 고르기' : '날짜로 돌아가기'}>
+    <div className="ui-dcal" role="dialog" aria-label={`${label} 달력`} onKeyDown={key}>
+      <div className="ui-dcal-head">
+        <button type="button" className="ui-dcal-nav" aria-label={view === 'days' ? '1년 전' : '1년 전'} onClick={() => go(-12)}><ChevronsLeft size={16} aria-hidden="true" /></button>
+        {view === 'days' && <button type="button" className="ui-dcal-nav" aria-label="이전 달" onClick={() => go(-1)}><ChevronLeft size={16} aria-hidden="true" /></button>}
+        <button type="button" className="ui-dcal-title" aria-live="polite" onClick={() => setView(view === 'days' ? 'months' : 'days')} title={view === 'days' ? '달 고르기' : '날짜로 돌아가기'}>
           {view === 'days' ? `${f.y}년 ${f.m}월` : `${f.y}년`}
         </button>
-        {view === 'days' && <button type="button" className="ui-cal-nav" aria-label="다음 달" onClick={() => go(1)}><ChevronRight size={16} aria-hidden="true" /></button>}
-        <button type="button" className="ui-cal-nav" aria-label="1년 뒤" onClick={() => go(12)}><ChevronsRight size={16} aria-hidden="true" /></button>
+        {view === 'days' && <button type="button" className="ui-dcal-nav" aria-label="다음 달" onClick={() => go(1)}><ChevronRight size={16} aria-hidden="true" /></button>}
+        <button type="button" className="ui-dcal-nav" aria-label="1년 뒤" onClick={() => go(12)}><ChevronsRight size={16} aria-hidden="true" /></button>
       </div>
       {view === 'months' ? (
-        <div className="ui-cal-months" role="group" aria-label={`${f.y}년 달 고르기`}>
+        <div className="ui-dcal-months" role="group" aria-label={`${f.y}년 달 고르기`}>
           {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
             const first = ymd(f.y, m, 1), last = ymd(f.y, m, daysIn(f.y, m));
             const disabled = (!!max && first > max) || (!!min && last < min);
@@ -78,18 +78,18 @@ function Calendar({ value, min, max, onPick, onClose, quick, label }: { value: s
           })}
         </div>
       ) : (
-        <div ref={grid} className="ui-cal-grid" role="grid" aria-label={`${f.y}년 ${f.m}월`}>
-          {WEEKDAYS.map((w, i) => <span key={w} className={`ui-cal-wd${i === 0 ? ' is-sun' : i === 6 ? ' is-sat' : ''}`} aria-hidden="true">{w}</span>)}
+        <div ref={grid} className="ui-dcal-grid" role="grid" aria-label={`${f.y}년 ${f.m}월`}>
+          {WEEKDAYS.map((w, i) => <span key={w} className={`ui-dcal-wd${i === 0 ? ' is-sun' : i === 6 ? ' is-sat' : ''}`} aria-hidden="true">{w}</span>)}
           {cells.map((d, i) => d == null ? <span key={`e${i}`} /> : (
             <button key={d} type="button" role="gridcell" tabIndex={d === focus ? 0 : -1} data-focus={d === focus ? '1' : undefined}
               aria-selected={d === value} aria-current={d === today ? 'date' : undefined} aria-label={formatYmd(d)} disabled={out(d)}
-              className={['ui-cal-day', d === value && 'is-sel', d === today && 'is-today', i % 7 === 0 && 'is-sun', i % 7 === 6 && 'is-sat'].filter(Boolean).join(' ')}
+              className={['ui-dcal-day', d === value && 'is-sel', d === today && 'is-today', i % 7 === 0 && 'is-sun', i % 7 === 6 && 'is-sat'].filter(Boolean).join(' ')}
               onClick={() => onPick(d)} onFocus={() => d !== focus && setFocus(d)}>{+d.slice(8)}</button>
           ))}
         </div>
       )}
       {!!quick?.length && (
-        <div className="ui-cal-quick">
+        <div className="ui-dcal-quick">
           {quick.map((q) => <button key={q.label} type="button" disabled={q.value != null && out(q.value)} className={q.value === value || (q.value == null && !value) ? 'on' : ''} onClick={() => onPick(q.value)}>{q.label}</button>)}
         </div>
       )}
@@ -125,7 +125,7 @@ export function DateField({ label, value, onChange, min, max, hint, error, quick
         {clearable && value && <button type="button" className="ui-date-clear" aria-label={`${label} 지우기`} onClick={() => onChange('')}><X size={14} aria-hidden="true" /></button>}
       </div>
       {open && (
-        <div className={`ui-cal-pop${right ? ' is-right' : ''}`}>
+        <div className={`ui-dcal-pop${right ? ' is-right' : ''}`}>
           <Calendar value={value} min={min} max={max} quick={quick} label={label} onClose={close} onPick={(v) => { onChange(v ?? ''); close(); }} />
         </div>
       )}
@@ -143,18 +143,18 @@ export function MonthStepper({ label, value, onChange, max }: { label: string; v
   const next = shiftMonth(value, 1), canNext = !max || next <= max;
   return (
     <div ref={root} className="ui-mstep" role="group" aria-label={label}>
-      <button type="button" className="ui-cal-nav" aria-label="이전 달" onClick={() => onChange(shiftMonth(value, -1))}><ChevronLeft size={18} aria-hidden="true" /></button>
+      <button type="button" className="ui-dcal-nav" aria-label="이전 달" onClick={() => onChange(shiftMonth(value, -1))}><ChevronLeft size={18} aria-hidden="true" /></button>
       <button type="button" className="ui-mstep-title" aria-haspopup="dialog" aria-expanded={open} onClick={() => { setYear(+value.slice(0, 4)); setOpen((o) => !o); }}>{formatYm(value)}</button>
-      <button type="button" className="ui-cal-nav" aria-label="다음 달" disabled={!canNext} onClick={() => canNext && onChange(next)}><ChevronRight size={18} aria-hidden="true" /></button>
+      <button type="button" className="ui-dcal-nav" aria-label="다음 달" disabled={!canNext} onClick={() => canNext && onChange(next)}><ChevronRight size={18} aria-hidden="true" /></button>
       {open && (
-        <div className="ui-cal-pop is-center">
-          <div className="ui-cal" role="dialog" aria-label={`${label} 고르기`} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); } }}>
-            <div className="ui-cal-head">
-              <button type="button" className="ui-cal-nav" aria-label="1년 전" onClick={() => setYear(year - 1)}><ChevronLeft size={16} aria-hidden="true" /></button>
-              <span className="ui-cal-title">{year}년</span>
-              <button type="button" className="ui-cal-nav" aria-label="1년 뒤" disabled={!!max && ym(year + 1, 1) > max} onClick={() => setYear(year + 1)}><ChevronRight size={16} aria-hidden="true" /></button>
+        <div className="ui-dcal-pop is-center">
+          <div className="ui-dcal" role="dialog" aria-label={`${label} 고르기`} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); } }}>
+            <div className="ui-dcal-head">
+              <button type="button" className="ui-dcal-nav" aria-label="1년 전" onClick={() => setYear(year - 1)}><ChevronLeft size={16} aria-hidden="true" /></button>
+              <span className="ui-dcal-title">{year}년</span>
+              <button type="button" className="ui-dcal-nav" aria-label="1년 뒤" disabled={!!max && ym(year + 1, 1) > max} onClick={() => setYear(year + 1)}><ChevronRight size={16} aria-hidden="true" /></button>
             </div>
-            <div className="ui-cal-months">
+            <div className="ui-dcal-months">
               {Array.from({ length: 12 }, (_, i) => ym(year, i + 1)).map((m) => (
                 <button key={m} type="button" disabled={!!max && m > max} className={m === value ? 'on' : ''} onClick={() => { onChange(m); setOpen(false); }}>{+m.slice(5)}월</button>
               ))}

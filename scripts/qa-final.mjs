@@ -277,10 +277,10 @@ async function main() {
           await page.getByRole('textbox', { name: '월세(만원)' }).fill('55');
           await page.getByRole('textbox', { name: '면적(㎡)' }).fill('18');
           await ev(() => window.__qa.find('.ui-date-btn').click());
-          await page.waitForSelector('.ui-cal');
-          const cal = await ev(() => { const c = document.querySelector('.ui-cal').getBoundingClientRect(), p = document.querySelector('.ui-panel').getBoundingClientRect(); return { inView: c.left >= 0 && c.right <= innerWidth && c.top >= 0, inPanel: c.left >= p.left - 1 && c.right <= p.right + 1, w: Math.round(c.width) }; });
+          await page.waitForSelector('.ui-dcal');
+          const cal = await ev(() => { const c = document.querySelector('.ui-dcal').getBoundingClientRect(), p = document.querySelector('.ui-panel').getBoundingClientRect(); return { inView: c.left >= 0 && c.right <= innerWidth && c.top >= 0, inPanel: c.left >= p.left - 1 && c.right <= p.right + 1, w: Math.round(c.width) }; });
           rec('H1:달력 위치', W, cal.inView && cal.inPanel, `달력 폭 ${cal.w}, 화면 안 ${cal.inView}, 패널 안 ${cal.inPanel}`);
-          await ev(() => window.__qa.find('.ui-cal-quick button', '오늘').click());
+          await ev(() => window.__qa.find('.ui-dcal-quick button', '오늘').click());
           const endSet = await ev(() => [...document.querySelectorAll('.ui-date-btn')].map((b) => b.textContent.trim()));
           if (W === 1280) {
             const s = await clickWait({ sel: '.ui-panel .ui-primary', text: '등록' }, `!!document.querySelector('.ui-home-card') || !!document.querySelector('[aria-label="내 집"]')`);

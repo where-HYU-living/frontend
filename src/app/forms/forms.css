@@ -132,44 +132,45 @@
 .ui-date.has-error .ui-date-btn { border-color: #c0392b; }
 .ui-date-clear { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ui-ink-3); cursor: pointer; }
 .ui-date-clear:hover { background: var(--ui-hair); color: var(--ui-ink); }
-.ui-cal-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; }
-.ui-date .ui-cal-pop { top: 62px; }
-.ui-cal-pop.is-right { left: auto; right: 0; }
-.ui-cal-pop.is-center { left: 50%; transform: translateX(-50%); top: calc(100% + 6px); }
-.ui-cal { width: 292px; box-sizing: border-box; padding: 10px; border-radius: 14px; background: #fff; box-shadow: 0 12px 36px rgba(22, 32, 46, .22), 0 0 0 1px rgba(22, 32, 46, .06); color: var(--ui-ink); font-size: 13px; }
-.ui-cal-head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
-.ui-cal-nav { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ui-ink-2); cursor: pointer; }
-.ui-cal-nav:hover:not(:disabled) { background: var(--ui-hair); color: var(--ui-ink); }
-.ui-cal-nav:disabled { opacity: .3; cursor: default; }
-.ui-cal-title { flex: 1; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--ui-ink); font: 700 14px inherit; font-family: inherit; text-align: center; line-height: 32px; cursor: pointer; }
-button.ui-cal-title:hover { background: var(--ui-hair); }
-.ui-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.ui-cal-wd { height: 24px; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--ui-ink-3); }
-.ui-cal-wd.is-sun, .ui-cal-day.is-sun { color: #d6453d; }
-.ui-cal-wd.is-sat, .ui-cal-day.is-sat { color: #2f6fd6; }
-.ui-cal-day { height: 36px; border: 0; border-radius: 10px; background: none; color: var(--ui-ink); font: 500 13px inherit; font-family: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
-.ui-cal-day:hover:not(:disabled) { background: rgba(14, 74, 132, .1); }
-.ui-cal-day:focus-visible { outline: 2px solid #0e4a84; outline-offset: -2px; }
-.ui-cal-day.is-today { box-shadow: inset 0 0 0 1.5px rgba(14, 74, 132, .5); font-weight: 700; }
-.ui-cal-day.is-sel, .ui-cal-day.is-sel:hover { background: #0e4a84; color: #fff; font-weight: 700; }
-.ui-cal-day:disabled { color: var(--ui-ink-3); opacity: .35; cursor: default; }
-.ui-cal-months { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 4px 0; }
-.ui-cal-months button { height: 40px; border: 0; border-radius: 10px; background: var(--ui-hair); color: var(--ui-ink); font: 600 13px inherit; font-family: inherit; cursor: pointer; }
-.ui-cal-months button:hover:not(:disabled) { background: rgba(14, 74, 132, .14); }
-.ui-cal-months button.on { background: #0e4a84; color: #fff; }
-.ui-cal-months button:disabled { opacity: .35; cursor: default; }
-.ui-cal-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--ui-hair); }
-.ui-cal-quick button { min-height: 30px; padding: 0 12px; border: 1px solid var(--ui-hair); border-radius: 999px; background: #fff; color: var(--ui-ink-2); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
-.ui-cal-quick button:hover:not(:disabled) { border-color: #0e4a84; color: #0e4a84; }
-.ui-cal-quick button.on { border-color: #0e4a84; background: #0e4a84; color: #fff; }
-.ui-cal-quick button:disabled { opacity: .4; cursor: default; }
+/* 날짜 고르기 달력 (DateField). 공고 캘린더(.ui-cal-*, dossier.css)와 이름이 겹치지 않게 ui-dcal- 접두사 */
+.ui-dcal-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; }
+.ui-date .ui-dcal-pop { top: 62px; }
+.ui-dcal-pop.is-right { left: auto; right: 0; }
+.ui-dcal-pop.is-center { left: 50%; transform: translateX(-50%); top: calc(100% + 6px); }
+.ui-dcal { width: 292px; box-sizing: border-box; padding: 10px; border-radius: 14px; background: #fff; box-shadow: 0 12px 36px rgba(22, 32, 46, .22), 0 0 0 1px rgba(22, 32, 46, .06); color: var(--ui-ink); font-size: 13px; }
+.ui-dcal-head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
+.ui-dcal-nav { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ui-ink-2); cursor: pointer; }
+.ui-dcal-nav:hover:not(:disabled) { background: var(--ui-hair); color: var(--ui-ink); }
+.ui-dcal-nav:disabled { opacity: .3; cursor: default; }
+.ui-dcal-title { flex: 1; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--ui-ink); font: 700 14px inherit; font-family: inherit; text-align: center; line-height: 32px; cursor: pointer; }
+button.ui-dcal-title:hover { background: var(--ui-hair); }
+.ui-dcal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.ui-dcal-wd { height: 24px; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--ui-ink-3); }
+.ui-dcal-wd.is-sun, .ui-dcal-day.is-sun { color: #d6453d; }
+.ui-dcal-wd.is-sat, .ui-dcal-day.is-sat { color: #2f6fd6; }
+.ui-dcal-day { height: 36px; border: 0; border-radius: 10px; background: none; color: var(--ui-ink); font: 500 13px inherit; font-family: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.ui-dcal-day:hover:not(:disabled) { background: rgba(14, 74, 132, .1); }
+.ui-dcal-day:focus-visible { outline: 2px solid #0e4a84; outline-offset: -2px; }
+.ui-dcal-day.is-today { box-shadow: inset 0 0 0 1.5px rgba(14, 74, 132, .5); font-weight: 700; }
+.ui-dcal-day.is-sel, .ui-dcal-day.is-sel:hover { background: #0e4a84; color: #fff; font-weight: 700; }
+.ui-dcal-day:disabled { color: var(--ui-ink-3); opacity: .35; cursor: default; }
+.ui-dcal-months { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 4px 0; }
+.ui-dcal-months button { height: 40px; border: 0; border-radius: 10px; background: var(--ui-hair); color: var(--ui-ink); font: 600 13px inherit; font-family: inherit; cursor: pointer; }
+.ui-dcal-months button:hover:not(:disabled) { background: rgba(14, 74, 132, .14); }
+.ui-dcal-months button.on { background: #0e4a84; color: #fff; }
+.ui-dcal-months button:disabled { opacity: .35; cursor: default; }
+.ui-dcal-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--ui-hair); }
+.ui-dcal-quick button { min-height: 30px; padding: 0 12px; border: 1px solid var(--ui-hair); border-radius: 999px; background: #fff; color: var(--ui-ink-2); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
+.ui-dcal-quick button:hover:not(:disabled) { border-color: #0e4a84; color: #0e4a84; }
+.ui-dcal-quick button.on { border-color: #0e4a84; background: #0e4a84; color: #fff; }
+.ui-dcal-quick button:disabled { opacity: .4; cursor: default; }
 
 /* 달 고르기 ‹ 2026년 11월 › */
 .ui-mstep { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 4px; border-radius: 12px; background: var(--ui-hair); }
 .ui-mstep-title { flex: 1; height: 36px; border: 0; border-radius: 9px; background: none; color: var(--ui-ink); font: 700 15px inherit; font-family: inherit; cursor: pointer; }
 .ui-mstep-title:hover, .ui-mstep-title[aria-expanded="true"] { background: rgba(255, 255, 255, .7); }
-.ui-mstep .ui-cal-nav { width: 36px; height: 36px; }
-.ui-mstep .ui-cal-nav:hover:not(:disabled) { background: rgba(255, 255, 255, .7); }
+.ui-mstep .ui-dcal-nav { width: 36px; height: 36px; }
+.ui-mstep .ui-dcal-nav:hover:not(:disabled) { background: rgba(255, 255, 255, .7); }
 
 /* ── 주소 ── */
 .ui-addr2-box { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 6px 0 12px; border: 1px solid var(--ui-hair); border-radius: 10px; background: var(--ui-glass-strong); color: var(--ui-ink-3); }
@@ -249,6 +250,6 @@ button.ui-cal-title:hover { background: var(--ui-hair); }
 .ui-home-alerts button:disabled { opacity: .6; cursor: default; }
 .ui-home-alerts .ui-home-alerts-more { border-style: dashed; background: none; }
 @media (max-width: 640px) {
-  .ui-cal { width: min(292px, calc(100vw - 32px)); }
+  .ui-dcal { width: min(292px, calc(100vw - 32px)); }
   .ui-date-btn { font-size: 16px; }
 }
