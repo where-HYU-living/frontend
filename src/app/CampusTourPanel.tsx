@@ -18,7 +18,9 @@ export function CampusTourPanel() {
 
   const go = (p: Place) => {
     if (!p.center) return;
-    const r = goToCampus(p.center[0], p.center[1]);
+    // 입구가 있으면 문 앞에 서서 문을 본다. 문 앞이 막혀 있으면(나무·벽) 건물이 보이는 빈자리로
+    const e = p.entrance;
+    const r = (e && goToCampus(e.stand[0], e.stand[1], e.door)) || goToCampus(p.center[0], p.center[1]);
     setMsg(r === 'switching' ? '캠퍼스로 이동하는 중…' : r ? '' : `${p.name} 앞으로는 갈 수 없어요`);
   };
 
