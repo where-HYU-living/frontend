@@ -1,6 +1,6 @@
 import type { ServerMsg, Vec3 } from './worldReducer';
 
-export type Pose = { p: Vec3; r: number; a: 'idle' | 'walk' | 'run' };
+export type Pose = { p: Vec3; r: number; a: 'idle' | 'walk' | 'run'; /** 실내 도면 id. 바깥이면 없음(보내지 않음) */ room?: number | null };
 export type SocketLike = { send(s: string): void; close(): void; onopen: (() => void) | null; onclose: (() => void) | null; onmessage: ((e: { data: string }) => void) | null; readyState: number };
 
 export const BACKOFF = [1000, 2000, 4000, 8000, 10000];
@@ -46,10 +46,10 @@ export function connectWorld(o: Opts): WorldConnection {
       if (o.getLook) send({ t: 'look', look: o.getLook() });
       moveTimer = setInterval(() => {
         const p = o.getPose();
-        const key = `${p.p.map((v) => v.toFixed(2))}|${p.r.toFixed(2)}|${p.a}`;
+        const key = `${p.p.map((v) => v.toFixed(2))}|${p.r.toFixed(2)}|${p.a}|${p.room ?? ''}`;
         if (key === last) return;
         last = key;
-        send({ t: 'move', p: p.p, r: p.r, a: p.a });
+        send(p.room != null ? { t: 'move', p: p.p, r: p.r, a: p.a, room: p.room } : { t: 'move', p: p.p, r: p.r, a: p.a });
       }, MOVE_MS);
       pingTimer = setInterval(() => send({ t: 'ping' }), PING_MS);
     };

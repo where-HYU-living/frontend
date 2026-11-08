@@ -2,7 +2,10 @@
 
 화면은 두 층이다.
 - **3D 층**: R3F `<Canvas>` (`src/world/WorldCanvas.tsx`). 장면 내용은 `src/world/buildWorld.js` 가 만들고, 후처리(GTAO)·라벨은 `WorldCanvas` 안의 `Post` 가 그린다. 타입은 `src/main.d.ts`(WorldApi)·`src/world/buildWorld.d.ts`. 스타일은 `src/style.css`.
-- **품질 프리셋**: `src/quality.ts` (`?q=high|med|low`, 없으면 기기에 맞춰 자동). 픽셀비·그림자 크기·나무 그림자·GTAO·MSAA 를 정한다. 새 무거운 효과는 프리셋에 넣어서 끌 수 있게 할 것.
+- **품질 프리셋**: `src/quality.ts` (`?q=high|med|low|min`, 없으면 기기에 맞춰 자동). 픽셀비·그림자·나무 그림자·GTAO·MSAA·캔버스 안티에일리어싱·하늘 환경광·시야 끝·지형 셰이더를 정한다. 새 무거운 효과는 프리셋에 넣어서 끌 수 있게 할 것.
+  - 상태는 `src/gfx.ts`(`useGfx`): 주소 `?q=` → 사용자가 고른 값(더 보기 > 그래픽, localStorage `chatatda.gfx`) → 자동(그래픽 장치: 가속 꺼짐=SwiftShader 면 `min`, 인텔 내장 그래픽이면 `low`). 자동일 때만 `FpsGuard`(WorldCanvas)가 24fps 아래면 한 단계씩 낮추고 같은 장치면 다음 접속에도 기억한다.
+  - 품질 변경은 월드를 다시 만들지 않고 `buildWorld` 의 `applyQuality(Q)` 로 바꾼다. 캔버스 안티에일리어싱·가로등만 다음 접속부터.
+  - 점검: `node scripts/gfx-check.mjs` (GPU 자동·실행 중 전환·가속 꺼짐 감지·자동 낮추기).
 - **메뉴 층 (React+TS)**: `src/app/`. 스타일은 `src/app/app.css`. 3D API는 `useWorld().api` 로만 부른다.
 
 ## CSS 이름이 겹치지 않게 (중요)
@@ -26,7 +29,7 @@
 ## 서버 연결
 - `VITE_API_BASE`(기본 `http://localhost:8080`)로 실서버에 바로 붙는다. 백엔드가 아직 일부 API만 구현했으므로 **`?mock=1`(또는 `VITE_USE_MOCK=true`)로 개발용 목 서버**(`src/mock/`, 계약 전 엔드포인트·메모리 상태·`MOCK` 배지)를 켜서 모든 탭을 볼 수 있다. 목은 동적 import 라 평소 번들에 안 들어간다. 아직 없는 API(검색·찜·비교 등)는 실패해도 화면이 깨지지 않게 빈 상태/오류 문구로 처리한다.
 - 계약 타입은 `src/api/types.ts` 한 곳, 호출은 `src/api/client.ts`(`api<T>()`), 서버 상태는 TanStack Query(`src/app/features/*.ts`), 로그인은 `src/app/state/session.ts`.
-- 로그인: `VITE_GOOGLE_CLIENT_ID` 가 있으면 구글 버튼(`src/app/auth/`)이 뜨고 ID 토큰을 `POST /auth/google` 로 보낸다(도메인 검증은 서버). 없으면 메일 코드 인증만.
+- 로그인: `VITE_GOOGLE_CLIENT_ID` 가 있으면 구글 버튼(`src/app/auth/`)이 뜨고 ID 토큰을 `POST /auth/google` 로 보낸다(도메인 검증은 서버). 화면 로그인은 구글뿐이다(키가 없으면 '로그인을 쓸 수 없어요' 안내). 메일 코드 인증(`/auth/email/*`)은 서버에만 남겨 둔다 — `final-qa.mjs`·백엔드 테스트가 그 길로 로그인한다.
 - 금액은 서버가 원, 화면은 만원(`src/lib/money.ts`). `null` 은 "정보 없음"으로 보여주고 0으로 바꾸지 않는다.
 
 ## 기능 위치
@@ -35,6 +38,7 @@
 - 3D 부가 표시는 `WorldEffects` 한 곳(시간대 조명 `api.setTimeOfDay`·내 과 건물·선택한 집 주변 시설·모집 중 단지 빛 기둥 `api.setBeacons`). 시간대는 상단바 슬라이더(왼쪽 낮 ~ 오른쪽 밤, `useUi.timeOfDay` 0~1)이고 `src/world/timeOfDay.ts` 의 `lightAt`(보간)·`starsAt`(별)·`clockLabel`(시각)을 쓴다. 아이콘은 모두 `lucide-react`, 3D 말풍선처럼 DOM 에 직접 넣는 곳은 `src/app/icons.tsx` 의 SVG 문자열을 쓴다.
 - 실내 3D: `src/interior/` — `buildInterior`(평면도→벽 조각, 순수 함수)·`InteriorScene`(별도 Canvas). 들어가면 동네 Canvas 는 멈추고(`frameloop never`) 나오면 그 자리 그대로.
 - 멀티플레이: `src/net/` — `worldReducer`·`interpolate`(순수)·`worldSocket`(재접속·10Hz)·`useMultiplayer`(3D 에 `api.setRemotePlayers`). `?solo` 를 붙이면 접속 안 함, `?invite=` 는 접속 후 주소에서 지운다.
+  - 실내(방 투어)도 같은 소켓: `move` 에 `room`(도면 id)을 실어 보낸다(`net/presence.ts` 의 `indoorPresence` 를 `InteriorScene` 이 건다). 바깥은 `room` 없는 사람만, 실내는 같은 `room` 인 사람만 그린다(`peersIn`, 실내는 `interior/IndoorPeers`). 방을 오가면 보간 샘플을 새로 시작. 점검: `node scripts/mp-check.mjs`.
 
 ## 고도화 기능 위치 (2026-11-07)
 - 폼 부품: `src/app/forms/`(Field·UnitInput·Segmented·ChipSelect·PhotoGrid·FormSection·StickyActions, 환산 월세 `calc.ts`). 새 폼은 이 부품으로 만든다(세로 한 줄 쌓기 금지, 섹션·2열·단위 접미사·하단 고정 버튼).

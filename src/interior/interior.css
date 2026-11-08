@@ -74,6 +74,7 @@
 .ui-in-x { border: 0; background: none; color: inherit; cursor: pointer; display: inline-flex; padding: 4px; }
 .ui-in-text { margin: 0; white-space: pre-wrap; word-break: break-word; }
 .ui-in-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ui-in-peer { position: absolute; left: 0; top: 0; display: none; will-change: transform; }
 .ui-in-label { position: absolute; left: 0; top: 0; display: none; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(20, 32, 48, 0.5); color: #fff; white-space: nowrap; will-change: transform; }
 
 /* ── 좁은 화면 ── */

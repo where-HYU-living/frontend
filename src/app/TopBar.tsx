@@ -7,13 +7,14 @@ import { useSession } from './state/session';
 import { useNotifications } from './features/more';
 import { unreadCount } from './InboxPanel';
 import { useSearch } from './features/search';
-import { useListingsUi } from './features/listings';
 import { useKakaoPlaces } from './features/kakaoPlaces';
 import { serviceTargetFor } from '../world/serviceArea';
 import { SITES } from '../world/neighborhood';
 import { useGoToPoint } from './goTo';
+import { isVisitKind, useVisit } from './visit';
 import { AvatarPicker, useAvatarState } from './avatar/AvatarPicker';
 import { InviteButton } from './InviteButton';
+import { GfxSettings } from './GfxSettings';
 import type { SearchResult } from '../api/types';
 import { toLatLng } from './map/geo';
 import { useMapFocus } from './map/mapFocus';
@@ -73,18 +74,20 @@ export function TopBar() {
   const typed = q.trim().length >= 2;
   const found = useSearch(q).data ?? [];
   const goToPoint = useGoToPoint();
+  const visit = useVisit();
   const areaId = useWorld((s) => s.areaId);
   const kakaoAll = useKakaoPlaces(q);
   const kakao = kakaoAll.map((k) => ({ ...k, walkable: serviceTargetFor(k.lat, k.lng, areaId ?? 'campus') != null }));
   const onMap = mapMode === '2d';
-  const showOnMap = (p: { name: string; address?: string | null; lat: number; lng: number; kind?: string }) => {
-    useMapFocus.getState().focus({ name: p.name, address: p.address ?? null, lat: p.lat, lng: p.lng, kind: p.kind ?? null });
+  const showOnMap = (p: { name: string; address?: string | null; lat: number; lng: number; kind?: string; id?: number | null }) => {
+    useMapFocus.getState().focus({ name: p.name, address: p.address ?? null, lat: p.lat, lng: p.lng, kind: p.kind ?? null, id: p.id ?? undefined });
     setFocused(false);
   };
   const pick = (r: SearchResult) => {
     setFocused(false);
-    if (r.type === 'LISTING' && r.id != null) { useListingsUi.getState().select(r.id); useUi.setState({ tab: 'home', panelOpen: true }); }
     if (onMap) return showOnMap({ ...r, kind: r.type });
+    // 집(매물·단지·기숙사·양도)은 상세 패널·지도 핀과 같은 길로 (그 탭·그 상세를 골라 두고 집 앞에 선다)
+    if (r.id != null && isVisitKind(r.type)) return visit({ kind: r.type, id: r.id, lat: r.lat, lng: r.lng, name: r.name });
     goToPoint(r);
   };
   // 입력 전에는 우리 서비스의 집 주변 12곳, 입력하면 이름이 맞는 캠퍼스 랜드마크도 같이
@@ -120,7 +123,7 @@ export function TopBar() {
             {typed && kakao.map((k) => (
               <li key={`k${k.id}`}>
                 <button type="button" disabled={!onMap && !k.walkable} onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => { if (onMap) showOnMap({ ...k, kind: 'PLACE' }); else if (goToPoint(k)) setFocused(false); }}
+                  onClick={() => { if (onMap) showOnMap({ ...k, id: null, kind: 'PLACE' }); else if (goToPoint(k)) setFocused(false); }}
                   title={onMap ? '지도에서 보기' : k.walkable ? '3D 로 가기' : '3D 로 걸어볼 수 있는 곳(캠퍼스·집 주변 12곳) 밖이에요'}>
                   {k.name}{k.address ? ` · ${k.address}` : ''}{!onMap && !k.walkable ? ' (3D 지원 지역 밖)' : ''}
                 </button>
@@ -196,6 +199,7 @@ export function TopBar() {
               <PopItem icon={<Shirt size={16} aria-hidden="true" />} onClick={() => pop.setOpen('avatar')}>캐릭터 꾸미기</PopItem>
               <li><InviteButton className="ui-tb-item" /></li>
             </ul>
+            <GfxSettings />
           </div>
         )}
         {pop.open === 'avatar' && <AvatarPicker look={avatar.look} onChange={avatar.change} deptName={avatar.deptName} />}

@@ -14,6 +14,8 @@ export type BuiltWorld = {
   frame(dt: number): void;
   marks: [string, number][];
   heroShot(): void;
+  /** 품질을 월드를 다시 만들지 않고 바꾼다 (그림자·환경광·지형·시야 끝·안개) */
+  applyQuality(q: Quality): void;
   api: Omit<WorldApi, 'dispose'>;
 };
 

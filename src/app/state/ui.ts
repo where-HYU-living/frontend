@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export type Tab = 'home' | 'tour' | 'dorm' | 'housing' | 'transfer' | 'myhome' | 'fav' | 'inbox';
 
 export const TABS: { id: Tab; label: string }[] = [
-  { id: 'home', label: '집 찾기' },
+  { id: 'home', label: '매물 찾기' },
   { id: 'tour', label: '캠퍼스 투어' },
   { id: 'dorm', label: '기숙사' },
   { id: 'housing', label: '청년안심주택' },

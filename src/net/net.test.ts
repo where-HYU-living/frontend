@@ -161,3 +161,48 @@ test('월드 전환 중(getPose 가 같은 값)에는 move 를 보내지 않는�
   const moves = s.sent.filter((m) => m.includes('"move"')).map((m) => JSON.parse(m).p[0]);
   expect(moves).toEqual([0, 400]);
 });
+
+// ----- 실내(방) 멀티플레이 -----
+test('room: 방을 오가면 좌표계가 바뀌므로 보간 샘플을 새로 시작하고, room 을 기억한다', () => {
+  let m = worldReducer(emptyWorld(), { t: 'welcome', selfId: 'me', spawn: { p: [0, 0, 0], r: 0 }, players: [P('a', 100)] }, 0);
+  m = worldReducer(m, { t: 'state', players: [P('a', 101)] }, 100);
+  expect(m.players.a.samples).toHaveLength(2);
+  expect(m.players.a.room).toBeNull();
+  m = worldReducer(m, { t: 'state', players: [{ ...P('a', 2), room: 101 }] }, 200);
+  expect(m.players.a.room).toBe(101);
+  expect(m.players.a.samples.map((s) => s.p[0])).toEqual([2]); // 바깥 x=101 과 섞지 않는다
+  m = worldReducer(m, { t: 'state', players: [P('a', 100)] }, 300); // room 없음 = 바깥으로 나옴
+  expect(m.players.a.room).toBeNull();
+  expect(m.players.a.samples).toHaveLength(1);
+});
+
+test('peersIn: 바깥은 바깥 사람만, 실내는 같은 방 사람만', async () => {
+  const { peersIn } = await import('./presence');
+  let m = worldReducer(emptyWorld(), { t: 'welcome', selfId: 'me', spawn: { p: [0, 0, 0], r: 0 }, players: [P('out'), { ...P('r1'), room: 101 }, { ...P('r2'), room: 202 }] }, 0);
+  m = worldReducer(m, { t: 'join', player: { ...P('r1b'), room: 101 } }, 1);
+  expect(peersIn(m.players, null).map(([id]) => id)).toEqual(['out']);
+  expect(peersIn(m.players, 101).map(([id]) => id).sort()).toEqual(['r1', 'r1b']);
+  expect(peersIn(m.players, 999)).toEqual([]);
+});
+
+test('socket: 실내면 move 에 room 을 싣고, 바깥이면 room 키 자체를 안 보낸다. 방만 바뀌어도 다시 보낸다', () => {
+  let pose: { p: [number, number, number]; r: number; a: 'idle'; room?: number | null } = { p: [1, 0, 1], r: 0, a: 'idle' };
+  const s = new Fake();
+  connectWorld({ url: 'x', getPose: () => pose, onMessage: () => {}, make: () => s });
+  s.open();
+  vi.advanceTimersByTime(100);
+  pose = { ...pose, room: 101 }; vi.advanceTimersByTime(100); // 좌표가 같아도 방이 바뀌면 보낸다
+  pose = { ...pose, room: null }; vi.advanceTimersByTime(100);
+  const moves = s.sent.filter((m) => m.includes('"move"')).map((m) => JSON.parse(m));
+  expect(moves.map((m) => m.room)).toEqual([undefined, 101, undefined]);
+  expect('room' in moves[0]).toBe(false);
+});
+
+test('headingOfYaw: 실내 카메라 앞(-sin,-cos) = 캐릭터 앞(sin,cos)', async () => {
+  const { headingOfYaw } = await import('./presence');
+  for (const yaw of [0, 0.7, -2]) {
+    const h = headingOfYaw(yaw);
+    expect(Math.sin(h)).toBeCloseTo(-Math.sin(yaw));
+    expect(Math.cos(h)).toBeCloseTo(-Math.cos(yaw));
+  }
+});

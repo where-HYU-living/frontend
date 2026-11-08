@@ -526,7 +526,9 @@ export async function makeTrees(world, heightAt, buildingIndex, roadIndex, scene
   group.add(makePetals(treeSpots, heightAt, buildingIndex, R));
 
   scene.add(group);
-  return { group, uTime, count: spots.length, treeSpots, update };
+  /** 품질을 실행 중에 바꿀 때 (가까운 칸의 원본 메시만 그림자를 드리운다) */
+  const setShadows = (on) => { for (const cell of cells) cell.hi.castShadow = on; };
+  return { group, uTime, count: spots.length, treeSpots, update, setShadows };
 }
 
 function makePetals(spots, heightAt, buildingIndex, R) {

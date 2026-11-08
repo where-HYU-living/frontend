@@ -33,7 +33,10 @@ function flatten(t, [cx, cz], r, fall) {
 
 export async function buildWorld({ Q, renderer, domElement, scene, camera, marks = [], progress = () => {}, worldUrl = '/world.json' }) {
   // ---- 안개·빛 (봄 오후 — 해가 서남쪽: 사자상 정면을 비춤)
-  scene.fog = new THREE.FogExp2(0xc9d7e4, 0.0026);
+  // 불러오는 동안은 안개를 짙게: 사자상 앞(1단계)은 또렷하고, 그 뒤로 채워지는 먼 건물·나무는 안개 속에서 나타난다
+  const LOAD_FOG = 0.0075;
+  scene.fog = new THREE.FogExp2(0xc9d7e4, LOAD_FOG);
+  scene.background = new THREE.Color(0xc9d7e4); // 하늘 사진이 오기 전까지 안개색 (로딩 중에도 화면이 보인다)
   const hemi = new THREE.HemisphereLight(0xdfeaff, 0x56613f, 0.6);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff1dc, 3.0);
@@ -56,17 +59,20 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   // t: 0(낮) ~ 1(밤). 조명·안개·하늘 밝기·별이 같이 부드럽게 바뀐다
   let extras = null; // 정문·문 마커·가로등 (플레이어가 만들어진 뒤에 생성)
   let lastT = 0;
+  let fogScale = Q.fogScale; // 품질 '최저'는 시야 끝이 짧아 안개를 짙게
   const setTimeOfDay = (t) => {
     lastT = t;
     const L = lightAt(t);
     sun.intensity = L.sun; sun.color.setHex(L.sunColor); sunDir.set(...L.sunDir).normalize();
-    hemi.intensity = L.hemi; scene.environmentIntensity = L.env; scene.backgroundIntensity = L.bg;
-    scene.fog.color.setHex(L.fog); scene.fog.density = L.fogDensity;
+    // 환경광(HDR)을 끈 품질에서는 그만큼을 반구광으로 채워 너무 어두워지지 않게
+    hemi.intensity = L.hemi + (scene.environment ? 0 : L.env * 0.9); scene.environmentIntensity = L.env; scene.backgroundIntensity = L.bg;
+    scene.fog.color.setHex(L.fog); scene.fog.density = L.fogDensity * fogScale;
+    if (scene.background?.isColor) scene.background.setHex(L.fog); // 하늘 사진이 없으면 안개색 하늘
     renderer.toneMappingExposure = L.exposure;
     starMat.opacity = starsAt(t); stars.visible = starMat.opacity > 0.01;
     extras?.setNight(t);
   };
-  sun.castShadow = true;
+  sun.castShadow = Q.shadows;
   sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
   Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 400 });
   sun.shadow.bias = -0.0004;
@@ -79,22 +85,47 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   // 사자상 앞 잔디밭은 실제로 평평함 → 거친 지형 데이터를 그 주변만 평평하게
   if (!lite) flatten(world.terrain, world.landmarks.find((l) => l.key === 'lion').p, 10, 14);
   const heightAt = makeHeightFn(world.terrain);
+  // 로딩 중에도 장면을 그리므로, 카메라를 처음부터 시작 자리(heroShot 과 같은 구도)에 둔다 → 건물·나무가 채워지는 게 보인다
+  {
+    const introCam = (x, z, fx, fz, dist, pitch) => {
+      const y = heightAt(x, z) + 1.4, yaw = Math.atan2(fx - x, fz - z) + Math.PI;
+      const cx = x + Math.sin(yaw) * Math.cos(pitch) * dist, cz = z + Math.cos(yaw) * Math.cos(pitch) * dist;
+      camera.position.set(cx, Math.max(y + Math.sin(pitch) * dist, heightAt(cx, cz) + 0.6), cz);
+      camera.lookAt(x, y, z);
+    };
+    if (lite) introCam(world.site.point[0], world.site.point[1] + 7, world.site.point[0], world.site.point[1], 12, 0.2);
+    else { const [lx, lz] = world.landmarks.find((l) => l.key === 'lion').p; introCam(lx - 13, lz + 1.5, lx, lz, 19, 0.17); }
+  }
 
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const [hdr, bg] = await Promise.all([
-    new HDRLoader().loadAsync('/env/sky_1k.hdr'),
-    new THREE.TextureLoader().loadAsync('/env/sky_bg.jpg'),
-  ]);
-  const envRT = pmrem.fromEquirectangular(hdr);
-  scene.environment = envRT.texture;
-  scene.userData.envRT = envRT; // 렌더 타깃 텍스처는 texture.dispose() 로는 GL 에서 안 지워진다 → disposeScene 이 envRT.dispose()
-  // 환경맵을 만든 뒤 PMREM 생성기(내부 평면 geometry·블러 재질·렌더 타깃)와 원본 HDR 은 더 쓰지 않는다 → 월드 전환마다 쌓이던 누수(3-4)
-  pmrem.dispose(); hdr.dispose();
+  // 하늘(HDR 환경광 + 배경 사진, 합계 약 1.7MB). 품질 '최저'는 받지 않고 안개색 하늘 — 나중에 품질을 올리면 그때 받는다
+  let curQ = Q;
+  let skyP = null, skyBg = null;
+  const applySky = () => {
+    const on = curQ.env && scene.userData.envRT;
+    scene.environment = on ? scene.userData.envRT.texture : null;
+    if (on) scene.background = skyBg;
+    else if (!scene.background?.isColor) scene.background = new THREE.Color(0xc9d7e4);
+  };
+  const loadSky = () => (skyP ??= (async () => {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const [hdr, bg] = await Promise.all([
+      new HDRLoader().loadAsync('/env/sky_1k.hdr'),
+      new THREE.TextureLoader().loadAsync('/env/sky_bg.jpg'),
+    ]);
+    if (!scene.children.includes(sun)) { pmrem.dispose(); hdr.dispose(); bg.dispose(); return; } // 받는 사이 월드가 내려갔다
+    const envRT = pmrem.fromEquirectangular(hdr);
+    scene.userData.envRT = envRT; // 렌더 타깃 텍스처는 texture.dispose() 로는 GL 에서 안 지워진다 → disposeScene 이 envRT.dispose()
+    // 환경맵을 만든 뒤 PMREM 생성기(내부 평면 geometry·블러 재질·렌더 타깃)와 원본 HDR 은 더 쓰지 않는다 → 월드 전환마다 쌓이던 누수(3-4)
+    pmrem.dispose(); hdr.dispose();
+    bg.mapping = THREE.EquirectangularReflectionMapping;
+    bg.colorSpace = THREE.SRGBColorSpace;
+    skyBg = bg;
+    scene.userData.skyBg = bg; // 환경광을 끈 동안 배경에서 빠져 있어도 월드를 내릴 때 해제
+  })());
+  if (Q.env) await loadSky();
   scene.environmentIntensity = 0.8;
-  bg.mapping = THREE.EquirectangularReflectionMapping;
-  bg.colorSpace = THREE.SRGBColorSpace;
-  scene.background = bg;
   scene.backgroundBlurriness = 0.0;
+  applySky();
   progress(0.25, 'sky');
 
   // 동네 모드에는 캠퍼스 랜드마크가 없다: 조각 밖 먼 곳에 더미를 두어 반경 판정이 모두 거짓이 되게 한다
@@ -113,9 +144,38 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   scene.add(terrain, outer);
   progress(0.45, 'terrain');
 
-  // 건물 (노천극장은 별도 조형으로 대체)
+  // ── 1단계: 시작 화면(사자상 정면)에 보이는 것부터. 이게 끝나면 화면을 공개한다 ──
   // 주인공 건물(101·102·104·105)은 사진 보고 따로 만든 모델로
   const hero = lite ? { ids: [], info: new Map(), group: new THREE.Group(), clear: [] } : await makeHero(world, heightAt, lm.lion.p);
+  if (hero.info.has(lm.aeji.bid)) lm.aeji.p = hero.info.get(lm.aeji.bid).center; // 옮긴 애지문 위치로 라벨·메뉴
+  console.log('hero merge', mergeStatic(hero.group, mergeGeometries));
+  scene.add(hero.group); // 아래에서 buildings 로 옮긴다 (카메라 가림 판정용)
+  // 사자상은 역사관 정면 계단 앞에서 광장(서쪽)을 바라봄
+  // (lion.js 의 조각 모델은 머리가 진행 방향에서 90° 돌아가 있어, 서쪽을 보게 하려면 남쪽 벡터를 넘김)
+  if (!lite) {
+    const lion = await makeLion(lm.lion.p, heightAt, [0.08, 1]);
+    mergeStatic(lion, mergeGeometries);
+    scene.add(lion);
+    { const hp = makeHeroProps(world, heightAt, lm.lion.p); console.log('props merge', mergeStatic(hp, mergeGeometries)); scene.add(hp); }
+    // 소나무 (사자상 화단·역사관 앞·애지문 옆)
+    { const pn = makePines([[9, 9, 1.15], [13, -9, 1.0], [18, 16, 0.9], [-6, -10, 0.85], [-50, 15, 1.0], [-31, 38, 1.05], [-52, 30, 0.9]], heightAt); mergeStatic(pn, mergeGeometries); scene.add(pn); }
+    // 광장 바닥 글씨 HANYANG UNIVERSITY (화강석 상감)
+    {
+      const c = document.createElement('canvas'); c.width = 2048; c.height = 160;
+      const g = c.getContext('2d'); g.fillStyle = 'rgba(70,72,74,.88)'; g.font = 'bold 140px "Times New Roman", serif'; g.textAlign = 'center';
+      g.fillText('HANYANG UNIVERSITY', 1024, 132);
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+      const geo = new THREE.PlaneGeometry(16, 1.25, 16, 1); geo.rotateX(-Math.PI / 2); geo.rotateY(-Math.PI / 2);
+      const cx = lm.lion.p[0] - 12.5, cz = lm.lion.p[1] - 1;
+      const pa = geo.attributes.position;
+      for (let k = 0; k < pa.count; k++) pa.setY(k, heightAt(cx + pa.getX(k), cz + pa.getZ(k)) + 0.04);
+      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2 }));
+      m.position.set(cx, 0, cz); m.receiveShadow = true; scene.add(m);
+    }
+    progress(0.5, 'hero'); // 0.5 이상이면 메뉴 층이 가림막을 걷는다 (App.tsx Loading)
+  }
+
+  // ── 2단계: 나머지 캠퍼스 (먼 곳은 짙은 안개 뒤에서 채워진다) ──
   // ---- 구역 플러그인: src/zones/*.js (구역마다 파일 하나 — docs: src/zones/README.md)
   const zones = lite ? [] : await loadZones({ THREE, world, heightAt, lm, scene, renderer });
   const zoneSkip = zones.flatMap((z) => z.skipIds || []);
@@ -127,9 +187,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     for (const f of z.footprints || []) { bIndex.add(f.pts, { id: f.id }); bInfo.set(f.id, f); }
     if (z.group) { if (z.merge !== false) mergeStatic(z.group, mergeGeometries); (z.occlude === false ? scene : buildings).add(z.group); }
   }
-  if (hero.info.has(lm.aeji.bid)) lm.aeji.p = hero.info.get(lm.aeji.bid).center; // 옮긴 애지문 위치로 라벨·메뉴
-  console.log('hero merge', mergeStatic(hero.group, mergeGeometries));
-  buildings.add(hero.group);
+  buildings.add(hero.group); // 장면에서 buildings 아래로 옮김
   scene.add(buildings);
   // 옹벽·석축·계단 (국토지리정보원 수치지도)
   const site = await makeSite(world, heightAt);
@@ -151,40 +209,20 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     return best && bd > 0.1 ? best : [0, 1];
   };
 
-  // 랜드마크
-  // 사자상은 역사관 정면 계단 앞에서 광장(서쪽)을 바라봄
-  // (lion.js 의 조각 모델은 머리가 진행 방향에서 90° 돌아가 있어, 서쪽을 보게 하려면 남쪽 벡터를 넘김)
+  // 랜드마크 (사자상·앞마당은 1단계에서 만들었다)
   if (!lite) {
-    const lion = await makeLion(lm.lion.p, heightAt, [0.08, 1]);
-    progress(0.62, 'lion');
     const amph = zoneReplace.has('amph') ? { group: new THREE.Group() } : await makeAmphitheater(amphB.pts, heightAt);
     progress(0.64, 'amph');
     // 한양대역 2번 출구 = 애지문 (hero.js 에서 캐노피·계단으로 만듦) → 일반 출구 모형에서 뺌
     const aejiC = lm.aeji.p;
     const exits = makeStationExits(world.exits.filter((e) => !(e.ref === '2' && Math.hypot(e.p[0] - aejiC[0], e.p[1] - aejiC[1]) < 30)), heightAt, nearestRoadDir);
-    for (const o of [lion, amph.group, exits]) mergeStatic(o, mergeGeometries);
-    scene.add(lion, amph.group, exits);
+    for (const o of [amph.group, exits]) mergeStatic(o, mergeGeometries);
+    scene.add(amph.group, exits);
     const props = makeProps(world, heightAt, bIndex, plaza);
     mergeStatic(props, mergeGeometries);
     scene.add(props);
-    { const hp = makeHeroProps(world, heightAt, lm.lion.p); console.log('props merge', mergeStatic(hp, mergeGeometries)); scene.add(hp); }
-    // 소나무 (사자상 화단·역사관 앞·애지문 옆)
-    { const pn = makePines([[9, 9, 1.15], [13, -9, 1.0], [18, 16, 0.9], [-6, -10, 0.85], [-50, 15, 1.0], [-31, 38, 1.05], [-52, 30, 0.9]], heightAt); mergeStatic(pn, mergeGeometries); scene.add(pn); }
-    // 광장 바닥 글씨 HANYANG UNIVERSITY (화강석 상감)
-    {
-      const c = document.createElement('canvas'); c.width = 2048; c.height = 160;
-      const g = c.getContext('2d'); g.fillStyle = 'rgba(70,72,74,.88)'; g.font = 'bold 140px "Times New Roman", serif'; g.textAlign = 'center';
-      g.fillText('HANYANG UNIVERSITY', 1024, 132);
-      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
-      const geo = new THREE.PlaneGeometry(16, 1.25, 16, 1); geo.rotateX(-Math.PI / 2); geo.rotateY(-Math.PI / 2);
-      const cx = lm.lion.p[0] - 12.5, cz = lm.lion.p[1] - 1;
-      const pa = geo.attributes.position;
-      for (let k = 0; k < pa.count; k++) pa.setY(k, heightAt(cx + pa.getX(k), cz + pa.getZ(k)) + 0.04);
-      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2 }));
-      m.position.set(cx, 0, cz); m.receiveShadow = true; scene.add(m);
-    }
   }
-  progress(0.7, 'lion+props');
+  progress(0.7, 'amph+props');
 
   // 나무 (사자상 광장·노천극장 객석은 비움)
   const blockIdx = {
@@ -268,10 +306,10 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       m.model.traverse((o) => { if (o.isMesh && o.castShadow !== shadow) o.castShadow = shadow; });
       if (m.tag.visible !== label) m.tag.visible = label; // 숨긴 CSS2D 는 DOM 갱신을 건너뛴다
       if (label) {
-        const sig = `${r.nickname}|${r.chat || ''}|${r.emote ? 1 : 0}`;
+        const sig = `${r.nickname}|${r.chat || ''}|${r.emote || ""}`;
         if (m.sig !== sig) {
           m.sig = sig; m.el.textContent = r.chat ? `${r.nickname}: ${r.chat}` : r.nickname;
-          if (r.emote && !r.chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = r.emote; m.el.appendChild(ic); }
+          if (r.emote) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = r.emote; m.el.appendChild(ic); }
         }
       }
       // 걷기: 팔다리 흔들기 + 살짝 통통 (내 캐릭터와 같은 방식)
@@ -352,24 +390,29 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   const selfTag = new CSS2DObject(selfEl); selfTag.position.set(0, 2.3, 0); selfTag.visible = false; player.mesh.add(selfTag);
   let selfSig = '';
   const setSelfBubble = ({ chat, emote } = {}) => {
-    const sig = `${chat || ''}|${emote ? 1 : 0}`;
+    const sig = `${chat || ''}|${emote || ""}`;
     if (sig === selfSig) return;
     selfSig = sig;
     selfTag.visible = !!(chat || emote);
     selfEl.textContent = chat || '';
-    if (emote && !chat) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = emote; selfEl.appendChild(ic); }
+    if (emote) { const ic = document.createElement('span'); ic.className = 'w3d-ico'; ic.innerHTML = emote; selfEl.appendChild(ic); }
   };
 
   player.occluders = [buildings];
   extras = makeExtras({ Q, scene, camera, world, heightAt, collide, player, bIndex, host: domElement.parentElement || document.body });
   extras.setNight(lastT);
   { const off = player.dispose.bind(player); player.dispose = () => { extras.dispose(); off(); }; }
-  // 동네 모드: 집 앞 길 위에서 시작해 집을 바라봄
+  // 동네 모드: 집 앞 길 위에서 시작해 집을 바라봄. 벽에 붙지 않게 첫 빈자리에서 같은 방향으로 더 물러난다(건물·이름표가 한 화면에)
+  const HOME_BACK = 10, HOME_DIST = 14, HOME_PITCH = 0.14; // 첫 빈자리에서 더 물러날 거리(m)·카메라 거리·각도
   const homeSpot = () => {
     const [hx, hz] = world.site.point;
+    const ok = (x, z) => !collide(x, z) && x > world.bounds.minX + 8 && x < world.bounds.maxX - 8 && z > world.bounds.minZ + 8 && z < world.bounds.maxZ - 8;
     for (let r = 7; r < 60; r += 3) for (let a = 0; a < 16; a++) {
-      const ang = Math.PI / 2 + (a / 16) * Math.PI * 2, x = hx + Math.cos(ang) * r, z = hz + Math.sin(ang) * r;
-      if (!collide(x, z) && x > world.bounds.minX + 8 && x < world.bounds.maxX - 8 && z > world.bounds.minZ + 8 && z < world.bounds.maxZ - 8) return [x, z];
+      const ang = Math.PI / 2 + (a / 16) * Math.PI * 2, c = Math.cos(ang), sn = Math.sin(ang);
+      if (!ok(hx + c * r, hz + sn * r)) continue;
+      let best = r;
+      for (let k = r + 1; k <= r + HOME_BACK; k++) { if (!ok(hx + c * k, hz + sn * k)) break; best = k; }
+      return [hx + c * best, hz + sn * best];
     }
     return [hx, hz + 12];
   };
@@ -404,7 +447,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   if (attrib) attrib.textContent = world.attribution;
   // 시작: 사자상 정면 (서쪽 광장에서 동쪽을 봄 — 뒤로 역사관, 오른쪽 뒤로 애지문·한양대역)
   const heroShot = () => {
-    if (lite) { const [x, z] = homeSpot(); player.teleport(x, z, world.site.point[0], world.site.point[1]); player.dist = 12; player.pitch = 0.2; return; }
+    if (lite) { const [x, z] = homeSpot(); player.teleport(x, z, world.site.point[0], world.site.point[1]); player.dist = HOME_DIST; player.pitch = HOME_PITCH; return; }
     player.teleport(lm.lion.p[0] - 13, lm.lion.p[1] + 1.5, lm.lion.p[0], lm.lion.p[1]); player.dist = 19; player.pitch = 0.17;
   };
   heroShot();
@@ -423,48 +466,105 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     }
   }
 
-  // 미니맵 (React 쪽이 #minimap canvas 를 깔아 둠. 없으면 미니맵 없이 동작)
+  // 미니맵 (React 쪽이 #minimap canvas·#minimap-hint 를 깔아 둠. 없으면 미니맵 없이 동작)
+  // 동그란 창, 내 위치가 늘 가운데(북쪽 위). 한 번 누르면 표시만, 두 번 누르면 그 자리로 이동.
   const mm = document.getElementById('minimap') || document.createElement('canvas');
+  const mmHint = document.getElementById('minimap-hint');
   const mg = mm.getContext('2d');
+  const MM_R = 150; // 미니맵 반지름이 보여 주는 거리(m)
+  const mmS = (mm.width / 2) / MM_R; // 캔버스 px / m
   const mmBase = document.createElement('canvas');
-  mmBase.width = mm.width; mmBase.height = mm.height;
   {
-    const g = mmBase.getContext('2d');
-    g.fillStyle = '#6b4c2e'; g.fillRect(0, 0, mm.width, mm.height);
     const { minX, maxX, minZ, maxZ } = world.bounds;
-    const sx = mm.width / (maxX - minX), sz = mm.height / (maxZ - minZ);
-    const M = ([x, z]) => [(x - minX) * sx, (z - minZ) * sz];
+    mmBase.width = Math.ceil((maxX - minX) * mmS); mmBase.height = Math.ceil((maxZ - minZ) * mmS);
+    const g = mmBase.getContext('2d');
+    g.fillStyle = '#6b4c2e'; g.fillRect(0, 0, mmBase.width, mmBase.height);
+    const M = ([x, z]) => [(x - minX) * mmS, (z - minZ) * mmS];
+    const poly = (pts) => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(...M(p)) : g.moveTo(...M(p)))); };
     for (const a of world.areas) {
       g.fillStyle = a.cls === 'forest' ? '#8c4a24' : a.cls === 'grass' ? '#9a8a45' : '#7a5a3a';
-      g.beginPath(); a.pts.forEach((p, i) => (i ? g.lineTo(...M(p)) : g.moveTo(...M(p)))); g.closePath(); g.fill();
+      poly(a.pts); g.closePath(); g.fill();
     }
     g.lineCap = 'round'; g.lineJoin = 'round';
     for (const r of world.roads) {
       g.strokeStyle = r.kind === 'road' ? '#3b3632' : '#d9b48a';
-      g.lineWidth = Math.max(0.8, r.w * sx * (r.kind === 'road' ? 1.2 : 1.6));
-      g.beginPath(); r.pts.forEach((p, i) => (i ? g.lineTo(...M(p)) : g.moveTo(...M(p)))); g.stroke();
+      g.lineWidth = Math.max(1, r.w * mmS * (r.kind === 'road' ? 1 : 1.3));
+      poly(r.pts); g.stroke();
     }
     g.fillStyle = 'rgba(30,26,22,.85)';
-    for (const b of world.buildings) {
-      g.beginPath(); b.pts.forEach(([x, z], i) => (i ? g.lineTo((x - minX) * sx, (z - minZ) * sz) : g.moveTo((x - minX) * sx, (z - minZ) * sz))); g.closePath(); g.fill();
-    }
+    for (const b of world.buildings) { poly(b.pts); g.closePath(); g.fill(); }
     g.fillStyle = '#ffd29a';
-    for (const l of world.landmarks) { g.beginPath(); g.arc((l.p[0] - minX) * sx, (l.p[1] - minZ) * sz, 2.5, 0, Math.PI * 2); g.fill(); }
+    for (const l of world.landmarks) { g.beginPath(); g.arc(...M(l.p), 4, 0, Math.PI * 2); g.fill(); }
   }
-  mm.addEventListener('click', (e) => {
+  /** 화면 좌표 → 월드 좌표 (원 밖이면 null) */
+  const mmToWorld = (cx, cy) => {
     const r = mm.getBoundingClientRect();
-    const { minX, maxX, minZ, maxZ } = world.bounds;
-    const x = minX + ((e.clientX - r.left) / r.width) * (maxX - minX), z = minZ + ((e.clientY - r.top) / r.height) * (maxZ - minZ);
-    if (!collide(x, z)) player.teleport(x, z);
+    const u = ((cx - r.left) / r.width) * 2 - 1, v = ((cy - r.top) / r.height) * 2 - 1;
+    if (u * u + v * v > 1) return null;
+    return [player.pos.x + u * MM_R, player.pos.z + v * MM_R];
+  };
+  let mmHover = null, mmMark = null, mmPulse = 0; // mmMark: 한 번 누른 자리(월드 좌표), mmPulse: 이동 직후 퍼지는 원
+  let hintTimer = 0;
+  const mmAbort = new AbortController(); // 월드를 다시 만들면 같은 캔버스에 리스너가 쌓이지 않게
+  { const off = player.dispose.bind(player); player.dispose = () => { mmAbort.abort(); clearTimeout(hintTimer); mmHint?.classList.remove('is-on'); off(); }; }
+  const mmOn = (type, fn) => mm.addEventListener(type, fn, { signal: mmAbort.signal });
+  const setHint = (text, ms = 0) => {
+    if (!mmHint) return;
+    mmHint.textContent = text;
+    mmHint.classList.toggle('is-on', !!text);
+    clearTimeout(hintTimer);
+    if (ms) hintTimer = setTimeout(() => setHint(''), ms);
+  };
+  const IDLE_HINT = '두 번 누르면 그 자리로 이동해요';
+  mmOn('pointerenter', () => setHint(IDLE_HINT));
+  mmOn('pointerleave', () => { mmHover = null; mmMark = null; setHint(''); drawMinimap(); });
+  mmOn('pointermove', (e) => { mmHover = mmToWorld(e.clientX, e.clientY); drawMinimap(); });
+  mmOn('click', (e) => {
+    const p = mmToWorld(e.clientX, e.clientY);
+    if (!p || e.detail > 1) return;
+    mmMark = p;
+    setHint(collide(p[0], p[1]) ? '건물 안이라 갈 수 없어요' : '한 번 더 누르면 이동해요');
+    drawMinimap();
+  });
+  mmOn('dblclick', (e) => {
+    const p = mmToWorld(e.clientX, e.clientY);
+    if (!p) return;
+    if (collide(p[0], p[1])) { setHint('건물 안이라 갈 수 없어요', 1600); return; }
+    player.teleport(p[0], p[1]);
+    mmMark = null; mmPulse = 1;
+    setHint('이동했어요', 1200);
+    drawMinimap();
   });
   const drawMinimap = () => {
-    const { minX, maxX, minZ, maxZ } = world.bounds;
-    mg.drawImage(mmBase, 0, 0);
-    const px = ((player.pos.x - minX) / (maxX - minX)) * mm.width, pz = ((player.pos.z - minZ) / (maxZ - minZ)) * mm.height;
-    mg.save(); mg.translate(px, pz); mg.rotate(-player.heading + Math.PI);
-    mg.fillStyle = '#fff'; mg.strokeStyle = '#0e4a84'; mg.lineWidth = 2;
-    mg.beginPath(); mg.moveTo(0, -7); mg.lineTo(5, 5); mg.lineTo(0, 2); mg.lineTo(-5, 5); mg.closePath(); mg.fill(); mg.stroke();
+    const { minX, minZ } = world.bounds;
+    const W = mm.width, H = mm.height, c = W / 2;
+    const px = player.pos.x, pz = player.pos.z;
+    const toMM = ([x, z]) => [c + (x - px) * mmS, c + (z - pz) * mmS];
+    mg.clearRect(0, 0, W, H);
+    mg.save();
+    mg.beginPath(); mg.arc(c, c, c, 0, Math.PI * 2); mg.clip();
+    mg.fillStyle = '#5a4128'; mg.fillRect(0, 0, W, H); // 지도 밖
+    mg.drawImage(mmBase, c - (px - minX) * mmS, c - (pz - minZ) * mmS);
+    const dot = (p, r, fill, stroke) => { const [x, y] = toMM(p); mg.beginPath(); mg.arc(x, y, r, 0, Math.PI * 2); if (fill) { mg.fillStyle = fill; mg.fill(); } if (stroke) { mg.strokeStyle = stroke; mg.lineWidth = 3; mg.stroke(); } };
+    if (mmHover && !mmMark) {
+      const bad = collide(mmHover[0], mmHover[1]);
+      dot(mmHover, 9, bad ? 'rgba(220,60,60,.25)' : 'rgba(255,255,255,.25)', bad ? 'rgba(220,60,60,.9)' : 'rgba(255,255,255,.95)');
+    }
+    if (mmMark) {
+      const bad = collide(mmMark[0], mmMark[1]);
+      dot(mmMark, 11, bad ? 'rgba(220,60,60,.3)' : 'rgba(14,74,132,.35)', bad ? '#dc3c3c' : '#fff');
+      dot(mmMark, 3.5, bad ? '#dc3c3c' : '#fff');
+    }
+    if (mmPulse > 0) { mg.globalAlpha = mmPulse; dot([px, pz], 10 + (1 - mmPulse) * 34, null, '#fff'); mg.globalAlpha = 1; }
+    mg.translate(c, c); mg.rotate(-player.heading + Math.PI);
+    mg.fillStyle = '#fff'; mg.strokeStyle = '#0e4a84'; mg.lineWidth = 3;
+    mg.beginPath(); mg.moveTo(0, -12); mg.lineTo(9, 9); mg.lineTo(0, 4); mg.lineTo(-9, 9); mg.closePath(); mg.fill(); mg.stroke();
     mg.restore();
+    // 테두리와 북쪽 표시
+    mg.strokeStyle = 'rgba(255,255,255,.85)'; mg.lineWidth = 4;
+    mg.beginPath(); mg.arc(c, c, c - 2, 0, Math.PI * 2); mg.stroke();
+    mg.fillStyle = '#fff'; mg.font = '700 20px system-ui, sans-serif'; mg.textAlign = 'center'; mg.textBaseline = 'top';
+    mg.strokeStyle = 'rgba(0,0,0,.45)'; mg.lineWidth = 3; mg.strokeText('N', c, 8); mg.fillText('N', c, 8);
   };
 
   // 이름표·말풍선 거르기: 가까운 것만(거리) · 최대 개수 · 화면 겹침 (src/world/labelCull.ts).
@@ -491,8 +591,17 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   };
 
   progress(1, 'labels+player');
+  // 로딩 중 짙던 안개를 1초에 걸쳐 원래 농도로 걷는다 (먼 건물이 갑자기 튀어나오지 않게)
+  let fogLift = 0;
+  const liftFog = (dt) => {
+    if (fogLift >= 1) return;
+    fogLift = Math.min(1, fogLift + dt);
+    const target = lightAt(lastT).fogDensity * fogScale, e = 1 - (1 - fogLift) ** 3;
+    scene.fog.density = Math.max(target, LOAD_FOG + (target - LOAD_FOG) * e);
+  };
   let mmTick = 0, lodTick = 1, cullTick = 1;
   const frame = (dt) => {
+    liftFog(dt);
     player.update(dt);
     extras.frame(dt);
     stars.position.copy(camera.position);
@@ -501,11 +610,26 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     const ppx = player.pos.x, ppz = player.pos.z;
     if ((cullTick += dt) > 0.1) { cullTick = 0; cullLabels(ppx, ppz); }
     if ((lodTick += dt) > 0.25) { lodTick = 0; trees.update(camera.position); }
-    if ((mmTick += dt) > 0.1) { mmTick = 0; drawMinimap(); }
+    if (mmPulse > 0) mmPulse = Math.max(0, mmPulse - dt * 1.8);
+    if ((mmTick += dt) > (mmPulse > 0 ? 0 : 0.1)) { mmTick = 0; drawMinimap(); }
   };
   console.log(`trees: ${trees.count}, buildings: ${buildings.children.length}`);
+  /** 품질을 월드를 다시 만들지 않고 바꾼다 (그림자·하늘 환경광·지형 셰이더·시야 끝·안개). 가로등·캔버스 안티에일리어싱은 다음 접속부터 */
+  const applyQuality = (q) => {
+    curQ = q;
+    sun.castShadow = q.shadows;
+    if (sun.shadow.mapSize.x !== q.shadowMap) { sun.shadow.mapSize.set(q.shadowMap, q.shadowMap); sun.shadow.map?.dispose(); sun.shadow.map = null; }
+    trees.setShadows(q.shadows && q.treeShadows);
+    terrain.userData.setLite(q.terrainLite);
+    camera.far = q.far; camera.updateProjectionMatrix();
+    fogScale = q.fogScale;
+    if (q.env) loadSky().then(() => { applySky(); setTimeOfDay(lastT); });
+    applySky();
+    setTimeOfDay(lastT);
+  };
+  applyQuality(Q);
   return {
-    world, zones, player, trees, labels, sun, sunDir, frame, marks, heroShot,
+    world, zones, player, trees, labels, sun, sunDir, frame, marks, heroShot, applyQuality,
     // React 메뉴 층이 쓰는 API (dispose 제외, 타입: src/main.d.ts)
     api: {
       landmarks: lite ? [{ key: 'hero', name: '집 앞' }] : [{ key: 'hero', name: '사자상 정면' }, ...order.map((key) => ({ key, name: lm[key].name }))],

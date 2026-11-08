@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
-import { TABS, useUi, type Tab } from './state/ui';
+import { useUi, type Tab } from './state/ui';
 import { CampusTourPanel } from './CampusTourPanel';
 import { ListingsPanel } from './ListingsPanel';
 import { DormPanel } from './DormPanel';
@@ -22,15 +22,7 @@ const EMPTY: Record<Tab, { title: string; body: string }> = {
 
 export function SidePanel() {
   const { tab, panelOpen, setPanelOpen } = useUi();
-  const label = TABS.find((t) => t.id === tab)?.label ?? EMPTY[tab].title;
-
-  if (!panelOpen) {
-    return (
-      <button className="reopen glass" type="button" onClick={() => setPanelOpen(true)}>
-        {label} 열기
-      </button>
-    );
-  }
+  if (!panelOpen) return null; // 접힌 패널은 상단바 탭으로 다시 연다
 
   const e = EMPTY[tab];
   return (

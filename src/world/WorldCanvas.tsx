@@ -6,7 +6,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { detectQuality, type Quality } from '../quality';
+import { judgeFps, type Quality } from '../quality';
+import { useGfx } from '../gfx';
 import { useWorld } from '../app/state/world';
 import { useUi } from '../app/state/ui';
 import { buildWorld, type BuiltWorld } from './buildWorld.js';
@@ -23,8 +24,13 @@ function World({ Q }: { Q: Quality }) {
   const { gl, scene, camera } = useThree();
   const site = useArea((s) => siteOf(s.area));
   const built = useRef<Built | null>(null);
+  // 월드는 그때의 품질로 만들고, 이후 품질이 바뀌면 다시 만들지 않고 applyQuality 로 바꾼다
+  const qRef = useRef(Q);
+  qRef.current = Q;
+  useEffect(() => { built.current?.applyQuality(Q); if (built.current) (window as unknown as { __proto?: { Q: Quality } }).__proto!.Q = Q; }, [Q]);
 
   useEffect(() => {
+    const Q = qRef.current;
     let dead = false;
     const T0 = performance.now(), marks: [string, number][] = [];
     const progress = (p: number, tag?: string) => {
@@ -36,8 +42,9 @@ function World({ Q }: { Q: Quality }) {
       .then((W: Built) => {
         if (dead) { W.player.dispose(); return; }
         built.current = W;
+        if (qRef.current !== Q) W.applyQuality(qRef.current); // 짓는 사이에 품질이 바뀌었으면
         const w = window as unknown as Record<string, unknown>;
-        w.__proto = { Q, marks, zones: W.zones, world: W.world, player: W.player, trees: W.trees, renderer: gl, scene, camera, heroShot: W.heroShot };
+        w.__proto = { Q: qRef.current, marks, zones: W.zones, world: W.world, player: W.player, trees: W.trees, renderer: gl, scene, camera, heroShot: W.heroShot };
         w.__ready = true; w.__area = site || 'campus';
         useWorld.setState({ status: 'ready', progress: 1, areaId: site || 'campus', api: { ...W.api, dispose: () => W.player.dispose() } });
       })
@@ -52,7 +59,7 @@ function World({ Q }: { Q: Quality }) {
       disposeScene(scene);
       built.current?.player.dispose(); built.current = null;
     };
-  }, [Q, gl, scene, camera, site]);
+  }, [gl, scene, camera, site]);
 
   useFrame((_, dt) => built.current?.frame(Math.min(0.05, dt)), 0);
   return null;
@@ -98,15 +105,50 @@ function Post({ Q }: { Q: Quality }) {
   return null;
 }
 
+/**
+ * 실행 중 FPS 를 보고 품질을 자동으로 한 단계씩 낮춘다 (품질이 '자동'일 때만, 주소 ?q= 나 직접 고른 값은 그대로).
+ * 월드가 준비된 뒤 2초 기다렸다가(셰이더 준비) 4초 창으로 잰다. 탭이 가려졌거나 월드를 바꾸는 중이면 창을 버린다.
+ */
+function FpsGuard() {
+  const w = useRef({ t: 0, frames: 0, warm: 2 });
+  const reset = (warm = 2) => { w.current = { t: 0, frames: 0, warm }; };
+  const status = useWorld((s) => s.status);
+  const level = useGfx((s) => s.level);
+  // 지도·실내를 보는 동안 3D 가 멈췄다가 돌아오면 첫 프레임 간격이 그 시간만큼 길다 → 그때마다 새로 잰다
+  const mapMode = useUi((s) => s.mapMode);
+  const indoor = useUi((s) => s.indoor);
+  useEffect(() => { reset(); }, [status, level, mapMode, indoor]);
+  useEffect(() => {
+    const onVis = () => reset(1);
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+  useFrame((_, dt) => {
+    if (status !== 'ready' || document.hidden) return;
+    const c = w.current;
+    if (c.warm > 0) { c.warm -= dt; return; }
+    c.t += dt; c.frames++;
+    if (c.t < 4) return;
+    const g = useGfx.getState();
+    const verdict = judgeFps(g.level, c.frames, c.t);
+    reset(verdict === 'down' ? 2 : 0);
+    if (verdict === 'down' && g.autoStepDown()) console.info(`[gfx] FPS ${(c.frames / c.t).toFixed(1)} → 품질 한 단계 낮춤: ${useGfx.getState().level}`);
+    if (verdict === 'slow' && !g.slow) g.markSlow();
+  }, -1);
+  return null;
+}
+
 /** 3D 층. 장면이 준비되면 WorldApi 를 useWorld 에 채운다. */
 export function WorldCanvas() {
-  const Q = useMemo(detectQuality, []);
+  const Q = useGfx((s) => s.Q);
+  // 캔버스 안티에일리어싱은 만들 때만 정해진다 → 처음 품질로 고정 (바꾼 값은 다음 접속부터)
+  const antialias = useMemo(() => useGfx.getState().Q.antialias, []);
   const mapMode = useUi((s) => s.mapMode); // 지도·실내를 보는 동안은 동네 3D 를 그리지 않는다 (GPU 절약)
   const indoor = useUi((s) => s.indoor);
   return (
     <Canvas
-      gl={{ antialias: true, powerPreference: 'high-performance' }}
-      dpr={[1, Q.pixelRatio]}
+      gl={{ antialias, powerPreference: 'high-performance' }}
+      dpr={[Q.minPixelRatio, Q.pixelRatio]}
       shadows={{ type: THREE.PCFSoftShadowMap }}
       camera={{ fov: 55, near: 0.3, far: 3000 }}
       frameloop={mapMode === '2d' || indoor ? 'never' : 'always'}
@@ -119,6 +161,7 @@ export function WorldCanvas() {
     >
       <World Q={Q} />
       <Post Q={Q} />
+      <FpsGuard />
     </Canvas>
   );
 }

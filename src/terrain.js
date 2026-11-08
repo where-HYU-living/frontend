@@ -124,6 +124,51 @@ export async function makeTerrain(world, splatCanvas, plazaCanvas = null) {
   mesh.receiveShadow = true;
   mesh.name = 'terrain';
 
+  // ---- 가벼운 지형 (품질 '최저': 그래픽 가속 없이 CPU 로 그리는 기기)
+  // 실측: 화면 대부분을 덮는 지형 셰이더(텍스처 9번 + 노멀맵 + PBR)가 가장 비싼 축. 텍스처 5번·램버트 조명·절반 격자로.
+  let lite = null;
+  const makeLite = () => {
+    const segX = Math.max(1, Math.round((t.w - 1) / 2)), segZ = Math.max(1, Math.round((t.h - 1) / 2));
+    const g = new THREE.PlaneGeometry(sizeX, sizeZ, segX, segZ);
+    g.rotateX(-Math.PI / 2);
+    g.translate(t.minX + sizeX / 2, 0, t.minZ + sizeZ / 2);
+    const p = g.attributes.position;
+    for (let k = 0; k < p.count; k++) p.setY(k, sampleGrid(t, p.getX(k), p.getZ(k)));
+    g.computeVertexNormals();
+    const m = new THREE.MeshLambertMaterial({ map: grass }); // map 은 uv 를 켜려고 둔다 (색은 아래 셰이더가 정함)
+    m.onBeforeCompile = (sh) => {
+      Object.assign(sh.uniforms, { uSplat: { value: splat }, uPlaza: { value: plaza }, uPlazaTex: { value: plazaPave }, uPave: { value: pave }, uRoad: { value: road }, uTile: { value: tile } });
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vSUv;')
+        .replace('#include <uv_vertex>', '#include <uv_vertex>\nvSUv = uv;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vSUv;\nuniform sampler2D uSplat, uPave, uRoad, uPlaza, uPlazaTex;\nuniform vec2 uTile;')
+        .replace('#include <map_fragment>', `
+          vec2 tuv = vSUv * uTile;
+          vec4 sp = texture2D(uSplat, vSUv);
+          vec3 cGrass = texture2D(map, tuv * 0.8).rgb * vec3(0.72, 1.0, 0.5);
+          vec3 col = mix(cGrass * 0.82 * vec3(0.95, 0.97, 0.85), cGrass, smoothstep(0.3, 0.7, sp.b));
+          col = mix(col, texture2D(uPave, tuv * 1.2).rgb * vec3(1.02, 0.96, 0.92), smoothstep(0.3, 0.7, sp.r));
+          // 광장 화강석 블록: 원래 지형과 같은 텍스처·색 보정 (단색으로 두면 시작 화면 앞 광장이 하얗게 떠 보였다)
+          float pm = texture2D(uPlaza, vSUv).r;
+          if (pm > 0.01) {
+            vec3 cPlaza = texture2D(uPlazaTex, tuv * 1.5).rgb;
+            col = mix(col, mix(vec3(dot(cPlaza, vec3(0.333))), cPlaza, 0.25) * 1.18, smoothstep(0.3, 0.7, pm));
+          }
+          col = mix(col, texture2D(uRoad, tuv * 0.6).rgb * 0.9, smoothstep(0.3, 0.7, sp.g));
+          diffuseColor.rgb *= col * 1.6; // 램버트는 PBR+하늘 환경광보다 어둡게 나온다 → 원래 지형 밝기에 맞춤(실측)
+        `);
+    };
+    m.userData.textures = mat.userData.textures;
+    return { geo: g, mat: m };
+  };
+  /** 실행 중에도 바꿀 수 있다 (품질을 낮추거나 올릴 때). 안 쓰는 쪽도 월드를 내릴 때 같이 해제한다 */
+  mesh.userData.setLite = (on) => {
+    if (on && !lite) { lite = makeLite(); mesh.userData.disposeAlso = [geo, mat, lite.geo, lite.mat]; }
+    mesh.geometry = on ? lite.geo : geo;
+    mesh.material = on ? lite.mat : mat;
+  };
+
   // 바깥 바닥 (경계 너머)
   const outer = new THREE.Mesh(
     new THREE.RingGeometry(Math.min(sizeX, sizeZ) * 0.3, 4000, 64, 1),
@@ -134,4 +179,12 @@ export async function makeTerrain(world, splatCanvas, plazaCanvas = null) {
   outer.receiveShadow = true;
 
   return { mesh, outer };
+}
+
+/** 지형 격자 높이 (쌍선형 보간) — 절반 격자 지형용 */
+function sampleGrid(t, x, z) {
+  const fx = Math.min(t.w - 1, Math.max(0, (x - t.minX) / t.step)), fz = Math.min(t.h - 1, Math.max(0, (z - t.minZ) / t.step));
+  const i = Math.min(t.w - 2, Math.floor(fx)), j = Math.min(t.h - 2, Math.floor(fz)), u = fx - i, v = fz - j;
+  const d = t.data, w = t.w;
+  return (d[j * w + i] * (1 - u) + d[j * w + i + 1] * u) * (1 - v) + (d[(j + 1) * w + i] * (1 - u) + d[(j + 1) * w + i + 1] * u) * v;
 }

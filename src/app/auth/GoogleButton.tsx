@@ -21,6 +21,6 @@ export function GoogleButton({ clientId, onCredential }: { clientId: string; onC
     return () => { dead = true; };
   }, [clientId]);
 
-  if (failed) return <p className="ui-modal-error" role="alert">구글 로그인을 불러오지 못했어요. 아래 메일 인증을 이용해 주세요.</p>;
+  if (failed) return <p className="ui-modal-error" role="alert">구글 로그인을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.</p>;
   return <div ref={ref} className="ui-google" aria-label="Google로 로그인" />;
 }

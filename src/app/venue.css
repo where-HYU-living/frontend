@@ -109,8 +109,26 @@
 /* 동네 둘러보기 */
 .ui-layer .ui-v-walk { margin: 4px 0 10px; height: 40px; padding: 0 14px; border-radius: 12px; background: #0e4a84; color: #fff; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 7px; }
 .ui-layer .ui-v-walk:hover { background: #0b3c6b; }
-.ui-v-hud { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 14px; background: rgba(255,255,255,.94); box-shadow: 0 4px 18px rgba(0,0,0,.18); max-width: calc(100vw - 24px); }
-.ui-v-hud-name { font-size: 14px; font-weight: 700; color: #1b2733; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34vw; }
-.ui-v-hud button { height: 38px; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; pointer-events: auto; }
-.ui-v-hud .ui-v-back { background: #eef2f6; color: #1b2733; }
+/* 동네 HUD: 상단바 아래 가운데 한 줄 알약. 메뉴 층(.ui-layer) 밖이라 버튼 기본 테두리·글꼴을 여기서 직접 지운다.
+   패널을 열고 닫아도 자리가 바뀌지 않는다. 가운데 두면 패널(오른쪽 끝 380px)과 겹치는 폭에서는 처음부터 패널 오른쪽에 둔다 */
+.ui-v-hud { position: fixed; top: 78px; left: 50%; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 4px; height: 46px; padding: 4px; border-radius: 14px; background: var(--ui-glass-strong); -webkit-backdrop-filter: var(--ui-blur); backdrop-filter: var(--ui-blur); border: 1px solid var(--ui-glass-line); box-shadow: 0 6px 22px rgba(22, 32, 46, .16); max-width: calc(100vw - 24px); color: var(--ui-ink); font-size: 14px; user-select: none; }
+@media (min-width: 761px) and (max-width: 1199px) { .ui-v-hud { left: 396px; transform: none; max-width: calc(100vw - 412px); } }
+.ui-v-hud button { font: inherit; height: 36px; padding: 0 13px; border: 0; border-radius: 10px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; flex: none; transition: background-color .15s ease; }
+.ui-v-hud button:focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
+.ui-v-hud .ui-v-back { background: transparent; color: var(--ui-ink-2); padding: 0 12px 0 10px; }
+.ui-v-hud .ui-v-back:hover { background: rgba(22, 32, 46, .07); color: var(--ui-ink); }
+.ui-v-hud-sep { width: 1px; height: 20px; background: var(--ui-hair); flex: none; }
+.ui-v-hud-place { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 0 10px 0 8px; }
+.ui-v-hud-ico { color: #d9480f; flex: none; }
+.ui-v-hud-name { font-size: 14px; font-weight: 750; color: var(--ui-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+.ui-v-hud .ui-v-hud-info { background: rgba(22, 32, 46, .07); color: var(--ui-ink); }
+.ui-v-hud .ui-v-hud-info:hover { background: rgba(22, 32, 46, .12); }
+.ui-v-hud .ui-v-hud-info[aria-pressed="true"] { background: #16202e; color: #fff; }
 .ui-v-hud .ui-v-hud-in { background: #0e4a84; color: #fff; }
+.ui-v-hud .ui-v-hud-in:hover { background: #0b3c6b; }
+@media (max-width: 760px) {
+  .ui-v-hud { top: 70px; left: 50%; max-width: calc(100vw - 24px); }
+  .ui-v-hud-name { max-width: 34vw; }
+  .ui-v-hud button { padding: 0 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .ui-v-hud button { transition: none; } }

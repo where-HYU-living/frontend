@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /** 지도 모드에서 검색·찜 등으로 고른 지점. KakaoMap 이 이동·줌·마커·정보 카드를 띄운다 (3D 로 가지 않음) */
-export type MapTarget = { name: string; address: string | null; lat: number; lng: number; /** SearchType·'PLACE'·'SITE' 등 */ kind: string | null };
+export type MapTarget = { name: string; address: string | null; lat: number; lng: number; /** SearchType·'PLACE'·'SITE' 등 */ kind: string | null; /** 집 핀이면 그 집 id (3D로 가기 → useVisit) */ id?: number };
 
 type MapFocusState = {
   target: MapTarget | null;

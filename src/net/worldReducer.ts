@@ -1,12 +1,12 @@
 import { sanitizeAppearance, type Appearance } from '../world/avatar';
 export type Vec3 = [number, number, number];
 export type Sample = { t: number; p: Vec3; r: number };
-export type PlayerState = { nickname: string; look?: Appearance; samples: Sample[]; a: string; emote?: { e: string; until: number }; chat?: { m: string; until: number } };
+export type PlayerState = { nickname: string; look?: Appearance; samples: Sample[]; a: string; /** 실내 도면 id (바깥이면 null). p 의 좌표계가 달라진다 */ room: number | null; emote?: { e: string; until: number }; chat?: { m: string; until: number } };
 export type WorldModel = { selfId: string | null; players: Record<string, PlayerState>; /** 내가 보낸 말·이모트 (서버가 보낸 사람에게도 되돌려 준다) */ self?: { emote?: { e: string; until: number }; chat?: { m: string; until: number } } };
 
-type Pub = { id: string; nickname?: string; look?: unknown; p: Vec3; r: number; a: string };
+type Pub = { id: string; nickname?: string; look?: unknown; p: Vec3; r: number; a: string; room?: number | null };
 export type ServerMsg =
-  | { t: 'welcome'; selfId: string; spawn: { p: Vec3; r: number }; players: Pub[]; /** 초대 토큰이 유효해 초대한 사람 옆에 놓였을 때 true */ invited?: boolean }
+  | { t: 'welcome'; selfId: string; spawn: { p: Vec3; r: number; /** 초대한 사람이 실내면 그 도면 id */ room?: number | null }; players: Pub[]; /** 초대 토큰이 유효해 초대한 사람 옆에 놓였을 때 true */ invited?: boolean }
   | { t: 'join'; player: Pub }
   | { t: 'leave'; id: string }
   | { t: 'state'; players: Pub[] }
@@ -22,10 +22,15 @@ const MAX_SAMPLES = 10;
 
 export const emptyWorld = (): WorldModel => ({ selfId: null, players: {} });
 
-const fresh = (p: Pub, now: number, prev?: PlayerState): PlayerState => ({
-  nickname: p.nickname ?? prev?.nickname ?? '', look: p.look ? sanitizeAppearance(p.look) : prev?.look, a: p.a, emote: prev?.emote, chat: prev?.chat,
-  samples: [...(prev?.samples ?? []), { t: now, p: p.p, r: p.r }].slice(-MAX_SAMPLES),
-});
+const fresh = (p: Pub, now: number, prev?: PlayerState): PlayerState => {
+  const room = p.room ?? null;
+  // 방에 들어가거나 나오면 좌표계가 바뀐다 → 옛 샘플과 보간하면 벽을 뚫고 미끄러지므로 새로 시작
+  const keep = prev && prev.room === room ? prev.samples : [];
+  return {
+    nickname: p.nickname ?? prev?.nickname ?? '', look: p.look ? sanitizeAppearance(p.look) : prev?.look, a: p.a, room, emote: prev?.emote, chat: prev?.chat,
+    samples: [...keep, { t: now, p: p.p, r: p.r }].slice(-MAX_SAMPLES),
+  };
+};
 
 /** 서버 메시지 → 월드 모델. welcome 은 players 를 통째로 교체(재접속 시 사라진 사람 정리). 자기 자신은 제외 */
 export function worldReducer(m: WorldModel, msg: ServerMsg, now: number): WorldModel {

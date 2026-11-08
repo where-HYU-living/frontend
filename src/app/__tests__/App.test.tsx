@@ -33,7 +33,7 @@ const renderReady = async () => {
 
 test('menu tabs appear exactly once', async () => {
   await renderReady();
-  expect(screen.getAllByRole('tab', { name: '집 찾기' })).toHaveLength(1);
+  expect(screen.getAllByRole('tab', { name: '매물 찾기' })).toHaveLength(1);
   expect(screen.getAllByRole('tab')).toHaveLength(6);
 });
 
@@ -49,7 +49,7 @@ test('panel starts folded, tab opens it, fold button closes it', async () => {
   expect(screen.getByRole('heading', { name: '기숙사' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '패널 접기' }));
   expect(screen.queryByRole('heading', { name: '기숙사' })).toBeNull();
-  expect(screen.getByRole('button', { name: '기숙사 열기' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '기숙사 열기' })).toBeNull();
 });
 
 test('search suggests landmarks and moves the player', async () => {

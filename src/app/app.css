@@ -13,7 +13,12 @@
 /* 3D 층 */
 #world { position: fixed; inset: 0; z-index: 0; }
 #world canvas { display: block; touch-action: none; }
-#minimap { top: auto; bottom: 16px; right: 16px; position: fixed; width: 188px; height: 149px; z-index: 5; }
+/* 미니맵: 동그란 창, 내 위치가 가운데. 올리면 살짝 커지고 위에 '두 번 누르면 이동' 안내가 뜬다 */
+#minimap { top: auto; bottom: 22px; right: 16px; position: fixed; width: 168px; height: 168px; z-index: 5; border-radius: 50%; border: 0; background: none; cursor: pointer; box-shadow: 0 6px 22px rgba(22, 32, 46, .32); transition: transform .18s ease, box-shadow .18s ease; }
+#minimap:hover { transform: scale(1.04); box-shadow: 0 8px 28px rgba(22, 32, 46, .4); }
+#minimap-hint { position: fixed; right: 100px; bottom: 200px; z-index: 5; width: max-content; padding: 5px 11px; border-radius: 999px; background: rgba(22, 32, 46, .78); color: #fff; font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0; transform: translate(50%, 4px); transition: opacity .15s ease, transform .15s ease; }
+#minimap-hint:empty { display: none; }
+#minimap-hint.is-on { opacity: 1; transform: translate(50%, 0); }
 #attrib { position: fixed; bottom: 4px; right: 16px; font-size: 10px; color: rgba(255, 255, 255, 0.6); pointer-events: none; z-index: 5; }
 #joystick { position: fixed; z-index: 5; }
 
@@ -52,7 +57,7 @@
 .tabs button[aria-selected='true'] { color: var(--ui-ink); font-weight: 650; }
 .tabs button[aria-selected='true'].is-open { background: var(--ui-glass-strong); box-shadow: 0 1px 3px rgba(22, 32, 46, 0.12); }
 .tabs button[aria-selected='true']:not(.is-open) { text-decoration: underline 2px; text-underline-offset: 6px; }
-.textbtn, .iconbtn, .reopen { color: var(--ui-ink); }
+.textbtn, .iconbtn { color: var(--ui-ink); }
 .textbtn { flex: none; height: 44px; padding: 0 14px; border-radius: 12px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .iconbtn { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; }
 
@@ -74,7 +79,6 @@
 .ui-tour-no { flex: 0 0 34px; font-variant-numeric: tabular-nums; color: var(--ui-ink-2); font-size: 13px; }
 .ui-tour-name { flex: 1; }
 .ui-tour-note { font-size: 11px; color: var(--ui-ink-2); }
-.reopen { position: absolute; left: 16px; top: 70px; height: 42px; padding: 0 14px; border-radius: 12px; font-weight: 600; }
 
 /* 로딩 */
 .loading { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #c9d7e4, #8fa3b6); }
@@ -82,6 +86,11 @@
 .loading-title { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
 .loading-sub { margin-top: 4px; color: var(--ui-ink-2); font-size: 14px; }
 .loading-bar { margin: 16px auto 0; width: 220px; height: 4px; border-radius: 4px; background: rgba(22, 32, 46, 0.12); overflow: hidden; }
+.ui-loadblock { position: fixed; inset: 0; z-index: 20; touch-action: none; cursor: progress; background-color: rgba(201, 215, 228, 0); transition: background-color 0.7s ease; }
+.ui-loadblock.is-veiled { background-color: rgb(201, 215, 228); }
+.ui-loadpill { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 999px; color: var(--ui-ink); font-size: 13px; font-weight: 600; pointer-events: none; }
+.ui-loadpill-text { min-width: 92px; font-variant-numeric: tabular-nums; }
+.ui-loadpill .loading-bar { margin: 0; width: 160px; }
 .loading-bar span { display: block; height: 100%; background: var(--ui-ink); transition: width 0.3s ease; }
 
 /* 상단바 메뉴(메뉴·⋯·계정): 한 번에 하나만 열린다 */
@@ -119,10 +128,9 @@
   .ui-tb-account .ui-tb-name, .ui-tb-account svg + svg { display: none; }
   .topbar .grow { display: none; }
   .ui-panel { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 55%; border-radius: 16px 16px 0 0; }
-  .reopen { top: auto; bottom: 16px; }
-  #minimap { display: none; }
+  #minimap, #minimap-hint { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .loading-bar span { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .loading-bar span, .ui-loadblock, #minimap, #minimap-hint { transition: none; } }
 
 /* 카카오맵 층: 3D(z0)·미니맵(z5) 위, 메뉴 층(z10) 아래 */
 .ui-map { position: fixed; inset: 0; z-index: 6; background: #e8eef3; color: var(--ui-ink); }
@@ -165,7 +173,7 @@
 .ui-modal-actions .primary:disabled { opacity: .45; cursor: default; }
 .ui-modal-actions .ghost { background: transparent; color: var(--ui-ink-2); }
 
-/* 집 찾기 패널 */
+/* 매물 찾기 패널 */
 .ui-filter { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; font-size: 13px; }
 .ui-filter label { display: flex; align-items: center; gap: 6px; }
 .ui-filter input { width: 64px; height: 32px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: inherit; font: inherit; }
@@ -238,6 +246,12 @@
 .ui-chat-row button { height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--ui-glass-strong); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
 .ui-chat-row input { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); font: inherit; }
 .ui-chat-note { color: #0e4a84; font-weight: 600; }
+/* 실내(방 투어) 위에 뜰 때: 실내 층(z30) 위, 조금 좁게. 가운데 방 바로가기 줄과 겹치지 않게 그 줄 폭을 줄인다 */
+.ui-chat.is-indoor { z-index: 31; width: 260px; bottom: 20px; }
+.ui-chat-sub { color: var(--ui-ink-3); font-weight: 500; }
+.ui-chat-mine { color: var(--ui-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 761px) { .ui-interior .ui-tour-rail { max-width: calc(100vw - 600px); } }
+@media (max-width: 760px) { .ui-chat.is-indoor { left: auto; right: 10px; bottom: 28px; width: calc(100vw - 160px); } }
 
 /* 후기·내 집·양도·알림 */
 .ui-form { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
@@ -258,7 +272,6 @@
 .ui-bell { position: relative; }
 .ui-badge-num { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px; background: #eb5757; color: #fff; font: 700 10px/16px inherit; font-family: inherit; text-align: center; }
 .ui-google { display: flex; justify-content: center; min-height: 44px; }
-.ui-modal-or { margin: 0; text-align: center; font-size: 12px; color: var(--ui-ink-3); }
 
 .ui-check { flex-direction: row !important; align-items: center; gap: 6px; }
 .ui-filter select { height: 32px; border-radius: 8px; border: 1px solid var(--ui-hair); background: var(--ui-glass-strong); color: inherit; font: inherit; }
@@ -331,3 +344,23 @@
 @media (max-width: 760px) { .ui-map-legend { left: 12px; right: 12px; bottom: auto; top: 64px; } }
 .ui-map-route-end { padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; box-shadow: 0 1px 5px rgba(22, 32, 46, .3); }
 .ui-map-route-end.is-from { background: #d9480f; } .ui-map-route-end.is-to { background: #1c7ed6; }
+
+/* 그래픽 품질 (더 보기 메뉴) · 느린 기기 안내 — GfxSettings.tsx */
+.ui-gfx { display: grid; gap: 6px; padding: 8px 10px 6px; border-top: 1px solid var(--ui-hair); }
+.ui-gfx-head { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ui-ink); }
+.ui-gfx-now { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--ui-ink-2); }
+.ui-gfx-seg button { min-height: 30px; font-size: 12px; }
+.ui-gfx-note, .ui-gfx-dev { margin: 0; font-size: 12px; color: var(--ui-ink-2); }
+.ui-gfx-dev { color: var(--ui-ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-gfx-warn { margin: 0; font-size: 12px; font-weight: 600; color: #b03a0a; }
+.ui-gfx-link { justify-self: start; padding: 0; border: 0; background: none; font: inherit; font-size: 12px; font-weight: 600; color: #0e4a84; text-decoration: underline; cursor: pointer; }
+.ui-gfx-howto { display: grid; gap: 6px; font-size: 12px; color: var(--ui-ink); }
+.ui-gfx-howto p { margin: 0; line-height: 1.5; }
+.ui-gfx-copy { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--ui-hair); border-radius: 8px; background: #fff; font: inherit; font-size: 12px; font-weight: 600; color: var(--ui-ink); cursor: pointer; }
+.ui-gfx-copy code { font-size: 11px; color: var(--ui-ink-2); }
+.ui-gfx-notice { position: fixed; z-index: 6; left: 50%; bottom: 84px; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); display: grid; gap: 6px; padding: 14px 40px 14px 16px; border-radius: 14px; color: var(--ui-ink); }
+.ui-gfx-notice-title { margin: 0; font-size: 14px; font-weight: 700; }
+.ui-gfx-notice-sub { margin: 0; font-size: 13px; color: var(--ui-ink-2); line-height: 1.45; }
+.ui-gfx-x { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: none; color: var(--ui-ink-2); cursor: pointer; }
+.ui-gfx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 2px; }
+.ui-gfx-primary { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 0; border-radius: 10px; background: #0e4a84; color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
