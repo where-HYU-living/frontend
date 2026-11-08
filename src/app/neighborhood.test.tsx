@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NeighborhoodButton, NeighborhoodHud } from './NeighborhoodButton';
 import { useArea } from './state/area';
@@ -70,5 +70,21 @@ describe('NeighborhoodHud', () => {
     render(<NeighborhoodHud />);
     fireEvent.click(screen.getByText('실내 보기'));
     expect(useUi.getState().indoor?.floorplanId).toBe(101);
+  });
+});
+
+describe('초대 자리(stand)로 옮기기', () => {
+  it('그 자리가 벽에 걸리면 바로 둘레의 빈자리에 선다 (30m 밖 "보이는 자리"로 가지 않는다)', () => {
+    const tried: [number, number][] = [];
+    const goToPlace = vi.fn(() => true), goToLandmark = vi.fn();
+    // (100,100) 과 반지름 1m 안은 막혀 있고, 2m 부터 빈자리
+    const teleport = (x: number, z: number) => { tried.push([x, z]); return Math.hypot(x - 100, z - 100) > 1.5; };
+    useWorld.setState({ api: { ...api, teleport, goToPlace, goToLandmark } as never, status: 'ready', areaId: 'l6' });
+    useArea.setState({ area: { site: 'l6' }, pendingGoto: { area: 'l6', x: 100, z: 100, stand: true } });
+    render(<NeighborhoodHud />);
+    const [x, z] = tried[tried.length - 1];
+    expect(Math.hypot(x - 100, z - 100)).toBeCloseTo(2, 5);
+    expect(goToPlace).not.toHaveBeenCalled();
+    expect(goToLandmark).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
+import { useDetailSel } from './state/detail';
 import { toLocal } from './map/geo';
 import { manwon } from '../lib/money';
 import { useDorms, useHousingList } from './features/catalog';
@@ -30,7 +31,7 @@ export function PlaceMarkers() {
     if (!api) return;
     api.setMarkers((showHousing ? housing ?? [] : []).map((h) => {
       const [x, z] = toLocal(h.lat, h.lng);
-      return { id: `h${h.id}`, x, z, color: h.recruiting ? '#2f9e57' : '#2f6fb3', text: `${h.name}${h.recruiting ? ' · 모집 중' : ''}`, icon: fav.has('HOUSING', h.id) ? HEART_SVG : undefined, label: `청년안심주택 ${h.name}`, onClick: () => useUi.setState({ tab: 'housing', panelOpen: true }) };
+      return { id: `h${h.id}`, x, z, color: h.recruiting ? '#2f9e57' : '#2f6fb3', text: `${h.name}${h.recruiting ? ' · 모집 중' : ''}`, icon: fav.has('HOUSING', h.id) ? HEART_SVG : undefined, label: `청년안심주택 ${h.name}`, onClick: () => { useDetailSel.getState().setHousing(h.id); useUi.setState({ tab: 'housing', panelOpen: true }); } };
     }), 'housing');
     return () => api.setMarkers([], 'housing');
   // eslint-disable-next-line react-hooks/exhaustive-deps

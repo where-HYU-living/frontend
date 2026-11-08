@@ -51,15 +51,25 @@ export function NeighborhoodHud() {
     if (!g) return;
     const m = siteMeta(areaId);
     if (!g.stand && m && Math.hypot(g.x - m.x, g.z - m.z) < 30) { api.goToLandmark('hero'); return; } // 집 근처면 기본 자리(집 앞 길). stand(초대 스폰·지도 지점)는 그 자리에
-    if (g.stand) { const [fx, fz] = g.face ?? [g.x, g.z - 1]; if (!api.teleport(g.x, g.z, fx, fz) && !api.goToPlace(g.x, g.z)) api.goToLandmark('hero'); return; }
+    if (g.stand) {
+      const [fx, fz] = g.face ?? [g.x, g.z - 1];
+      // 그 자리(초대받은 경우 초대한 사람 옆 1.5m)가 벽·건물에 걸리면 바로 둘레(1~3m)의 빈자리부터 찾는다.
+      // 예전엔 곧장 '그 지점이 보이는 자리'(30m 밖)로 가서 초대한 사람과 26m 떨어져 서는 일이 가끔 있었다
+      for (const r of [0, 1, 2, 3]) for (let k = 0; k < (r ? 8 : 1); k++) {
+        const a = (k * Math.PI) / 4;
+        if (api.teleport(g.x + r * Math.cos(a), g.z + r * Math.sin(a), fx, fz)) return;
+      }
+      if (!api.goToPlace(g.x, g.z)) api.goToLandmark('hero');
+      return;
+    }
     if (!api.goToPlace(g.x, g.z)) api.teleport(g.x, g.z);
   }, [api, areaId, pendingGoto, consumeGoto]);
 
   useEffect(() => {
     if (!api || !meta || areaId !== meta.id) return;
     // 이름표는 띄우지 않는다: 이름은 위 HUD 에 있고, 집 앞에 서 있으니 빛 기둥만으로 어느 건물인지 안다 (이름이 세 번 겹쳐 헷갈렸음)
-    api.setBeacons([{ x: meta.x, z: meta.z, color: 0xff8a1f }]);
-    return () => { api.setBeacons([]); };
+    api.setBeacons([{ x: meta.x, z: meta.z, color: 0xff8a1f }], 'home');
+    return () => { api.setBeacons([], 'home'); };
   }, [api, meta, areaId]);
 
   if (!meta || indoor || mapMode === '2d') return null;

@@ -336,11 +336,11 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   };
 
   // 빛 기둥+깃발 (모집 중인 청년안심주택 강조). React 가 setBeacons 로 전체 교체
-  const beaconObjs = [];
+  const beaconObjs = new Map(); // 묶음(group)별: 모집 중 단지('default')와 동네 HUD 의 우리 집('home')이 서로 지우지 않게
   const beaconMat = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending });
-  const setBeacons = (items) => {
-    for (const g of beaconObjs) { scene.remove(g); g.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); }
-    beaconObjs.length = 0;
+  const setBeacons = (items, group = 'default') => {
+    for (const g of beaconObjs.get(group) ?? []) { scene.remove(g); g.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); }
+    const list = []; beaconObjs.set(group, list);
     for (const it of items) {
       const g = new THREE.Group();
       const y = heightAt(it.x, it.z);
@@ -348,7 +348,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       const flag = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({ color: it.color, side: THREE.DoubleSide })); flag.position.set(2.6, 24, 0);
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 14, 6), new THREE.MeshBasicMaterial({ color: 0xffffff })); pole.position.y = 21;
       g.add(pillar, flag, pole); g.position.set(it.x, y, it.z);
-      scene.add(g); beaconObjs.push(g);
+      scene.add(g); list.push(g);
     }
   };
 

@@ -1,4 +1,4 @@
-import 'pretendard/dist/web/static/pretendard-dynamic-subset.css'; // 3-4: 쓰는 글자 묶음(unicode-range)만 내려받는다 (전체 6굵기 4.6MB → 수백 KB)
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'; // 가변 글꼴 한 벌(굵기 45~920)을 쓰는 글자 묶음만. 굵기별 정적 글꼴 CSS(542KB, @font-face 828개) 대신 56KB, 550·650·750 같은 중간 굵기도 진짜로 그린다
 import { createRoot } from 'react-dom/client';
 import '../style.css'; // 3D 쪽 스타일 (라벨·조이스틱·미니맵)
 import './app.css';

@@ -9,9 +9,13 @@ import { UnitInput } from './forms/Field';
 import { ChipSelect } from './forms/Segmented';
 import { FormSection, StickyActions } from './forms/FormSection';
 import './forms/forms.css';
+import { useModal } from './useModal';
 
 const won = (man: string) => (man.trim() === '' || !Number.isFinite(Number(man)) || Number(man) < 0 ? null : Math.round(Number(man) * 10000));
 const man = (w: number | null | undefined) => (w == null ? '' : String(w / 10000));
+/** '첫 로그인 때 한 번': 닫으면 이 브라우저에선 다시 저절로 열지 않는다 (예전엔 sessionStorage 라 새 창마다 다시 열렸다. 점검 스크립트는 sessionStorage 로 끈다) */
+const ONBOARDED = 'chatatda.onboarded';
+const onboarded = () => { try { return !!(localStorage.getItem(ONBOARDED) || sessionStorage.getItem(ONBOARDED)); } catch { return true; } };
 
 /** 로그인 직후 학과·예산을 받는다 (건너뛰기 가능). 내 계정 버튼으로 다시 열 수 있다 */
 export function ProfileModal() {
@@ -35,23 +39,24 @@ export function ProfileModal() {
     setDep(p.departmentId == null ? '' : String(p.departmentId));
     setBuildingIds(p.buildingIds ?? []);
     setRent(man(p.budget?.rentCap)); setDeposit(man(p.budget?.depositCap));
-    if (p.departmentId == null && p.budget == null && !sessionStorage.getItem('chatatda.onboarded')) useUi.setState({ profileOpen: true });
+    if (p.departmentId == null && p.budget == null && !onboarded()) useUi.setState({ profileOpen: true });
   }, [profile.data]);
 
+  const close = () => { try { localStorage.setItem(ONBOARDED, '1'); } catch { /* 무시 */ } useUi.setState({ profileOpen: false }); };
+  const box = useModal(open && !!token, close);
   if (!open || !token) return null;
-  const close = () => { try { sessionStorage.setItem('chatatda.onboarded', '1'); } catch { /* 무시 */ } useUi.setState({ profileOpen: false }); };
   const submit = () => {
     const d = deps.data?.find((x) => String(x.id) === dep);
     const rentCap = won(rent), depositCap = won(deposit);
     save.mutate(
-      { departmentId: d ? d.id : undefined, buildingIds, budget: rentCap == null && depositCap == null ? undefined : { rentCap, depositCap } },
+      { departmentId: d ? d.id : undefined, buildingIds, budget: { rentCap, depositCap } },
       { onSuccess: close },
     );
   };
 
   return (
     <div className="ui-modal-back" onMouseDown={close}>
-      <div className="ui-modal ui-modal-lg glass" role="dialog" aria-label="내 정보" onMouseDown={(e) => e.stopPropagation()}>
+      <div ref={box} className="ui-modal ui-modal-lg glass" role="dialog" aria-modal="true" aria-label="내 정보" onMouseDown={(e) => e.stopPropagation()}>
         <h2>내 정보</h2>
         <p className="ui-modal-sub">학과를 고르면 집마다 과 건물까지 걸어서 몇 분인지 보여 줘요. 예산을 넣으면 넘는 집을 표시해요. 둘 다 나중에 해도 돼요.</p>
         <FormSection title="학과">

@@ -1,4 +1,4 @@
 /* 3D 층 부가 UI (w3d- 접두사) */
-.w3d-door-prompt { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 20; padding: 10px 18px; border: 2px solid #fff; border-radius: 999px; background: #0e4a84; color: #fff; font: 700 14px/1.2 'Pretendard', system-ui, sans-serif; cursor: pointer; box-shadow: 0 0 0 4px rgba(255, 210, 122, .55), 0 4px 14px rgba(0, 0, 0, .4); white-space: nowrap; }
+.w3d-door-prompt { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 20; padding: 10px 18px; border: 2px solid #fff; border-radius: 999px; background: #0e4a84; color: #fff; font: 700 14px/1.2 'Pretendard Variable', 'Pretendard', system-ui, sans-serif; cursor: pointer; box-shadow: 0 0 0 4px rgba(255, 210, 122, .55), 0 4px 14px rgba(0, 0, 0, .4); white-space: nowrap; }
 .w3d-door-prompt[hidden] { display: none; }
 .w3d-door-prompt:focus-visible { outline: 3px solid #ffd27a; outline-offset: 3px; }

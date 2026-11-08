@@ -54,7 +54,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); fetchMock.mockReset(); vi.unstubAllGlobals(); });
 
-const hearts = () => screen.getAllByRole('button', { name: /^찜(함|하기)$/ });
+const hearts = () => screen.getAllByRole('button', { name: /(^| )찜$/ }); // 이름표: '<집 이름> 찜' (눌림은 aria-pressed)
 
 test('하트 상태는 종류와 상관없이 /me/favorites 목록에서 정해진다 (같은 id 라도 종류가 다르면 따로)', async () => {
   favs = [fav('HOUSING', 1), fav('DORM', 3)];
@@ -164,7 +164,7 @@ test('찜 목록: 종류별 개수 필터, 카드에서 바로 취소, 누르면
   expect(useDetailSel.getState().housing).toBe(3);
 
   const card = screen.getByText('LISTING7').closest('li')!;
-  fireEvent.click(within(card).getByRole('button', { name: '찜함' }));
+  fireEvent.click(within(card).getByRole('button', { name: /찜$/, pressed: true }));
   await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.path === '/me/favorites/LISTING/7')).toBe(true));
   await waitFor(() => expect(screen.queryByText('LISTING7')).toBeNull()); // 취소하면 목록에서 사라진다
 });

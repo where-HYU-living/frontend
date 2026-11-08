@@ -9,6 +9,7 @@ import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 const OUT = process.argv[2] || 'final-qa.json';
 const FE = 'http://localhost:5173', BE = 'http://localhost:8080/api/v1', PROD = 'https://api-production-8811.up.railway.app/api/v1';
 const MAIL_LOG = process.env.MAIL_LOG; // 로컬 서버 로그 파일 (인증 코드 읽기)
+const MOCK = true; // 프론트 점검은 ?mock=1 (목 서버) 로 돈다 — 화면 로그인은 아무 토큰이나
 const R = {};
 const put = (id, side, res, how) => { (R[id] ||= {})[side] = [res, how]; console.log(`${id.padEnd(4)} ${side} ${res.padEnd(4)} ${how}`); };
 const check = async (id, side, fn) => { try { const [res, how] = await fn(); put(id, side, res, how); } catch (e) { put(id, side, '실패', `예외: ${String(e.message || e).split('\n')[0].slice(0, 160)}`); } };
@@ -178,8 +179,8 @@ async function frontend() {
   await check('B4', 'fe', async () => {
     const out = [];
     for (const nth of [0, 3]) { // 매물 1(서비스 밖) · 매물 4(캠퍼스 안)
-      await ev(() => { window.__app.useListingsUi.getState().select(null); window.__app.useMapFocus = null; }); await tab('집 찾기');
-      await $('.ui-cards li').nth(nth).locator('button').first().click(); await page.waitForTimeout(400);
+      await ev(() => { window.__app.useListingsUi.getState().select(null); window.__app.useMapFocus = null; }); await tab('매물 찾기');
+      await $('.ui-cards li').nth(nth).locator('button').first().click(); await $('.ui-ld-go').click(); await page.waitForTimeout(400);
       const sel = await ev(() => window.__app.useListingsUi.getState().selectedId); const plan = await ev(() => window.__lastLanding ?? null);
       await page.waitForFunction(() => window.__ready === true, null, { timeout: 60000 }); await page.waitForTimeout(1200);
       const [x, z] = await pose(); const d = await ev(async (id) => { const l = await window.__app.api(`/listings/${id}`); return [(l.lng - 127.044341) * Math.cos(37.5561486 * Math.PI / 180) * 111320, -(l.lat - 37.5561486) * 110540]; }, sel);
@@ -204,11 +205,16 @@ async function frontend() {
   await check('C1', 'fe', async () => { await page.getByRole('button', { name: '지도로 보기' }).click(); await $('.ui-map-legend').waitFor({ timeout: 30000 }); const pins = await $('.ui-map-pin').count(); await $('.ui-map-listing').first().click(); const card = await $('.ui-map-card').count(); await page.getByRole('button', { name: '3D로 들어가기' }).click(); await page.waitForTimeout(800); const mode = await ev(() => window.__app.useUi.getState().mapMode); return ok(pins > 0 && card === 1 && mode === '3d', `지도 핀 ${pins}개 → 매물 핀 → 카드 → 3D로 들어가기 → ${mode}`); });
   put('C8', 'fe', '통과', 'map-check 6/6 (검색 5곳 마커 오차 0px, 도착 y=지면, 상태 유지)');
   await ev(() => window.__useArea.getState().goTo('campus', 0, 0)); await ready('campus');
-  await check('C2', 'fe', async () => { await ev(() => window.__app.useListingsUi.getState().select(null)); await tab('집 찾기'); await $('.ui-cards li').first().waitFor(); const n = await $('.ui-cards li').count(); const tot = await $('.ui-v-summary b').textContent(); return ok(n > 0 && tot.includes(String(n)), `카드 ${n}개, 요약 '${tot}'`); });
+  await check('C2', 'fe', async () => { await ev(() => window.__app.useListingsUi.getState().select(null)); await tab('매물 찾기'); await $('.ui-cards li').first().waitFor(); const n = await $('.ui-cards li').count(); const tot = await $('.ui-v-summary b').textContent(); return ok(n > 0 && tot.includes(String(n)), `카드 ${n}개, 요약 '${tot}'`); });
   await check('C3', 'fe', async () => { const n0 = await $('.ui-cards li').count(); await page.getByRole('button', { name: '적정', exact: true }).click(); await page.waitForTimeout(800); const n1 = await $('.ui-cards li').count(); await page.getByRole('button', { name: '적정', exact: true }).click(); await page.getByRole('button', { name: /조건/ }).click(); await page.getByRole('textbox', { name: '관리비 상한(만원)' }).fill('5'); await page.waitForTimeout(800); const n2 = await $('.ui-cards li').count(); await page.getByRole('button', { name: '조건 모두 지우기' }).click(); return ok(n1 < n0 && n2 < n0, `전체 ${n0} → 등급 '적정' ${n1} → 관리비 5만 이하 ${n2}`); });
-  await check('C6', 'fe', async () => { const h = $('.ui-cards li button.ui-heart').first(); const p0 = await h.getAttribute('aria-pressed'); await h.click(); await page.waitForTimeout(800); const p = await h.getAttribute('aria-pressed'); if (p0 === 'true') { await h.click(); await page.waitForTimeout(600); } return ok(p0 !== p, `카드 하트 → aria-pressed ${p0} → ${p}`); });
+  await check('C6', 'fe', async () => {
+    // 필터를 지운 직후엔 목록이 250ms 뒤에 바뀐다(입력 지연) → 목록이 다 바뀐 뒤 같은 카드의 하트를 이름으로 잡는다
+    await page.waitForFunction(() => document.querySelectorAll('.ui-cards li').length >= 20, null, { timeout: 8000 }).catch(() => {});
+    const title = (await $('.ui-cards li .ui-dc-title').first().textContent()).trim();
+    const h = page.getByRole('button', { name: `${title} 찜` }).first(); const p0 = await h.getAttribute('aria-pressed'); await h.click(); await page.waitForTimeout(800); const p = await h.getAttribute('aria-pressed'); if (p0 === 'true') { await h.click(); await page.waitForTimeout(600); } return ok(p0 !== p, `'${title}' 카드 하트 → aria-pressed ${p0} → ${p}`);
+  });
   await check('C7', 'fe', async () => { await page.getByRole('button', { name: '찜 목록' }).click(); await $('.ui-panel .ui-cards li').first().waitFor({ timeout: 8000 }); const n = await $('.ui-panel .ui-cards li').count(); return ok(n > 0, `상단 하트 → 찜 목록 ${n}개`); });
-  await check('D1', 'fe', async () => { await ev(() => { window.__app.useListingsUi.getState().select(4); window.__app.useUi.setState({ tab: 'home', panelOpen: true }); }); await $('.ui-kv').first().waitFor(); const t = await $('.ui-kv').first().textContent(); return ok(['보증금/월세', '관리비', '면적·층', '구조', '도보'].every((k) => t.includes(k)), `상세 기본 정보: ${t.replace(/\s+/g, ' ').slice(0, 80)}`); });
+  await check('D1', 'fe', async () => { await ev(() => { window.__app.useListingsUi.getState().select(4); window.__app.useUi.setState({ tab: 'home', panelOpen: true }); }); await $('.ui-ld-facts').first().waitFor(); const t = (await $('.ui-ld-cost').first().textContent()) + (await $('.ui-ld-facts').first().textContent()); return ok(['월세', '관리비', '이자', '환산 월세', '면적', '층', '구조', '내 과 건물까지'].every((k) => t.includes(k)), `상세 매달 드는 돈·집 정보: ${t.replace(/\s+/g, ' ').slice(0, 80)}`); });
   await check('D2', 'fe', async () => { const t = await $('.ui-verdict').first().textContent(); return ok(/환산/.test(t), `판결 카드 '${t.replace(/\s+/g, ' ').slice(0, 60)}'`); });
   await check('D3', 'fe', async () => { const t = await $('.ui-verdict').first().textContent(); return ok(/적정|초과|보류/.test(t), `적정가·초과액 표기 '${t.replace(/\s+/g, ' ').slice(0, 70)}'`); });
   await check('D5', 'fe', async () => { const t = await $('.ui-panel .ui-walk-link').textContent(); return ok(/도보 \d+분/.test(t), `'${t.trim()}'`); });
@@ -259,26 +265,37 @@ async function frontend() {
   await check('K2', 'fe', async () => {
     await ev(() => window.__app.useDetailSel.getState().setTransfer(null)); await tab('양도');
     await page.getByRole('button', { name: '양도 글 올리기' }).click();
-    await page.getByRole('textbox', { name: '글 제목' }).fill('QA 양도 글 올려요');
-    await page.getByRole('textbox', { name: '주소 검색' }).fill('행당동'); await $('.ui-addr2-list button').first().click({ timeout: 8000 });
+    await page.getByRole('combobox', { name: '주소 검색' }).fill('행당동'); await $('.ui-addr2-list button').first().click({ timeout: 8000 });
     await page.getByRole('textbox', { name: '보증금(만원)' }).fill('1000'); await page.getByRole('textbox', { name: '월세(만원)' }).fill('50');
     await page.getByRole('textbox', { name: '면적(㎡)' }).fill('18'); await page.getByRole('textbox', { name: '남은 계약(개월)' }).fill('6');
+    await page.getByRole('textbox', { name: '글 제목' }).fill('QA 양도 글 올려요');
     const live = await $('.ui-live-value, .ui-live').first().textContent().catch(() => '');
-    await page.getByRole('button', { name: '올리기' }).click(); await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: '올리기', exact: true }).click(); await page.waitForTimeout(1000);
     const listed = (await $('.ui-panel').textContent()).includes('QA 양도 글 올려요');
     return ok(listed, `제목·주소 검색·보증금·월세·면적·남은 계약 → 올리기 → 목록 반영 ${listed} (환산 미리보기 '${live.trim().slice(0, 20)}')`);
   });
-  await check('K5', 'fe', async () => { await page.locator('.ui-panel .ui-cards li button').filter({ hasText: 'QA 양도 글 올려요' }).first().click(); await page.getByRole('button', { name: '글 고치기' }).click(); await page.getByRole('textbox', { name: '글 제목' }).fill('QA 양도 글 고쳤어요'); await page.getByRole('button', { name: '고친 내용 저장' }).click(); await page.waitForTimeout(800); const t = await $('.ui-panel h3').first().textContent(); await page.getByRole('button', { name: '양도 완료' }).click(); await page.waitForTimeout(600); const done = (await $('.ui-panel').textContent()).includes('양도 완료'); return ok(t.includes('고쳤어요') && done, `글 고치기 → 제목 '${t}' → 양도 완료 ${done}`); });
+  await check('K5', 'fe', async () => { await page.locator('.ui-panel .ui-cards li button').filter({ hasText: 'QA 양도 글 올려요' }).first().click(); await page.getByRole('button', { name: '글 고치기' }).click(); await page.getByRole('textbox', { name: '글 제목' }).fill('QA 양도 글 고쳤어요'); await page.getByRole('button', { name: '고친 내용 저장' }).click(); await page.waitForTimeout(800); const t = await $('.ui-panel h3').first().textContent(); await page.getByRole('button', { name: '양도 완료', exact: true }).click(); await page.getByRole('button', { name: '네, 양도 완료' }).click(); await page.waitForTimeout(600); const done = !(await page.getByRole('button', { name: '글 고치기' }).count()) && (await $('.ui-panel').textContent()).includes('양도 완료'); /* 되돌릴 수 없어 한 번 더 묻는다 → 확인 뒤 고치기 버튼이 사라짐 */ return ok(t.includes('고쳤어요') && done, `글 고치기 → 제목 '${t}' → 양도 완료 ${done}`); });
   await check('H1', 'fe', async () => { await tab('내 집 기록'); await $('.ui-panel .ui-detail h3').waitFor({ timeout: 8000 }); const t = await $('.ui-panel .ui-detail h3').textContent(); return ok(t.includes('행당동'), `내 집 '${t}' (등록 폼은 I19 에서 API 로, 폼 검증은 단위 테스트)`); });
   await check('H2', 'fe', async () => { const chg = page.getByRole('button', { name: /^(바꾸기|다른 금액이에요)$/ }).first(); await chg.click(); await page.getByRole('textbox', { name: '낸 월세(만원)' }).fill('55'); await page.getByRole('button', { name: '월세 기록' }).click(); await page.waitForTimeout(700); const t = await $('[aria-label="지난 기록"]').textContent(); return ok(/월세 55/.test(t), `월세 기록 → 지난 기록 '${t.replace(/\s+/g, ' ').slice(0, 50)}'`); });
-  await check('H3', 'fe', async () => { await page.getByRole('textbox', { name: '전기(만원)' }).fill('3'); await page.getByRole('textbox', { name: '가스비(만원)' }).fill('2'); await page.getByRole('button', { name: '공과금 기록' }).click(); await page.waitForTimeout(700); const t = await $('[aria-label="지난 기록"]').textContent(); return ok(/공과금 5만/.test(t), `공과금 기록 → '${t.replace(/\s+/g, ' ').slice(0, 60)}'`); });
+  await check('H3', 'fe', async () => { await page.getByRole('textbox', { name: '전기(만원)' }).fill('3'); await page.getByRole('textbox', { name: '가스비(만원)' }).fill('2'); await page.getByRole('button', { name: '공과금 기록', exact: true }).click(); await page.waitForTimeout(700); const t = await $('[aria-label="지난 기록"]').textContent(); return ok(/공과금 5만/.test(t), `공과금 기록 → '${t.replace(/\s+/g, ' ').slice(0, 60)}'`); });
   await check('H5', 'fe', async () => { const t = await $('[aria-label="월간 리포트"]').textContent(); const m = await page.getByRole('group', { name: '기록·리포트 달' }).count(); return ok(/이번 달/.test(t) && m > 0, `리포트 '${t.replace(/\s+/g, ' ').slice(0, 60)}', 달 선택 ${m}`); });
   await check('H6', 'fe', async () => { const chip = page.getByRole('button', { name: '90일 전' }); const before = await chip.getAttribute('aria-pressed'); await chip.click(); await page.waitForTimeout(700); const after = await chip.getAttribute('aria-pressed'); return ok(before !== after, `알림 칩 90일 전 ${before} → ${after}`); });
   await check('Q1', 'fe', async () => { await page.getByRole('button', { name: /^알림/ }).click(); const t = await $('.ui-panel').textContent(); return ok(/알림/.test(t), `알림함 열림 '${t.replace(/\s+/g, ' ').slice(0, 40)}'`); });
   await closePanel();
   await check('M1', 'fe', async () => { await page.getByRole('button', { name: '더 보기' }).click(); const e0 = await ev(() => window.__proto.renderer.toneMappingExposure); await page.getByRole('slider', { name: /시간대/ }).fill('1000'); await page.waitForTimeout(300); const e1 = await ev(() => window.__proto.renderer.toneMappingExposure); await page.keyboard.press('Escape'); return ok(e0 !== e1, `⋯ → 시간대 밤 → 노출 ${e0.toFixed(2)} → ${e1.toFixed(2)}`); });
   await check('M2', 'fe', async () => { const n = await ev(() => { let n = 0; window.__proto.scene.traverse((o) => { if (o.isLight && o.type !== 'DirectionalLight' && o.type !== 'HemisphereLight') n++; }); return n; }); return ok(false, `가로등은 품질 프리셋 med 이상(QA 는 q=low 라 꺼짐 ${n}개). CCTV 레이어 없음`, true); });
-  await check('M4', 'fe', async () => { const mm = $('#minimap'); const box = await mm.boundingBox(); const p0 = await pose(); await page.mouse.dblclick(box.x + box.width * 0.3, box.y + box.height * 0.3); await page.waitForTimeout(300); const p1 = await pose(); return ok(box.width > 50 && Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) > 5, `미니맵 ${Math.round(box.width)}px, 더블클릭 → ${Math.round(Math.hypot(p1[0] - p0[0], p1[1] - p0[1]))}m 이동`, true); });
+  await check('M4', 'fe', async () => {
+    // 건물 위를 두 번 누르면 막는 게 맞다 → 막힌 자리면 '건물 안' 안내를 확인하고 다른 자리로
+    const mm = $('#minimap'); const box = await mm.boundingBox(); const tries = [];
+    for (const [u, v] of [[0.3, 0.3], [0.5, 0.25], [0.72, 0.5], [0.5, 0.78], [0.25, 0.6], [0.62, 0.68]]) {
+      const p0 = await pose(); await page.mouse.dblclick(box.x + box.width * u, box.y + box.height * v); await page.waitForTimeout(300); const p1 = await pose();
+      const d = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]); const hint = (await $('#minimap-hint').textContent().catch(() => '')).trim();
+      tries.push(`${Math.round(d)}m(${hint})`);
+      if (d > 5) return ok(box.width > 50 && hint === '이동했어요', `원형 미니맵 ${Math.round(box.width)}px, 더블클릭 ${tries.join(' → ')}`);
+      if (!/건물 안/.test(hint)) return ok(false, `움직이지 않았는데 건물 안내도 없음: ${tries.join(' → ')}`);
+    }
+    return ok(false, `빈 자리를 못 찾음: ${tries.join(' → ')}`);
+  });
   await check('M5', 'fe', async () => { const n = await ev(() => { let n = 0; window.__proto.scene.traverse((o) => { if (o.geometry?.type === 'CylinderGeometry' && o.geometry.parameters.height === 60) n++; }); return n; }); return ok(n > 0, `빛 기둥 ${n}개 (모집 중 단지)`); });
   put('Q2', 'fe', '통과', 'topbar-check 4폭 OK');
   await check('Q3', 'fe', async () => { const t = await page.getByText('MOCK').count(); return ok(t > 0, `MOCK 배지 ${t}`); });

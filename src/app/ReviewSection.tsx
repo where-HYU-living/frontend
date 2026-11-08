@@ -45,7 +45,7 @@ export function ReviewForm({ targetType, targetId, pin = null, floorplanId = nul
         <small aria-live="polite">{rating ? SCORE_WORD[rating] : '별을 눌러 주세요'}</small>
       </div>
       <div className="ui-rv-items">
-        {ITEMS.map(([k, name]) => <div key={k} className="ui-review-line"><span>{name}</span><Stars value={scores[k] ?? 0} onChange={(n) => setScores({ ...scores, [k]: n })} label={name} /></div>)}
+        {ITEMS.map(([k, name]) => <div key={k} className="ui-review-line"><span>{name}</span><Stars value={scores[k] ?? 0} onChange={(n) => setScores((o) => ({ ...o, [k]: n }))} label={name} /></div>)}
       </div>
       <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={pin ? '여기가 어땠나요? 예: 여기 곰팡이' : '살아 보니 어땠나요? 예: 겨울에 외풍이 있어요, 집주인이 수리를 빨리 해 줘요'} aria-label="후기 내용" rows={3} maxLength={600} />
       <p className={`ui-rv-count${text.length > 500 ? ' is-over' : ''}`}>{text.length}/500자</p>

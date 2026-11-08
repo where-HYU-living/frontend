@@ -140,7 +140,7 @@ export default async function (ctx) {
   const signTex = canvasTex(256, 128, (g, w, h) => {
     g.fillStyle = '#3a3d40'; g.fillRect(0, 0, w, h);
     g.strokeStyle = '#8c8f92'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
-    g.fillStyle = '#f4f4f0'; g.font = 'bold 92px Pretendard, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#f4f4f0'; g.font = 'bold 92px "Pretendard Variable", Pretendard, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('209', w / 2, h / 2 + 4);
   });
   const signMat = new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.5 });

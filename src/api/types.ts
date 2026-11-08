@@ -76,7 +76,7 @@ export type Dorm = { id: number; name: string; lat: number; lng: number; roomTyp
 export type AnnouncementStatus = 'UPCOMING' | 'OPEN' | 'CLOSED' | 'ANNOUNCED' | 'ADDITIONAL';
 export type EventType = 'NOTICE' | 'APPLY_START' | 'APPLY_END' | 'DOCS_DUE' | 'RESULT' | 'CONTRACT' | 'MOVE_IN';
 export type Housing = { id: number; name: string; address: string; lat: number; lng: number; recruiting: boolean; nextEvent: { type: EventType; date: string } | null; subscribed: boolean; /** 가장 싼 주택형의 환산 월세(원). 서버가 주면 목록 카드에 보인다 */ minConvertedRent?: number | null; walkMin?: number | null };
-export type HousingUnitType = { id: number; name: string; exclusiveAreaM2: number; deposit: number; rent: number; mgmtFee: number | null; convertedRent: number; floorplanId: number | null };
+export type HousingUnitType = { id: number; name: string; exclusiveAreaM2: number | null; deposit: number; rent: number; mgmtFee: number | null; convertedRent: number; floorplanId: number | null };
 export type HousingDetail = Housing & { unitTypes: HousingUnitType[]; floorLayoutImageUrl: string | null; contact: string | null; walkMin: number | null };
 export type Announcement = { id: number; housingId: number; title: string; status: AnnouncementStatus; events: { type: EventType; date: string }[] };
 

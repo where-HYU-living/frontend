@@ -14,6 +14,7 @@ import { Joystick } from './Joystick';
 import { TourHud } from './TourHud';
 import { jumpTargets, landingSpot, nearestFree } from './tourNav';
 import { pinnedReviews, type Pin } from './pins';
+import { isTypingTarget } from '../lib/keys';
 import { PinPanel } from './PinPanel';
 import { Room3D } from './Room3D';
 import { buildRoomScene } from './roomScene';
@@ -107,7 +108,13 @@ export function InteriorScene() {
   const exit = useUi((s) => s.exitIndoor);
   const q = useFloorPlan(indoor?.floorplanId ?? null);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.code === 'Escape') exit(); };
+    const k = (e: KeyboardEvent) => {
+      if (e.code !== 'Escape') return;
+      // 글을 쓰는 중이면 입력칸만 빠져나오고, 로그인 창·핀 후기 쓰기가 열려 있으면 그쪽이 먼저 닫힌다 (쓰던 글을 잃지 않게)
+      if (isTypingTarget(e.target)) { (e.target as HTMLElement).blur(); return; }
+      if (useSession.getState().loginOpen || document.querySelector('.ui-interior .ui-review-form')) return;
+      exit();
+    };
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
   }, [exit]);

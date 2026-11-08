@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
@@ -27,10 +27,29 @@ export function useGoToListing() {
 
 type Filters = Parameters<typeof useListings>[0];
 
+/** 가로로 넘치는 칩 줄: 오른쪽에 더 있으면 'right', 왼쪽에도 있으면 'both' (끝을 흐리게 해 밀어 볼 수 있다는 걸 보여 준다) */
+function useOverflowHint() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState<'' | 'right' | 'left' | 'both'>('');
+  const measure = () => {
+    const el = ref.current; if (!el) return;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2, left = el.scrollLeft > 2;
+    setMore(right && left ? 'both' : right ? 'right' : left ? 'left' : '');
+  };
+  useEffect(() => {
+    measure();
+    const el = ref.current; if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return { ref, more, measure };
+}
+
 export function ListingsPanel() {
-  const { filters, setFilters, selectedId, select } = useListingsUi();
+  const { ref: gradesRef, more, measure } = useOverflowHint();
+  const filters = useListingsUi((s) => s.filters), setFilters = useListingsUi((s) => s.setFilters), selectedId = useListingsUi((s) => s.selectedId), select = useListingsUi((s) => s.select);
   const q = useListings(filters);
-  const { showHousing, setShowHousing } = useUi();
+  const showHousing = useUi((s) => s.showHousing), setShowHousing = useUi((s) => s.setShowHousing);
   const [open, setOpen] = useState(false);
 
   if (selectedId != null) return <ListingDetailView id={selectedId} onBack={() => select(null)} />;
@@ -57,7 +76,7 @@ export function ListingsPanel() {
             {activeCount > 0 && <span className="ui-v-filter-n" aria-label={`${activeCount}개 적용 중`}>{activeCount}</span>}
             <ChevronDown size={15} className={open ? 'is-open' : ''} aria-hidden="true" />
           </button>
-          <div className="ui-v-grades" role="group" aria-label="가격 등급">
+          <div ref={gradesRef} className="ui-v-grades" data-more={more || undefined} role="group" aria-label="가격 등급" onScroll={measure}>
             {GRADES.map((g) => (
               <button key={g} type="button" className={`ui-v-grade${filters.grades.includes(g) ? ' is-on' : ''}`} style={{ '--g': GRADE_INK[g] } as React.CSSProperties} aria-pressed={filters.grades.includes(g)} onClick={() => toggle(g)}>
                 <SeverityMeter grade={g} />{GRADE_META[g].label}

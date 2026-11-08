@@ -56,7 +56,7 @@ export function makeExtras({ Q, scene, camera, world, heightAt, collide, player,
       const cap = new THREE.Mesh(new THREE.BoxGeometry(W + 2, 0.18, 1.4), white); cap.position.y = H + 0.65; g.add(cap);
       const c = document.createElement('canvas'); c.width = 512; c.height = 96;
       const cx = c.getContext('2d'); cx.fillStyle = '#0e4a84'; cx.fillRect(0, 0, 512, 96);
-      cx.fillStyle = '#fff'; cx.font = 'bold 54px "Pretendard", system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(it.name.length > 12 ? it.name.slice(0, 12) : it.name, 256, 50);
+      cx.fillStyle = '#fff'; cx.font = 'bold 54px "Pretendard Variable", "Pretendard", system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(it.name.length > 12 ? it.name.slice(0, 12) : it.name, 256, 50);
       const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
       const sign = new THREE.Mesh(new THREE.PlaneGeometry(W - 1.6, 0.72), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
       sign.position.set(0, H + 0.1, 0.57); g.add(sign);

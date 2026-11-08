@@ -50,7 +50,7 @@ test('grade chip and rent filter go to the request in won', async () => {
 
 test('guest heart click opens login and sends no request', () => {
   renderWithClient(<><HeartButton type="LISTING" id={1} favorited={false} /><LoginModal /></>);
-  fireEvent.click(screen.getByLabelText('찜하기'));
+  fireEvent.click(screen.getByRole('button', { name: '찜', pressed: false }));
   expect(screen.getByRole('dialog', { name: '로그인' })).toBeTruthy();
   expect(fetchMock).not.toHaveBeenCalled();
 });

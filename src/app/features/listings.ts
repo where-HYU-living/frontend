@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useDebounced } from './search';
 import { create } from 'zustand';
 import { api, type Query } from '../../api/client';
 import type { Alternative, Grade, RoomType, ListingDetail, ListingSummary, Page, PriceCheck } from '../../api/types';
@@ -28,8 +29,14 @@ export const useListingsUi = create<ListingsUi>((set) => ({
   select: (selectedId) => set({ selectedId }),
 }));
 
-export const useListings = (f: Filters) =>
-  useQuery({ queryKey: ['listings', f], queryFn: ({ signal }) => api<Page<ListingSummary>>('/listings', { query: buildListingParams(f), signal }), staleTime: 60_000 });
+/**
+ * 필터 칸에 한 글자씩 칠 때마다 요청하지 않게 잠깐 기다렸다가(250ms) 받고, 새 결과가 올 때까지는 앞 결과를 그대로 보여 준다
+ * (목록이 '불러오는 중'으로 비었다가 다시 차거나 3D 말풍선이 지워졌다 다시 생기는 깜빡임을 막는다)
+ */
+export const useListings = (f: Filters) => {
+  const d = useDebounced(f, 250);
+  return useQuery({ queryKey: ['listings', d], queryFn: ({ signal }) => api<Page<ListingSummary>>('/listings', { query: buildListingParams(d), signal }), staleTime: 60_000, placeholderData: keepPreviousData });
+};
 
 export const useListingDetail = (id: number | null) =>
   useQuery({ queryKey: ['listing', id], enabled: id != null, queryFn: ({ signal }) => api<ListingDetail>(`/listings/${id}`, { signal }) });

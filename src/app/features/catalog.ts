@@ -4,6 +4,7 @@ import bundledDepartments from '../data/departments.json';
 import campusPlaces from '../data/campusPlaces.json';
 import type { Nearby, CampusBuilding, Announcement, AnnouncementStatus, Department, Dorm, EventType, FavoriteItem, FloorPlan, Housing, HousingDetail, Profile } from '../../api/types';
 import { useSession } from '../state/session';
+import { refreshPersonal } from './personal';
 
 const get = <T,>(path: string, query?: Record<string, string | number | undefined>) => ({ signal }: { signal: AbortSignal }) => api<T>(path, { query, signal });
 
@@ -34,7 +35,7 @@ export const useCampusBuildings = () => useQuery({ queryKey: ['buildings'], quer
 export const useNearby = (listingId: number | null) => useQuery({ queryKey: ['nearby', listingId], enabled: listingId != null, retry: false, staleTime: 300_000, queryFn: get<Nearby[]>(`/listings/${listingId}/nearby`, { radius: 300 }) });
 export const useFavorites = () => {
   const token = useSession((s) => s.token);
-  return useQuery({ queryKey: ['favorites', !!token], enabled: !!token, queryFn: get<FavoriteItem[]>('/me/favorites') });
+  return useQuery({ queryKey: ['favorites', token], enabled: !!token, queryFn: get<FavoriteItem[]>('/me/favorites') });
 };
 export const useProfile = () => {
   const token = useSession((s) => s.token);
@@ -45,7 +46,8 @@ export function useSubscribe(housingId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (on: boolean) => api(`/housing/${housingId}/subscribe`, { method: on ? 'POST' : 'DELETE' }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['housing'] }); },
+    // 목록과 이 단지 상세만 (['housing'] 접두사로 지우면 단지 상세 30개를 모두 다시 받는다)
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['housing'], exact: true }); qc.invalidateQueries({ queryKey: ['housing', housingId] }); },
   });
 }
 
@@ -53,7 +55,8 @@ export function useSaveProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<Pick<Profile, 'departmentId' | 'buildingIds' | 'budget'>>) => api<Profile>('/me/profile', { method: 'PUT', body }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['profile'] }); qc.invalidateQueries({ queryKey: ['listings'] }); },
+    // 과 건물·예산이 바뀌면 도보 분·예산 초과가 들어 있는 목록·상세·판결을 모두 다시 받는다
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['profile'] }); void refreshPersonal(qc); },
   });
 }
 

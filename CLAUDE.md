@@ -42,9 +42,11 @@
 
 ## 고도화 기능 위치 (2026-11-07)
 - 폼 부품: `src/app/forms/`(Field·UnitInput·Segmented·ChipSelect·PhotoGrid·FormSection·StickyActions, 환산 월세 `calc.ts`). 새 폼은 이 부품으로 만든다(세로 한 줄 쌓기 금지, 섹션·2열·단위 접미사·하단 고정 버튼).
-- 용의자 파일·판결·수배 전단·비교: `src/app/dossier/`(`DossierCard`·`ExcessGauge`·`WantedFlyer`·`CompareSection`, 순수 로직 `dossierLogic.ts`).
+- 용의자 파일·판결·수배 전단·비교: `src/app/dossier/`(`DossierCard`·`PriceLineup`(가격 눈금자)·`SeverityMeter`·`WantedFlyer`·`CompareSection`, 순수 로직 `dossierLogic.ts`). 판결 카드 본체는 `src/app/VerdictCard.tsx`.
+- 오류 경계: 패널·지도·실내는 `ErrorBoundary`(`src/app/ErrorBoundary.tsx`)로 감싸 한 곳이 터져도 3D 는 남는다. 로그인 계정이 바뀌면 `features/personal.ts` 의 `watchSession` 이 앞사람 기록을 지우고 사람마다 다른 쿼리를 다시 받는다 — 새 쿼리를 만들면 `SHARED`(공용)·`MINE`(/me) 중 어디인지 확인할 것.
+- 키 입력: 3D·실내 이동/단축키는 `lib/keys.ts` 의 `isTypingTarget` 으로 입력칸에서 치는 키를 거른다. 대화상자는 `useModal`(Esc·초점 가두기).
 - 입구·정문·문 앞 실내 진입·가로등: `src/world/`(`campus.ts`·`doors.ts`·`streetlamps.ts`·`worldExtras.js`). 가로등은 품질 프리셋 `streetlamps`(low 에서 끔).
-- 캐릭터 꾸미기: `src/world/avatar.ts` + `src/app/avatar/`. 내 화면에만 적용(서버 계약에 `look` 필드 없음).
+- 캐릭터 꾸미기: `src/world/avatar.ts` + `src/app/avatar/`. 고른 외형은 WS `look` 으로 보내 다른 접속자에게도 보인다(`worldSocket`·`worldReducer`, 서버 `WorldService.Pub.look`).
 - 실내 3D: `src/interior/`(`Room3D`·`Walker`·`furnish`·`trim`·`pins`). 실내 후기 핀 좌표 규칙은 `pins.ts` 상단 주석(계약과 맞춰야 함).
 
 ## 성능 측정 (캡처 없이 숫자만)

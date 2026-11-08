@@ -17,7 +17,8 @@ export type WorldApi = {
   /** 3D 위에 매물 말풍선을 그린다 (전체 교체). x,z = 3D 좌표(m) */
   setMarkers(items: Marker[], group?: string): void;
   /** 빛 기둥+깃발 (전체 교체). 모집 중인 청년안심주택 강조 */
-  setBeacons(items: { x: number; z: number; color: string | number }[]): void;
+  /** group 마다 따로 바꾼다 (기본 'default' = 모집 중 단지, 'home' = 동네 HUD 의 우리 집) */
+  setBeacons(items: { x: number; z: number; color: string | number }[], group?: string): void;
   /** 시간대 조명: t = 0(낮) ~ 1(밤), 중간값은 부드럽게 섞인다 */
   setTimeOfDay(t: number): void;
   /** 다른 접속자 표시 (전체 교체, 목록에 없는 사람은 지움). r = y축 회전(라디안) */

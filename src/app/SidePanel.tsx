@@ -21,7 +21,7 @@ const EMPTY: Record<Tab, { title: string; body: string }> = {
 };
 
 export function SidePanel() {
-  const { tab, panelOpen, setPanelOpen } = useUi();
+  const tab = useUi((s) => s.tab), panelOpen = useUi((s) => s.panelOpen), setPanelOpen = useUi((s) => s.setPanelOpen);
   if (!panelOpen) return null; // 접힌 패널은 상단바 탭으로 다시 연다
 
   const e = EMPTY[tab];

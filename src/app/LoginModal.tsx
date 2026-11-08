@@ -5,6 +5,7 @@ import { useSession } from './state/session';
 import { GoogleButton } from './auth/GoogleButton';
 import { GOOGLE_CLIENT_ID } from './auth/loadGoogle';
 import './forms/forms.css';
+import { useModal } from './useModal';
 
 const MESSAGES: Record<string, string> = {
   INVALID_EMAIL_DOMAIN: '한양대 메일(@hanyang.ac.kr)만 가능해요. 한양대 구글 계정으로 로그인해 주세요',
@@ -22,6 +23,7 @@ export function LoginModal() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  const box = useModal(loginOpen, closeLogin);
   if (!loginOpen) return null;
 
   const google = async (idToken: string) => {
@@ -34,7 +36,7 @@ export function LoginModal() {
 
   return (
     <div className="ui-modal-back" onMouseDown={closeLogin}>
-      <div className="ui-modal ui-modal-lg glass" role="dialog" aria-label="로그인" aria-busy={busy} onMouseDown={(e) => e.stopPropagation()}>
+      <div ref={box} className="ui-modal ui-modal-lg glass" role="dialog" aria-modal="true" aria-label="로그인" aria-busy={busy} onMouseDown={(e) => e.stopPropagation()}>
         <h2>한양대 구글 계정으로 로그인</h2>
         <p className="ui-modal-sub">찜, 후기, 내 집 기록에 필요해요. 둘러보기는 로그인 없이 돼요.</p>
         {GOOGLE_CLIENT_ID

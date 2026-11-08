@@ -213,7 +213,7 @@ export function TopBar() {
         {pop.open === 'avatar' && <AvatarPicker look={avatar.look} onChange={avatar.change} deptName={avatar.deptName} />}
       </div>
 
-      <div className="ui-tb-wrap">
+      <div className="ui-tb-wrap ui-tb-wrap-acc">
         {token
           ? <>
               <button className="textbtn glass ui-tb-account" type="button" data-pop="account" aria-haspopup="true" aria-expanded={pop.open === 'account'} aria-label={`내 계정 ${nickname ?? ''}`.trim()} onClick={() => pop.toggle('account')}>

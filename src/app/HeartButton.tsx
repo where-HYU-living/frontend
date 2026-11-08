@@ -12,7 +12,7 @@ export function HeartButton({ type, id, favorited, name, className }: { type: Fa
   const m = useToggleFavorite(type, id);
   return (
     <span className={`ui-heart-wrap${className ? ` ${className}` : ''}`}>
-      <button type="button" className={`ui-heart${on ? ' on' : ''}`} aria-label={on ? '찜함' : '찜하기'} aria-pressed={on} title={name ? `${name} ${on ? '찜 취소' : '찜하기'}` : on ? '찜 취소' : '찜하기'} disabled={m.isPending} onClick={() => requireLoginThen(() => m.mutate(!on))}>
+      <button type="button" className={`ui-heart${on ? ' on' : ''}`} aria-label={name ? `${name} 찜` : '찜'} aria-pressed={on} title={name ? `${name} ${on ? '찜 취소' : '찜하기'}` : on ? '찜 취소' : '찜하기'} disabled={m.isPending} onClick={() => requireLoginThen(() => m.mutate(!on))}>
         <Heart size={20} fill={on ? 'currentColor' : 'none'} aria-hidden="true" />
       </button>
       {m.isError && <span className="ui-heart-err" role="alert">찜을 저장하지 못했어요</span>}

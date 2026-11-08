@@ -37,7 +37,7 @@ export function InteriorPost({ Q }: { Q: Quality }) {
     rig.composer.setSize(size.width, size.height);
     rig.ao.setSize(size.width * gl.getPixelRatio() * aoScale, size.height * gl.getPixelRatio() * aoScale); // setSize 가 전체 크기로 되돌리므로 AO 는 매번 다시 맞춘다
   }, [rig, size, gl, aoScale]);
-  useEffect(() => () => rig?.composer.dispose(), [rig]);
+  useEffect(() => () => { for (const p of rig?.composer.passes ?? []) p.dispose(); rig?.composer.dispose(); }, [rig]); // 붙인 패스(GTAO 타깃)도 같이 푼다
 
   useFrame(() => { if (rig) rig.composer.render(); else gl.render(scene, camera); }, 1);
   return null;

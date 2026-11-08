@@ -44,15 +44,15 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
         <li className="ui-v-chip-li"><WalkLink walkMin={h.walkMin} from={{ lat: h.lat, lng: h.lng, name: h.name }} className="ui-v-chip ui-walk-link" /></li>
         {h.contact && <InfoChip icon={<Phone size={14} aria-hidden="true" />}>입주지원센터 {h.contact}</InfoChip>}
       </ul>
-      <button type="button" className={`ui-v-notify ${h.subscribed ? 'is-on' : 'is-off'}`} onClick={() => { if (requireLogin()) sub.mutate(!h.subscribed); }}>
+      <button type="button" className={`ui-v-notify ${h.subscribed ? 'is-on' : 'is-off'}`} aria-pressed={h.subscribed} disabled={sub.isPending} onClick={() => { if (requireLogin()) sub.mutate(!h.subscribed); }}>
         <Bell size={16} aria-hidden="true" />{h.subscribed ? <>알림 받는 중 <small>눌러서 끄기</small></> : 'D-day 알림 받기'}
       </button>
       {sub.isError && <p className="ui-heart-err" role="alert">알림 설정을 저장하지 못했어요</p>}
       <SectionTitle count={h.unitTypes.length}>주택형</SectionTitle>
       <ul className="ui-v-units">
         {h.unitTypes.map((u) => (
-          <UnitCard key={u.id} name={u.name} chip={`${u.exclusiveAreaM2}㎡`} priceLabel="환산 월세" price={manwon(u.convertedRent)}
-            facts={[{ label: '보증금', value: manwon(u.deposit) }, { label: '월세', value: manwon(u.rent) }, { label: '관리비', value: u.mgmtFee != null ? manwon(u.mgmtFee) : '-' }, ...(vsMine(u.convertedRent) ? [{ label: '내 집 대비', value: vsMine(u.convertedRent)! }] : [])]}
+          <UnitCard key={u.id} name={u.name} chip={u.exclusiveAreaM2 == null ? '면적 정보 없음' : `${u.exclusiveAreaM2}㎡`} priceLabel="환산 월세" price={manwon(u.convertedRent)}
+            facts={[{ label: '보증금', value: manwon(u.deposit) }, { label: '월세', value: manwon(u.rent) }, { label: '관리비', value: u.mgmtFee != null ? manwon(u.mgmtFee) : '정보 없음' }, ...(vsMine(u.convertedRent) ? [{ label: '내 집 대비', value: vsMine(u.convertedRent)! }] : [])]}
             floorplanId={u.floorplanId} onEnter={() => enter(u.floorplanId!, `${h.name} ${u.name}`)} />
         ))}
         {h.unitTypes.length === 0 && <li className="ui-card-sub">주택형 정보가 아직 없어요.</li>}

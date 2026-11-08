@@ -161,7 +161,7 @@ function Form({ onDone, initial }: { onDone: () => void; initial?: TransferDetai
 
       {save.isError && <p className="ui-field-error" role="alert">{initial ? '고친 내용을 저장하지 못했어요' : '글을 올리지 못했어요'}</p>}
       <StickyActions reason={reason} onReason={goMissing}>
-        <button type="button" className="ui-primary" disabled={!valid || save.isPending} onClick={submit}>{save.isPending ? '올리는 중…' : initial ? '고친 내용 저장' : '올리기'}</button>
+        <button type="button" className="ui-primary" disabled={!valid || save.isPending || upBusy} onClick={submit}>{upBusy ? '사진 올리는 중…' : save.isPending ? '올리는 중…' : initial ? '고친 내용 저장' : '올리기'}</button>
       </StickyActions>
     </div>
   );
@@ -173,6 +173,7 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   const go = useGoTo();
   const token = useSession((s) => s.token);
   const [editing, setEditing] = useState(false);
+  const [confirmDone, setConfirmDone] = useState(false);
   if (q.isLoading) return <p className="empty">불러오는 중…</p>;
   if (editing && q.data) return <div><BackButton onClick={() => setEditing(false)} /><Form initial={q.data} onDone={() => setEditing(false)} /></div>;
   if (!q.data) return <div><BackButton onClick={onBack} /><p className="empty">양도 글을 불러오지 못했어요.</p></div>;
@@ -195,9 +196,13 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
       {t.mine && t.status === 'OPEN' && (
         <div className="ui-inline">
           <button type="button" className="ui-mini" onClick={() => setEditing(true)}>글 고치기</button>
-          <button type="button" className="ui-mini" onClick={() => finish.mutate(t.id)}>양도 완료</button>
+          {/* 되돌릴 수 없어 한 번 더 묻는다 (브라우저 확인 창 대신 버튼 안에서) */}
+          {confirmDone
+            ? <><button type="button" className="ui-mini is-danger" disabled={finish.isPending} onClick={() => finish.mutate(t.id, { onSettled: () => setConfirmDone(false) })}>{finish.isPending ? '처리 중…' : '네, 양도 완료'}</button><button type="button" className="ui-mini" onClick={() => setConfirmDone(false)}>취소</button></>
+            : <button type="button" className="ui-mini" onClick={() => setConfirmDone(true)}>양도 완료</button>}
         </div>
       )}
+      {finish.isError && <p className="ui-field-error" role="alert">양도 완료로 바꾸지 못했어요. 잠시 뒤 다시 해 보세요.</p>}
     </div>
   );
 }

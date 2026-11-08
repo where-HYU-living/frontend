@@ -1,10 +1,19 @@
 import type { ReactElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { flushSync } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { Bus, GraduationCap, House, Hand, Heart, PartyPopper, Store, TrainFront, WashingMachine, ChevronLeft } from 'lucide-react';
 import type { Nearby } from '../api/types';
 
 /** 3D 말풍선은 React 밖(DOM)이라 아이콘을 SVG 문자열로 만들어 넘긴다 */
-export const svgOf = (el: ReactElement): string => renderToStaticMarkup(el);
+// (react-dom/server 의 renderToStaticMarkup 을 쓰면 서버 렌더러 전체가 첫 화면 번들에 들어가서, 떼어 낸 요소에 한 번 그려 문자열만 얻는다)
+export const svgOf = (el: ReactElement): string => {
+  const box = document.createElement('div');
+  const root = createRoot(box);
+  flushSync(() => root.render(el));
+  const html = box.innerHTML;
+  root.unmount();
+  return html;
+};
 
 export const NEARBY_ICON: Record<Nearby['category'], { label: string; svg: string }> = {
   CONVENIENCE: { label: '편의점', svg: svgOf(<Store size={14} />) },

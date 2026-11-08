@@ -9,6 +9,7 @@ import { classifyPress, LONG_PRESS_MS, MOVE_SLOP_PX, pinFromPoint, type Pin } fr
 import { PIN_KEY } from './Room3D';
 import { roomAt } from './structure';
 import { yawToward } from './tourNav';
+import { isTypingTarget } from '../lib/keys';
 
 const EYE = 1.55;
 const RADIUS = 0.22; // 몸 반경. 욕실처럼 좁은 곳도 지나갈 수 있게 조금 작게
@@ -64,7 +65,7 @@ export function Walker({ plan, built, input, colliders, floorAt, pickRef, pinRef
     };
 
     let look: { id: number; lx: number; ly: number; sx: number; sy: number; t0: number; timer: number; consumed: boolean } | null = null;
-    const kd = (e: KeyboardEvent) => keys.add(e.code), ku = (e: KeyboardEvent) => keys.delete(e.code);
+    const kd = (e: KeyboardEvent) => { if (!isTypingTarget(e.target)) keys.add(e.code); }, ku = (e: KeyboardEvent) => keys.delete(e.code);
     const down = (e: PointerEvent) => {
       if (look || (e.pointerType === 'mouse' && e.button !== 0)) return;
       try { el.setPointerCapture(e.pointerId); } catch { /* 일부 환경 */ }

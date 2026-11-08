@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { BellRing, Check, Pencil, TrendingDown, TrendingUp, X } from 'lucide-react';
 import { manwon } from '../lib/money';
 import { GRADE_META } from '../lib/grade';
-import type { AddressResult, MyHome } from '../api/types';
+import type { AddressResult, Grade, MyHome } from '../api/types';
 import { AddressPicker } from './AddressPicker';
 import { ITEM_LABEL, manToWon, thisMonth, useAlertActions, useAlerts, useMyHome, usePayments, useReport, useSaveHome, useSavePayment, useSaveUtility, useUtilities, validDaysBefore } from './features/more';
 import { useSession } from './state/session';
@@ -70,6 +70,16 @@ function HomeForm({ initial, onDone, onCancel }: { initial?: MyHome | null; onDo
   );
 }
 
+/** 적정가 대비 누적 금액. 서버 값은 (환산 월세 − 적정가) 라 싼 집이면 음수 → '덜 냈어요', 1만 원 안쪽이면 '거의 같아요' */
+export function excessPhrase(e: { monthly: number; cumulative: number }): string {
+  if (Math.abs(e.cumulative) < 10_000) return Math.abs(e.monthly) < 10_000 ? '적정가와 거의 같게 내고 있어요' : `이번 달 적정가보다 ${manwon(Math.abs(e.monthly))} ${e.monthly > 0 ? '더' : '덜'} 냈어요`;
+  return `지금까지 적정가보다 ${manwon(Math.abs(e.cumulative))} 원 ${e.cumulative > 0 ? '더' : '덜'} 냈어요 (한 달에 ${manwon(Math.abs(e.monthly))})`;
+}
+function ExcessLine({ excess }: { excess: { monthly: number; cumulative: number; grade: Grade } }) {
+  const over = excess.cumulative >= 10_000 || (Math.abs(excess.cumulative) < 10_000 && excess.monthly >= 10_000);
+  return <p className={over ? 'ui-over' : 'ui-card-sub'} style={over ? { color: GRADE_META[excess.grade].color } : undefined}>{excessPhrase(excess)}</p>;
+}
+
 export function ReportCard({ month }: { month: string }) {
   const q = useReport(month, true);
   if (q.isLoading) return <p className="ui-card-sub">리포트를 만드는 중…</p>;
@@ -84,7 +94,7 @@ export function ReportCard({ month }: { month: string }) {
         {(Object.entries(r.breakdown) as [string, number | null][]).map(([k, v]) => (<Fragment key={k}><dt>{ITEM_LABEL[k] ?? k}</dt><dd>{v == null ? '기록 없음' : manwon(v)}</dd></Fragment>))}
       </dl>
       {r.excess
-        ? <p className="ui-over" style={{ color: GRADE_META[r.excess.grade].color }}>지금까지 적정가보다 {manwon(r.excess.cumulative)} 원 더 냈어요 (이번 달 {manwon(r.excess.monthly)})</p>
+        ? <ExcessLine excess={r.excess} />
         : <p className="ui-card-sub">적정가 대비 초과액은 판정 보류예요.</p>}
     </section>
   );
@@ -159,7 +169,7 @@ function UtilityRows({ month, saved }: { month: string; saved: { electricity: nu
       <div className="ui-home-util-head"><span>공과금</span><small>{sum ? `합계 ${manwon(sum)}` : '모르는 항목은 비워 두세요'}</small></div>
       <div className="ui-fgrid ui-home-util-grid">
         {UTIL_KEYS.map((k) => (
-          <UnitInput key={k} label={ITEM_LABEL[k]} unit="만원" inputMode="decimal" value={u[k]} onChange={(v) => setU({ ...u, [k]: v })} ariaLabel={`${ITEM_LABEL[k]}(만원)`} placeholder="-" />
+          <UnitInput key={k} label={ITEM_LABEL[k]} unit="만원" inputMode="decimal" value={u[k]} onChange={(v) => setU((o) => ({ ...o, [k]: v }))} ariaLabel={`${ITEM_LABEL[k]}(만원)`} placeholder="-" />
         ))}
       </div>
       <button type="button" className={`ui-home-utilsave${!dirty && saved ? ' is-saved' : ''}`} disabled={!dirty || util.isPending}
@@ -183,7 +193,7 @@ function History({ month, onPick }: { month: string; onPick: (month: string) => 
       <ul className="ui-home-hist">
         {months.map((m) => {
           const p = pay.find((x) => x.month === m), u = util.find((x) => x.month === m);
-          const utilSum = u ? UTIL_KEYS.reduce<number>((a, k) => a + (u[k] ?? 0), 0) : null;
+          const utilSum = u && UTIL_KEYS.some((k) => u[k] != null) ? UTIL_KEYS.reduce<number>((a, k) => a + (u[k] ?? 0), 0) : null; // 전부 비어 있으면 0만이 아니라 '기록 없음'
           return (
             <li key={m}>
               <button type="button" className={m === month ? 'is-on' : ''} aria-current={m === month ? 'true' : undefined} onClick={() => onPick(m)}>

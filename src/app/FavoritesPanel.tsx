@@ -44,7 +44,9 @@ export function FavoritesPanel() {
 
   const counts = new Map<FavoriteType, number>();
   for (const f of all) counts.set(f.type, (counts.get(f.type) ?? 0) + 1);
-  const shown = filter === 'ALL' ? all : all.filter((f) => f.type === filter);
+  // 고른 종류의 마지막 찜을 풀면 그 칩이 사라지므로 전체로 돌아간다 (빈 목록에 아무 칩도 안 눌린 상태가 되지 않게)
+  const active = filter !== 'ALL' && !counts.has(filter) ? 'ALL' : filter;
+  const shown = active === 'ALL' ? all : all.filter((f) => f.type === active);
 
   /** 3D 에서 그 집 앞으로 가고, 그 종류의 탭을 열어 상세까지 보여 준다 */
   const open = (f: FavoriteItem) => {
@@ -58,9 +60,9 @@ export function FavoritesPanel() {
   return (
     <div className="ui-fav">
       <div className="ui-fav-filter" role="group" aria-label="종류별로 보기">
-        <button type="button" className={`ui-fav-chip${filter === 'ALL' ? ' is-on' : ''}`} aria-pressed={filter === 'ALL'} onClick={() => setFilter('ALL')}>전체 <b>{all.length}</b></button>
+        <button type="button" className={`ui-fav-chip${active === 'ALL' ? ' is-on' : ''}`} aria-pressed={active === 'ALL'} onClick={() => setFilter('ALL')}>전체 <b>{all.length}</b></button>
         {TYPE_ORDER.filter((t) => counts.has(t)).map((t) => (
-          <button key={t} type="button" className={`ui-fav-chip${filter === t ? ' is-on' : ''}`} aria-pressed={filter === t} onClick={() => setFilter(t)}>{TYPE_LABEL[t]} <b>{counts.get(t)}</b></button>
+          <button key={t} type="button" className={`ui-fav-chip${active === t ? ' is-on' : ''}`} aria-pressed={active === t} onClick={() => setFilter(t)}>{TYPE_LABEL[t]} <b>{counts.get(t)}</b></button>
         ))}
       </div>
       <ul className="ui-cards">

@@ -78,7 +78,7 @@ await C.page.waitForTimeout(800);
 const [cx, cz] = await pose(C); const [ax3, az3] = await pose(A);
 const cArea = (await st(C)).area;
 const cSeesA = await has(C, A.id);
-log(cArea === 'l6' && Math.hypot(cx - ax3, cz - az3) <= 3 && cSeesA && stillThere, '초대 링크(동네)', `C 월드 ${cArea}, A 와 거리 ${Math.hypot(cx - ax3, cz - az3).toFixed(2)}m, C 가 A 를 봄 ${cSeesA}, B 는 전환 중에도 A 를 계속 봄 ${stillThere}`);
+log(cArea === 'l6' && Math.hypot(cx - ax3, cz - az3) <= 3 && cSeesA && stillThere, '초대 링크(동네)', `C 월드 ${cArea}, A 와 거리 ${Math.hypot(cx - ax3, cz - az3).toFixed(2)}m (C ${cx.toFixed(1)},${cz.toFixed(1)} · A ${ax3.toFixed(1)},${az3.toFixed(1)}), C 가 A 를 봄 ${cSeesA}, B 는 전환 중에도 A 를 계속 봄 ${stillThere}`);
 
 // 6. 캠퍼스로 돌아오기 + 캠퍼스 초대
 await A.page.evaluate(() => window.__useArea.getState().leave());

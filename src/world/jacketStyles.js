@@ -43,7 +43,7 @@ export function paintBack(cg, st, lionImg) {
   cg.fillStyle = st.ink; cg.strokeStyle = st.outline || st.ink; cg.textAlign = 'center'; cg.textBaseline = 'middle'; cg.lineJoin = 'round';
   const fill = (txt, x, y) => { if (st.outline) { cg.lineWidth = 7; cg.strokeText(txt, x, y); } cg.fillText(txt, x, y); };
   const arcText = (word, size, R, span, cy, font) => {
-    cg.font = `${font} ${size}px Pretendard, Arial Black, sans-serif`;
+    cg.font = `${font} ${size}px "Pretendard Variable", Pretendard, Arial Black, sans-serif`;
     for (let i = 0; i < word.length; i++) {
       const a = -span / 2 + (span * (i + 0.5)) / word.length;
       cg.save(); cg.translate(cx + Math.sin(a) * R, cy - Math.cos(a) * R); cg.rotate(a); fill(word[i], 0, 0); cg.restore();
@@ -53,7 +53,7 @@ export function paintBack(cg, st, lionImg) {
     arcText(st.line1, 86, 330, 1.3, 330, '700');
   } else {
     arcText(st.line1, 96, 290, 1.75, 345, '900');
-    cg.font = '900 88px Pretendard, Arial Black, sans-serif'; fill(st.line2, cx, 170);
+    cg.font = '900 88px "Pretendard Variable", Pretendard, Arial Black, sans-serif'; fill(st.line2, cx, 170);
   }
   const lion = tinted(lionImg, st.ink);
   if (lion) cg.drawImage(lion, cx - 105, 218, 210, 186);
@@ -65,7 +65,7 @@ export function paintPatch(hg, st) {
   hg.clearRect(0, 0, 128, 128);
   if (st.patch === 'none') return;
   hg.textAlign = 'center'; hg.textBaseline = 'middle';
-  hg.font = '900 100px Pretendard, Arial Black, sans-serif';
+  hg.font = '900 100px "Pretendard Variable", Pretendard, Arial Black, sans-serif';
   if (st.patch === 'square') {
     hg.fillStyle = st.ink; hg.fillRect(8, 8, 112, 112); hg.fillStyle = st.patchInk; hg.fillText('H', 64, 70);
   } else if (st.patch === 'outlineH') {

@@ -72,6 +72,11 @@ function Post({ Q }: { Q: Quality }) {
   const useAO = Q.ao !== 'off' && !/noao/.test(location.search);
 
   const rig = useMemo(() => {
+    const labels = new CSS2DRenderer();
+    Object.assign(labels.domElement.style, { position: 'fixed', inset: '0', pointerEvents: 'none' });
+    gl.domElement.parentElement?.appendChild(labels.domElement);
+    // AO 를 끈 품질이면 후처리 렌더 타깃(전체 해상도 여러 장)을 아예 만들지 않는다
+    if (!useAO) return { composer: null, ao: null, labels };
     const pr = gl.getPixelRatio();
     const composer = Q.msaa > 0
       ? new EffectComposer(gl, new THREE.WebGLRenderTarget(size.width * pr, size.height * pr, { samples: Q.msaa, type: THREE.HalfFloatType }))
@@ -82,24 +87,29 @@ function Post({ Q }: { Q: Quality }) {
     ao.blendIntensity = 0.85;
     composer.addPass(ao);
     composer.addPass(new OutputPass());
-    const labels = new CSS2DRenderer();
-    Object.assign(labels.domElement.style, { position: 'fixed', inset: '0', pointerEvents: 'none' });
-    gl.domElement.parentElement?.appendChild(labels.domElement);
     return { composer, ao, labels };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gl, scene, camera, Q]);
 
   useEffect(() => {
-    rig.composer.setSize(size.width, size.height);
-    // addPass/setSize 가 전체 크기로 되돌리므로 AO 는 매번 다시 맞춤
-    rig.ao.setSize(size.width * gl.getPixelRatio() * aoScale, size.height * gl.getPixelRatio() * aoScale);
+    if (rig.composer && rig.ao) {
+      rig.composer.setSize(size.width, size.height);
+      // addPass/setSize 가 전체 크기로 되돌리므로 AO 는 매번 다시 맞춤
+      rig.ao.setSize(size.width * gl.getPixelRatio() * aoScale, size.height * gl.getPixelRatio() * aoScale);
+    }
     rig.labels.setSize(size.width, size.height);
   }, [rig, size, gl, aoScale]);
 
-  useEffect(() => () => { rig.composer.dispose(); rig.labels.domElement.remove(); }, [rig]);
+  // 품질이 바뀌면(자동 낮추기·그래픽 메뉴) rig 를 새로 만든다 → 옛 rig 의 GPU 자원을 모두 푼다.
+  // EffectComposer.dispose 는 자기 렌더 타깃만 풀고 붙인 패스(GTAO 의 법선·AO·디노이즈 타깃)는 안 풀어서 따로 푼다
+  useEffect(() => () => {
+    for (const p of rig.composer?.passes ?? []) p.dispose();
+    rig.composer?.dispose();
+    rig.labels.domElement.remove();
+  }, [rig]);
 
   useFrame(() => {
-    if (useAO) rig.composer.render(); else gl.render(scene, camera);
+    if (rig.composer) rig.composer.render(); else gl.render(scene, camera);
     rig.labels.render(scene, camera);
   }, 1);
   return null;

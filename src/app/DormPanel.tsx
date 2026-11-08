@@ -30,7 +30,7 @@ export function DormPanel() {
           <div className="ui-v-dorm-head">
             <h3>{d.name}</h3>
             <span className="ui-v-dorm-actions">
-              <button type="button" className="ui-v-link" onClick={() => go(d)}><MapPin size={14} aria-hidden="true" />지도에서 보기</button>
+              <button type="button" className="ui-v-link" onClick={() => go(d)}><MapPin size={14} aria-hidden="true" />3D에서 보기</button>
               <HeartButton type="DORM" id={d.id} name={d.name} />
             </span>
           </div>

@@ -100,10 +100,10 @@ function signTexture(text, sub) {
   const g = c.getContext('2d');
   g.fillStyle = '#1f2a22'; g.fillRect(0, 0, 512, 160);
   g.fillStyle = '#3cb44a'; g.beginPath(); g.arc(80, 80, 52, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#fff'; g.font = 'bold 64px Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = '#fff'; g.font = 'bold 64px "Pretendard Variable", Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText('2', 80, 84);
-  g.textAlign = 'left'; g.font = 'bold 56px Pretendard, sans-serif'; g.fillText(text, 156, 62);
-  g.font = '500 34px Pretendard, sans-serif'; g.fillStyle = '#cfe8d2'; g.fillText(sub, 158, 118);
+  g.textAlign = 'left'; g.font = 'bold 56px "Pretendard Variable", Pretendard, sans-serif'; g.fillText(text, 156, 62);
+  g.font = '500 34px "Pretendard Variable", Pretendard, sans-serif'; g.fillStyle = '#cfe8d2'; g.fillText(sub, 158, 118);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;

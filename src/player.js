@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { isTypingTarget } from './lib/keys';
 
 // 과잠 입은 한양대생 (단순화한 귀여운 캐릭터)
 import { STYLES, hasStyle, paintBack, paintPatch } from './world/jacketStyles.js';
@@ -105,7 +106,7 @@ export class Player {
   dispose() { for (const off of this.offs) off(); this.offs = []; this.keys.clear(); }
   #bind(dom) {
     const on = (t, type, fn, opts) => { t.addEventListener(type, fn, opts); this.offs.push(() => t.removeEventListener(type, fn, opts)); };
-    on(window, 'keydown', (e) => { if (e.target.tagName === 'INPUT') return; this.keys.add(e.code); });
+    on(window, 'keydown', (e) => { if (isTypingTarget(e.target)) return; this.keys.add(e.code); });
     on(window, 'keyup', (e) => this.keys.delete(e.code));
     on(window, 'blur', () => this.keys.clear());
     let drag = null;

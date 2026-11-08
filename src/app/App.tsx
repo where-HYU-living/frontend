@@ -15,22 +15,40 @@ import { NeighborhoodHud } from './NeighborhoodButton';
 import { TransferMarkers } from './TransferMarkers';
 import { ProfileModal } from './ProfileModal';
 import { WorldChat } from './WorldChat';
+import { ErrorBoundary } from './ErrorBoundary';
+import { watchSession } from './features/personal';
+import { useFavOverrides } from './features/favorites';
+import { useProfile } from './features/catalog';
+import { useSession } from './state/session';
+import { ApiError } from '../api/client';
+import './forms/forms.css';
 // 3-4 성능: 실내 3D·카카오 지도는 들어갈 때만 내려받는다 (첫 화면 번들에서 뺌)
 const KakaoMap = lazy(() => import('./map/KakaoMap').then((m) => ({ default: m.KakaoMap })));
 const InteriorScene = lazy(() => import('../interior/InteriorScene').then((m) => ({ default: m.InteriorScene })));
 function Indoor() {
   const indoor = useUi((s) => s.indoor);
   if (!indoor) return null;
-  return <Suspense fallback={<div className="loading" role="status"><div className="loading-card glass"><div className="loading-sub">실내를 불러오는 중</div></div></div>}><InteriorScene /></Suspense>;
+  return <ErrorBoundary label="실내 3D" place="center" onClose={() => useUi.getState().exitIndoor()}><Suspense fallback={<div className="loading" role="status"><div className="loading-card glass"><div className="loading-sub">실내를 불러오는 중</div></div></div>}><InteriorScene /></Suspense></ErrorBoundary>;
 }
 import { MockBadge } from '../mock/MockBadge';
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
+// 4xx(없음·권한·검증)는 다시 해도 같으니 바로 실패로 보여 주고, 네트워크·5xx 만 한 번 더
+const retry = (n: number, e: unknown) => n < 1 && !(e instanceof ApiError && e.status >= 400 && e.status < 500);
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry, refetchOnWindowFocus: false } } });
+// 로그인 계정이 바뀌면 앞사람 기록·찜 표시를 지우고 사람마다 다른 값(찜·도보 분·예산)을 다시 받는다
+watchSession(queryClient, () => useFavOverrides.setState({ o: {} }));
 // 점검 스크립트용 (scripts/*-check.mjs): 화면 상태를 숫자로 읽고 바꾼다. 개발 서버에서만
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   void Promise.all([import('./features/listings'), import('./state/detail'), import('../api/client'), import('./state/session')]).then(([l, d, c, s]) => {
     (window as unknown as Record<string, unknown>).__app = { useUi, useListingsUi: l.useListingsUi, useDetailSel: d.useDetailSel, useSession: s.useSession, queryClient, api: c.api };
   });
+}
+
+/** 새로고침하면 세션엔 토큰만 남는다 → 내 정보의 닉네임으로 채운다 (상단 계정 버튼·같이 걷기 이름표가 '손님'이 되지 않게) */
+function NicknameSync() {
+  const nick = useProfile().data?.nickname;
+  useEffect(() => { if (nick && useSession.getState().token && useSession.getState().nickname !== nick) useSession.setState({ nickname: nick }); }, [nick]);
+  return null;
 }
 
 function Loading() {
@@ -73,15 +91,16 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <WorldLayer />
+      <NicknameSync />
       <ListingMarkers />
       <PlaceMarkers />
       <WorldEffects />
       <NeighborhoodHud />
       <TransferMarkers />
-      {mapMode === '2d' && <Suspense fallback={<p className="ui-map-note" role="status">지도를 불러오는 중</p>}><KakaoMap /></Suspense>}
+      {mapMode === '2d' && <ErrorBoundary label="지도" place="center" onClose={() => useUi.getState().setMapMode('3d')}><Suspense fallback={<p className="ui-map-note" role="status">지도를 불러오는 중</p>}><KakaoMap /></Suspense></ErrorBoundary>}
       <div className="ui-layer">
         <TopBar />
-        {mapMode === '3d' && <SidePanel />}
+        {mapMode === '3d' && <ErrorBoundary label="이 화면" place="panel" onClose={() => useUi.getState().setPanelOpen(false)}><SidePanel /></ErrorBoundary>}
       </div>
       <LandingNotice />
       <RouteHud />

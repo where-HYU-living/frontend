@@ -45,9 +45,15 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   const data = text ? safeJson(text) : null;
   if (!res.ok) {
     const d = (data ?? {}) as { code?: string; message?: string; details?: unknown };
-    if (res.status === 401 && token) useSession.getState().logout(); // 만료된 토큰
+    // 만료된 토큰: 이 요청을 보낸 토큰이 아직 지금 토큰일 때만 (늦게 온 401 이 새로 로그인한 사람을 내보내지 않게).
+    // 저장·쓰기 요청이었으면 로그인 창을 띄워 다시 로그인하고 이어서 하게 한다
+    if (res.status === 401 && token && useSession.getState().token === token) {
+      useSession.getState().logout();
+      if ((init.method ?? 'GET') !== 'GET') useSession.getState().openLogin();
+    }
     throw new ApiError(d.code ?? `HTTP_${res.status}`, d.message ?? '요청을 처리하지 못했어요.', res.status, d.details ?? null);
   }
+  if (text && data === null) throw new ApiError('BAD_RESPONSE', '서버 응답을 읽지 못했어요.', res.status); // 2xx 인데 JSON 이 아님 (프록시 오류 화면 등)
   return data as T;
 }
 
