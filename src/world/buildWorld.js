@@ -65,7 +65,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     const L = lightAt(t);
     sun.intensity = L.sun; sun.color.setHex(L.sunColor); sunDir.set(...L.sunDir).normalize();
     // 환경광(HDR)을 끈 품질에서는 그만큼을 반구광으로 채워 너무 어두워지지 않게
-    hemi.intensity = L.hemi + (scene.environment ? 0 : L.env * 0.6); scene.environmentIntensity = L.env; scene.backgroundIntensity = L.bg;
+    hemi.intensity = L.hemi + (scene.environment ? 0 : L.env * 0.9); scene.environmentIntensity = L.env; scene.backgroundIntensity = L.bg;
     scene.fog.color.setHex(L.fog); scene.fog.density = L.fogDensity * fogScale;
     if (scene.background?.isColor) scene.background.setHex(L.fog); // 하늘 사진이 없으면 안개색 하늘
     renderer.toneMappingExposure = L.exposure;

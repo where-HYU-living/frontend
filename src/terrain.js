@@ -137,21 +137,26 @@ export async function makeTerrain(world, splatCanvas, plazaCanvas = null) {
     g.computeVertexNormals();
     const m = new THREE.MeshLambertMaterial({ map: grass }); // map 은 uv 를 켜려고 둔다 (색은 아래 셰이더가 정함)
     m.onBeforeCompile = (sh) => {
-      Object.assign(sh.uniforms, { uSplat: { value: splat }, uPlaza: { value: plaza }, uPave: { value: pave }, uRoad: { value: road }, uTile: { value: tile } });
+      Object.assign(sh.uniforms, { uSplat: { value: splat }, uPlaza: { value: plaza }, uPlazaTex: { value: plazaPave }, uPave: { value: pave }, uRoad: { value: road }, uTile: { value: tile } });
       sh.vertexShader = sh.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec2 vSUv;')
         .replace('#include <uv_vertex>', '#include <uv_vertex>\nvSUv = uv;');
       sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vSUv;\nuniform sampler2D uSplat, uPave, uRoad, uPlaza;\nuniform vec2 uTile;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vSUv;\nuniform sampler2D uSplat, uPave, uRoad, uPlaza, uPlazaTex;\nuniform vec2 uTile;')
         .replace('#include <map_fragment>', `
           vec2 tuv = vSUv * uTile;
           vec4 sp = texture2D(uSplat, vSUv);
           vec3 cGrass = texture2D(map, tuv * 0.8).rgb * vec3(0.72, 1.0, 0.5);
           vec3 col = mix(cGrass * 0.82 * vec3(0.95, 0.97, 0.85), cGrass, smoothstep(0.3, 0.7, sp.b));
           col = mix(col, texture2D(uPave, tuv * 1.2).rgb * vec3(1.02, 0.96, 0.92), smoothstep(0.3, 0.7, sp.r));
-          col = mix(col, vec3(0.6, 0.6, 0.6), smoothstep(0.3, 0.7, texture2D(uPlaza, vSUv).r));
+          // 광장 화강석 블록: 원래 지형과 같은 텍스처·색 보정 (단색으로 두면 시작 화면 앞 광장이 하얗게 떠 보였다)
+          float pm = texture2D(uPlaza, vSUv).r;
+          if (pm > 0.01) {
+            vec3 cPlaza = texture2D(uPlazaTex, tuv * 1.5).rgb;
+            col = mix(col, mix(vec3(dot(cPlaza, vec3(0.333))), cPlaza, 0.25) * 1.18, smoothstep(0.3, 0.7, pm));
+          }
           col = mix(col, texture2D(uRoad, tuv * 0.6).rgb * 0.9, smoothstep(0.3, 0.7, sp.g));
-          diffuseColor.rgb *= col;
+          diffuseColor.rgb *= col * 1.6; // 램버트는 PBR+하늘 환경광보다 어둡게 나온다 → 원래 지형 밝기에 맞춤(실측)
         `);
     };
     m.userData.textures = mat.userData.textures;
