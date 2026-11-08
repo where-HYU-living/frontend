@@ -69,9 +69,7 @@
 .ui-v-grades::-webkit-scrollbar { display: none; }
 /* 등급 칩: 꺼져 있으면 색 점만, 켜면 등급 색으로 채운다 */
 .ui-v-grade { flex: none; height: 32px; padding: 0 12px 0 10px; border-radius: 999px; border: 1px solid var(--ui-hair); background: rgba(255, 255, 255, .85); font-size: 12.5px; font-weight: 650; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.ui-v-grade i { width: 9px; height: 9px; border-radius: 50%; background: var(--g); }
-.ui-v-grade.is-on { background: var(--g); border-color: var(--g); color: var(--g-ink); }
-.ui-v-grade.is-on i { background: var(--g-ink); }
+.ui-v-grade.is-on { border-color: var(--g); box-shadow: inset 0 0 0 1px var(--g); color: var(--g); background: #fff; font-weight: 800; }
 .ui-v-filter-body { padding: 14px; border-radius: 14px; background: rgba(255, 255, 255, .7); border: 1px solid var(--ui-hair); display: flex; flex-direction: column; gap: 12px; }
 .ui-v-filter-foot { display: flex; justify-content: flex-end; }
 .ui-v-reset { height: 32px; padding: 0 12px; border-radius: 10px; font-size: 12.5px; font-weight: 650; color: var(--ui-ink-2); border: 1px solid var(--ui-hair); background: rgba(255, 255, 255, .8); }

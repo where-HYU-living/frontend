@@ -3,7 +3,7 @@ import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useWorld } from './state/world';
 import { useUi } from './state/ui';
 import { toLocal } from './map/geo';
-import { GRADE_META, inkFor } from '../lib/grade';
+import { GRADE_INK, GRADE_META } from '../lib/grade';
 import { depositRent, manwon } from '../lib/money';
 import type { Grade, ListingSummary } from '../api/types';
 import { ApiError } from '../api/client';
@@ -15,7 +15,7 @@ import { useGoToPoint } from './goTo';
 import './venue.css';
 import { DossierCard } from './dossier/DossierCard';
 import { HeartButton } from './HeartButton';
-import { GRADE_HINT } from './dossier/dossierLogic';
+import { SeverityMeter } from './dossier/SeverityMeter';
 
 const ROOM_FILTER: [Filters['roomType'], string][] = [['', '전체'], ['OPEN', '오픈형'], ['SEPARATED', '분리형'], ['ONE_HALF', '1.5룸'], ['TWO_ROOM', '투룸'], ['DUPLEX', '복층']];
 const GRADES: Grade[] = ['FAIR', 'SLIGHTLY_HIGH', 'HIGH', 'CULPRIT', 'PENDING'];
@@ -30,7 +30,6 @@ type Filters = Parameters<typeof useListings>[0];
 export function ListingsPanel() {
   const { filters, setFilters, selectedId, select } = useListingsUi();
   const q = useListings(filters);
-  const go = useGoToListing();
   const { showHousing, setShowHousing } = useUi();
   const [open, setOpen] = useState(false);
 
@@ -60,8 +59,8 @@ export function ListingsPanel() {
           </button>
           <div className="ui-v-grades" role="group" aria-label="가격 등급">
             {GRADES.map((g) => (
-              <button key={g} type="button" className={`ui-v-grade${filters.grades.includes(g) ? ' is-on' : ''}`} style={{ '--g': GRADE_META[g].color, '--g-ink': inkFor(GRADE_META[g].color) } as React.CSSProperties} aria-pressed={filters.grades.includes(g)} onClick={() => toggle(g)}>
-                <i aria-hidden="true" />{GRADE_META[g].label}
+              <button key={g} type="button" className={`ui-v-grade${filters.grades.includes(g) ? ' is-on' : ''}`} style={{ '--g': GRADE_INK[g] } as React.CSSProperties} aria-pressed={filters.grades.includes(g)} onClick={() => toggle(g)}>
+                <SeverityMeter grade={g} />{GRADE_META[g].label}
               </button>
             ))}
           </div>
@@ -96,10 +95,9 @@ export function ListingsPanel() {
               grade={l.grade}
               title={l.title}
               rent={manwon(l.convertedRent)}
-              deposit={depositRent(l.deposit, l.rent)}
-              hint={GRADE_HINT[l.grade]}
+              deposit={`보증금/월세 ${depositRent(l.deposit, l.rent)}`}
               meta={[`${l.areaM2}㎡`, l.floor == null ? '층 정보 없음' : `${l.floor}층`, l.walkMin == null ? '도보 정보 없음' : `도보 ${l.walkMin}분`]}
-              onClick={() => { select(l.id); go(l); }}
+              onClick={() => select(l.id)} // 정보만 연다. 3D 이동은 상세의 [3D에서 보기]로
             />
             <HeartButton type="LISTING" id={l.id} favorited={l.favorited} name={l.title} className="ui-heart-abs" />
           </li>

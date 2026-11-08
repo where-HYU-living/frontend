@@ -70,3 +70,42 @@ export const TYPE_NAME: Record<Alternative['type'], string> = { HOUSING: '청년
 
 /** N2: 수배 전단 대상 (범인 등급 + 판정 수치 존재) */
 export const isWanted = (grade: Grade | undefined): boolean => grade === 'CULPRIT';
+
+// ───── 가격 눈금자 (판결 카드) ─────
+/** 눈금자 범위·눈금: 값들(원)을 다 담고 양옆에 여유. 폭에 따라 5만/10만/20만 간격 */
+export function lineupScale(values: number[]): { min: number; max: number; ticks: number[] } {
+  const v = values.filter((x) => Number.isFinite(x) && x > 0);
+  const lo = Math.min(...v), hi = Math.max(...v), range = Math.max(hi - lo, 50_000);
+  const step = range <= 250_000 ? 50_000 : range <= 700_000 ? 100_000 : 200_000;
+  const min = Math.max(0, Math.floor((lo - range * 0.18) / step) * step);
+  const max = Math.ceil((hi + range * 0.18) / step) * step;
+  const ticks: number[] = [];
+  for (let t = min; t <= max + 1; t += step) ticks.push(t);
+  return { min, max, ticks };
+}
+
+export type LineupLabel = { key: string; at: number; text: string; /** 빈자리가 없으면 빼도 되는 이름표 (겹치느니 안 그린다) */ optional?: boolean };
+export type Lane = 'top' | 'above' | 'below';
+export type PlacedLabel = LineupLabel & { lane: Lane; left: number; align: 'start' | 'center' | 'end' };
+/**
+ * 눈금자 이름표 자리: 위·아래 줄 중 겹치지 않는 쪽에 놓고, 셋이 몰려 있으면 맨 위 한 줄을 더 쓴다(먼저 온 것이 우선). 양 끝에서는 안쪽으로 정렬해 잘리지 않게.
+ * at·결과 left 는 %. width 는 눈금자 폭(px) 어림 — 글자 폭을 % 로 바꾸는 데만 쓴다.
+ */
+export function placeLabels(items: LineupLabel[], width = 300): PlacedLabel[] {
+  const used: Record<Lane, [number, number][]> = { top: [], above: [], below: [] };
+  const out: PlacedLabel[] = [];
+  for (const it of items) {
+    const w = ((it.text.length * 12 + 10) / width) * 100;
+    const align: PlacedLabel['align'] = it.at - w / 2 < 0 ? 'start' : it.at + w / 2 > 100 ? 'end' : 'center';
+    const a = align === 'start' ? 0 : align === 'end' ? 100 - w : it.at - w / 2;
+    const span: [number, number] = [a - 1.5, a + w + 1.5];
+    const free = (lane: Lane) => used[lane].every(([s, e]) => span[1] <= s || span[0] >= e);
+    const pref: Lane[] = it.key === 'house' ? ['below', 'above', 'top'] : ['above', 'below', 'top'];
+    const found = pref.find(free);
+    if (!found && it.optional) continue;
+    const lane = found ?? pref[0];
+    used[lane].push(span);
+    out.push({ ...it, lane, align, left: align === 'start' ? 0 : align === 'end' ? 100 : it.at });
+  }
+  return out;
+}

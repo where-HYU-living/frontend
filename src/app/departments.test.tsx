@@ -68,7 +68,9 @@ test('keyboard: arrows move, enter picks; empty search shows a message', () => {
   fireEvent.keyDown(input, { key: 'ArrowDown' }); // 목록 순서: 공과(기계,컴퓨터) → 경영 → 인문 → 두 번째 = 컴퓨터
   fireEvent.keyDown(input, { key: 'Enter' });
   expect(onChange).toHaveBeenLastCalledWith(1);
-  fireEvent.change(input, { target: { value: 'zzzz' } });
+  expect(screen.queryByLabelText('학과 검색')).toBeNull(); // 고르면 검색칸 대신 고른 학과 카드
+  fireEvent.click(screen.getByText('바꾸기'));
+  fireEvent.change(screen.getByLabelText('학과 검색'), { target: { value: 'zzzz' } });
   expect(screen.getByText('검색 결과가 없어요')).toBeTruthy();
 });
 

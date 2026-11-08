@@ -30,3 +30,19 @@ export const isPositive = (s: string): boolean => s.trim() !== '' && Number.isFi
 export const isNonNegative = (s: string): boolean => s.trim() !== '' && Number.isFinite(Number(s)) && Number(s) >= 0;
 /** 양의 정수 문자열인가 */
 export const isPositiveInt = (s: string): boolean => isPositive(s) && Number.isInteger(Number(s));
+
+/** 숫자 칸 입력 정리: 숫자만(decimal 이면 소수점 하나까지). 붙여넣은 '1,000' '55만' 같은 것도 숫자만 남긴다 */
+export function cleanNumber(s: string, decimal = false): string {
+  if (!decimal) return s.replace(/[^\d]/g, '');
+  const t = s.replace(/[^\d.]/g, ''), i = t.indexOf('.');
+  return i < 0 ? t : t.slice(0, i + 1) + t.slice(i + 1).replace(/\./g, '');
+}
+
+/** 만원 단위 숫자 문자열 → '1억 2,000만 원' 처럼 읽기 쉽게 (큰 보증금을 0 하나 틀리게 적는 일을 막는다). 비었거나 숫자가 아니면 null */
+export function manReadable(s: string): string | null {
+  const n = Number(s);
+  if (s.trim() === '' || !Number.isFinite(n) || n <= 0) return null;
+  const eok = Math.floor(n / 10000), rest = Math.round((n - eok * 10000) * 10) / 10;
+  const r = rest ? `${rest.toLocaleString('ko-KR')}만` : '';
+  return eok ? `${eok}억${r ? ` ${r}` : ''} 원` : `${r} 원`;
+}

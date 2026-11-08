@@ -17,8 +17,9 @@ afterEach(() => { cleanup(); fetchMock.mockReset(); vi.unstubAllGlobals(); });
 test('lists listings with grade badge and null walk time as 정보 없음', async () => {
   fetchMock.mockResolvedValue(json({ items: [item({}), item({ id: 2, grade: 'PENDING', title: '표본 없음' })], page: 0, size: 100, total: 2 }));
   renderWithClient(<ListingsPanel />);
-  expect((await screen.findAllByText('1,000/55')).length).toBe(2);
-  expect([...document.querySelectorAll('.ui-card-badge')].map((e) => e.textContent)).toEqual(['비쌈', '판정 보류']);
+  expect((await screen.findAllByText('보증금/월세 1,000/55')).length).toBe(2);
+  // 색 배지 대신 판정 한 줄: 등급 + 시세 대비 문장
+  expect([...document.querySelectorAll('.ui-dc-verdict')].map((e) => e.textContent)).toEqual(['비쌈시세보다 꽤 높아요', '판정 보류비교할 거래가 부족해요']);
   expect(screen.getAllByText('도보 정보 없음').length).toBe(2);
   expect(document.body.textContent).not.toMatch(/NaN|undefined/);
 });

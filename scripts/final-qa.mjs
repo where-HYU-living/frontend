@@ -122,20 +122,24 @@ async function frontend() {
   const $ = (s) => page.locator(s);
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const pose = () => ev(() => { const p = window.__proto.player.pos; return [p.x, p.z]; });
+  /** 화면에 토큰을 넣어 로그인 상태로 (구글 로그인은 자동화 불가). 목 서버면 아무 토큰이나, 실서버면 점검용 메일 인증으로 받는다 */
+  const uiLogin = async () => {
+    const tok = MOCK ? 'qa-token' : await login('qa@hanyang.ac.kr');
+    await page.waitForFunction(() => !!window.__app?.useSession, null, { timeout: 10000 });
+    await page.evaluate((t) => window.__app.useSession.getState().setLogin(t, 'QA'), tok);
+    await page.waitForFunction(() => !!localStorage.getItem('chatatda.token'), null, { timeout: 5000 });
+  };
   const tab = async (name) => { if (!(await page.getByRole('tab', { name, selected: true }).count()) || !(await $('.ui-panel').count())) await page.getByRole('tab', { name }).click(); await $('.ui-panel').waitFor(); };
   const closePanel = () => ev(() => window.__app.useUi.setState({ panelOpen: false }));
   const markers = () => ev(() => { let n = 0; window.__proto.scene.traverse((o) => { if (o.isCSS2DObject && o.element.classList.contains('w3d-marker')) n++; }); return n; });
   const markerTexts = () => ev(() => { const t = []; window.__proto.scene.traverse((o) => { if (o.isCSS2DObject && o.element.classList.contains('w3d-marker')) t.push(o.element.textContent); }); return t; });
 
   await check('A1', 'fe', async () => {
+    // 화면 로그인은 구글뿐이라 자동화할 수 없다 → 로그인 창(구글 버튼)이 뜨는지만 보고, 토큰은 서버의 점검용 메일 인증으로 받아 넣는다
     await page.getByRole('button', { name: '로그인' }).click();
-    await page.getByRole('textbox', { name: '학교 메일' }).fill('qa@hanyang.ac.kr');
-    await page.getByRole('button', { name: '인증 코드 받기' }).click();
-    await page.getByRole('textbox', { name: '인증 코드' }).fill('123456');
-    await page.getByRole('button', { name: '확인' }).click();
-    await page.waitForFunction(() => !!localStorage.getItem('chatatda.token'), null, { timeout: 5000 });
     const google = await $('.ui-google').count();
-    return ok(true, `로그인 → 메일 → 인증 코드 받기 → 123456 → 확인 → 토큰 저장 (구글 버튼 영역 ${google}개)`);
+    await uiLogin();
+    return ok(true, `로그인 창 (구글 버튼 영역 ${google}개) → 점검용 메일 인증 토큰 → 저장`);
   });
   await ev(() => window.__app.useUi.setState({ profileOpen: false }));
   await check('A2', 'fe', async () => {
@@ -164,8 +168,7 @@ async function frontend() {
     await page.getByRole('button', { name: /^내 계정/ }).click(); await page.getByRole('button', { name: '로그아웃' }).click();
     const gone = await ev(() => localStorage.getItem('chatatda.token') == null);
     const loginBtn = await page.getByRole('button', { name: '로그인' }).isVisible();
-    await page.getByRole('button', { name: '로그인' }).click(); await page.getByRole('textbox', { name: '학교 메일' }).fill('qa@hanyang.ac.kr'); await page.getByRole('button', { name: '인증 코드 받기' }).click(); await page.getByRole('textbox', { name: '인증 코드' }).fill('123456'); await page.getByRole('button', { name: '확인' }).click();
-    await page.waitForFunction(() => !!localStorage.getItem('chatatda.token')); await ev(() => window.__app.useUi.setState({ profileOpen: false }));
+    await uiLogin(); await ev(() => window.__app.useUi.setState({ profileOpen: false }));
     return ok(gone && loginBtn, `계정 메뉴 → 로그아웃 → 토큰 삭제 ${gone}, '로그인' 버튼 ${loginBtn} → 다시 로그인 (401 자동 로그아웃은 client.test)`);
   });
   await closePanel();
@@ -267,10 +270,10 @@ async function frontend() {
   });
   await check('K5', 'fe', async () => { await page.locator('.ui-panel .ui-cards li button').filter({ hasText: 'QA 양도 글 올려요' }).first().click(); await page.getByRole('button', { name: '글 고치기' }).click(); await page.getByRole('textbox', { name: '글 제목' }).fill('QA 양도 글 고쳤어요'); await page.getByRole('button', { name: '고친 내용 저장' }).click(); await page.waitForTimeout(800); const t = await $('.ui-panel h3').first().textContent(); await page.getByRole('button', { name: '양도 완료' }).click(); await page.waitForTimeout(600); const done = (await $('.ui-panel').textContent()).includes('양도 완료'); return ok(t.includes('고쳤어요') && done, `글 고치기 → 제목 '${t}' → 양도 완료 ${done}`); });
   await check('H1', 'fe', async () => { await tab('내 집 기록'); await $('.ui-panel .ui-detail h3').waitFor({ timeout: 8000 }); const t = await $('.ui-panel .ui-detail h3').textContent(); return ok(t.includes('행당동'), `내 집 '${t}' (등록 폼은 I19 에서 API 로, 폼 검증은 단위 테스트)`); });
-  await check('H2', 'fe', async () => { await page.getByRole('textbox', { name: '낸 월세(만원)' }).fill('55'); await page.getByRole('button', { name: '월세 기록' }).click(); await page.waitForTimeout(700); const t = await $('[aria-label="지난 기록"]').textContent(); return ok(/월세 55/.test(t), `월세 기록 → 지난 기록 '${t.replace(/\s+/g, ' ').slice(0, 50)}'`); });
+  await check('H2', 'fe', async () => { const chg = page.getByRole('button', { name: /^(바꾸기|다른 금액이에요)$/ }).first(); await chg.click(); await page.getByRole('textbox', { name: '낸 월세(만원)' }).fill('55'); await page.getByRole('button', { name: '월세 기록' }).click(); await page.waitForTimeout(700); const t = await $('[aria-label="지난 기록"]').textContent(); return ok(/월세 55/.test(t), `월세 기록 → 지난 기록 '${t.replace(/\s+/g, ' ').slice(0, 50)}'`); });
   await check('H3', 'fe', async () => { await page.getByRole('textbox', { name: '전기(만원)' }).fill('3'); await page.getByRole('textbox', { name: '가스비(만원)' }).fill('2'); await page.getByRole('button', { name: '공과금 기록' }).click(); await page.waitForTimeout(700); const t = await $('[aria-label="지난 기록"]').textContent(); return ok(/공과금 5만/.test(t), `공과금 기록 → '${t.replace(/\s+/g, ' ').slice(0, 60)}'`); });
-  await check('H5', 'fe', async () => { const t = await $('[aria-label="월간 리포트"]').textContent(); const m = await page.getByRole('textbox', { name: '기록·리포트 달' }).count() || await $('input[type=month]').count(); return ok(/이번 달/.test(t) && m > 0, `리포트 '${t.replace(/\s+/g, ' ').slice(0, 60)}', 달 선택 ${m}`); });
-  await check('H6', 'fe', async () => { await page.getByRole('button', { name: '추가' }).click(); await page.waitForTimeout(600); const t = await $('.ui-rows').last().textContent(); return ok(/만료 \d+일 전/.test(t), `알림 추가 → '${t.replace(/\s+/g, ' ').slice(0, 40)}'`); });
+  await check('H5', 'fe', async () => { const t = await $('[aria-label="월간 리포트"]').textContent(); const m = await page.getByRole('group', { name: '기록·리포트 달' }).count(); return ok(/이번 달/.test(t) && m > 0, `리포트 '${t.replace(/\s+/g, ' ').slice(0, 60)}', 달 선택 ${m}`); });
+  await check('H6', 'fe', async () => { const chip = page.getByRole('button', { name: '90일 전' }); const before = await chip.getAttribute('aria-pressed'); await chip.click(); await page.waitForTimeout(700); const after = await chip.getAttribute('aria-pressed'); return ok(before !== after, `알림 칩 90일 전 ${before} → ${after}`); });
   await check('Q1', 'fe', async () => { await page.getByRole('button', { name: /^알림/ }).click(); const t = await $('.ui-panel').textContent(); return ok(/알림/.test(t), `알림함 열림 '${t.replace(/\s+/g, ' ').slice(0, 40)}'`); });
   await closePanel();
   await check('M1', 'fe', async () => { await page.getByRole('button', { name: '더 보기' }).click(); const e0 = await ev(() => window.__proto.renderer.toneMappingExposure); await page.getByRole('slider', { name: /시간대/ }).fill('1000'); await page.waitForTimeout(300); const e1 = await ev(() => window.__proto.renderer.toneMappingExposure); await page.keyboard.press('Escape'); return ok(e0 !== e1, `⋯ → 시간대 밤 → 노출 ${e0.toFixed(2)} → ${e1.toFixed(2)}`); });

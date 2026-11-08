@@ -110,3 +110,145 @@
   .ui-modal-lg { width: 100vw; }
 }
 .ui-form2-btn { align-self: end; min-height: 40px; height: auto; border-radius: 10px; font-size: 13px; }
+
+/* ── 버튼 보조 ── */
+.ui-secondary { height: 44px; padding: 0 16px; border: 1px solid var(--ui-hair); border-radius: 12px; background: var(--ui-glass-strong); color: var(--ui-ink); font: 600 14px inherit; font-family: inherit; cursor: pointer; }
+.ui-secondary:hover { background: #fff; }
+.ui-textlink { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border: 0; border-radius: 8px; background: none; color: #0e4a84; font: 600 12.5px inherit; font-family: inherit; cursor: pointer; white-space: nowrap; }
+.ui-textlink:hover { background: rgba(14, 74, 132, .08); }
+.ui-sticky-jump { border: 0; background: none; padding: 2px 6px; border-radius: 8px; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.ui-sticky-jump:hover { background: rgba(179, 65, 43, .08); }
+.ui-form2-restored { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* ── 날짜 칸 + 달력 ── */
+.ui-date { position: relative; }
+.ui-date-row { display: flex; align-items: center; gap: 4px; }
+.ui-date-btn { flex: 1; min-width: 0; min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--ui-hair); border-radius: 10px; background: var(--ui-glass-strong); color: var(--ui-ink); font: 600 13px inherit; font-family: inherit; text-align: left; cursor: pointer; }
+.ui-date-btn svg { flex: none; color: #0e4a84; }
+.ui-date-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-date-btn.is-empty { color: var(--ui-ink-3); font-weight: 500; }
+.ui-date-btn:hover { border-color: rgba(14, 74, 132, .45); }
+.ui-date-btn[aria-expanded="true"] { outline: 2px solid #0e4a84; outline-offset: 1px; border-color: #0e4a84; }
+.ui-date.has-error .ui-date-btn { border-color: #c0392b; }
+.ui-date-clear { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ui-ink-3); cursor: pointer; }
+.ui-date-clear:hover { background: var(--ui-hair); color: var(--ui-ink); }
+.ui-cal-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; }
+.ui-date .ui-cal-pop { top: 62px; }
+.ui-cal-pop.is-right { left: auto; right: 0; }
+.ui-cal-pop.is-center { left: 50%; transform: translateX(-50%); top: calc(100% + 6px); }
+.ui-cal { width: 292px; box-sizing: border-box; padding: 10px; border-radius: 14px; background: #fff; box-shadow: 0 12px 36px rgba(22, 32, 46, .22), 0 0 0 1px rgba(22, 32, 46, .06); color: var(--ui-ink); font-size: 13px; }
+.ui-cal-head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
+.ui-cal-nav { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ui-ink-2); cursor: pointer; }
+.ui-cal-nav:hover:not(:disabled) { background: var(--ui-hair); color: var(--ui-ink); }
+.ui-cal-nav:disabled { opacity: .3; cursor: default; }
+.ui-cal-title { flex: 1; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--ui-ink); font: 700 14px inherit; font-family: inherit; text-align: center; line-height: 32px; cursor: pointer; }
+button.ui-cal-title:hover { background: var(--ui-hair); }
+.ui-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.ui-cal-wd { height: 24px; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--ui-ink-3); }
+.ui-cal-wd.is-sun, .ui-cal-day.is-sun { color: #d6453d; }
+.ui-cal-wd.is-sat, .ui-cal-day.is-sat { color: #2f6fd6; }
+.ui-cal-day { height: 36px; border: 0; border-radius: 10px; background: none; color: var(--ui-ink); font: 500 13px inherit; font-family: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.ui-cal-day:hover:not(:disabled) { background: rgba(14, 74, 132, .1); }
+.ui-cal-day:focus-visible { outline: 2px solid #0e4a84; outline-offset: -2px; }
+.ui-cal-day.is-today { box-shadow: inset 0 0 0 1.5px rgba(14, 74, 132, .5); font-weight: 700; }
+.ui-cal-day.is-sel, .ui-cal-day.is-sel:hover { background: #0e4a84; color: #fff; font-weight: 700; }
+.ui-cal-day:disabled { color: var(--ui-ink-3); opacity: .35; cursor: default; }
+.ui-cal-months { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 4px 0; }
+.ui-cal-months button { height: 40px; border: 0; border-radius: 10px; background: var(--ui-hair); color: var(--ui-ink); font: 600 13px inherit; font-family: inherit; cursor: pointer; }
+.ui-cal-months button:hover:not(:disabled) { background: rgba(14, 74, 132, .14); }
+.ui-cal-months button.on { background: #0e4a84; color: #fff; }
+.ui-cal-months button:disabled { opacity: .35; cursor: default; }
+.ui-cal-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--ui-hair); }
+.ui-cal-quick button { min-height: 30px; padding: 0 12px; border: 1px solid var(--ui-hair); border-radius: 999px; background: #fff; color: var(--ui-ink-2); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
+.ui-cal-quick button:hover:not(:disabled) { border-color: #0e4a84; color: #0e4a84; }
+.ui-cal-quick button.on { border-color: #0e4a84; background: #0e4a84; color: #fff; }
+.ui-cal-quick button:disabled { opacity: .4; cursor: default; }
+
+/* 달 고르기 ‹ 2026년 11월 › */
+.ui-mstep { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 4px; border-radius: 12px; background: var(--ui-hair); }
+.ui-mstep-title { flex: 1; height: 36px; border: 0; border-radius: 9px; background: none; color: var(--ui-ink); font: 700 15px inherit; font-family: inherit; cursor: pointer; }
+.ui-mstep-title:hover, .ui-mstep-title[aria-expanded="true"] { background: rgba(255, 255, 255, .7); }
+.ui-mstep .ui-cal-nav { width: 36px; height: 36px; }
+.ui-mstep .ui-cal-nav:hover:not(:disabled) { background: rgba(255, 255, 255, .7); }
+
+/* ── 주소 ── */
+.ui-addr2-box { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 6px 0 12px; border: 1px solid var(--ui-hair); border-radius: 10px; background: var(--ui-glass-strong); color: var(--ui-ink-3); }
+.ui-addr2-box:focus-within { outline: 2px solid #0e4a84; outline-offset: 1px; border-color: #0e4a84; }
+.ui-field .ui-addr2-box input { flex: 1; min-width: 0; min-height: 38px; padding: 0; border: 0; border-radius: 0; background: none; outline: 0; }
+.ui-field .ui-addr2-box input:focus { outline: 0; }
+.ui-field.has-error .ui-addr2-box { border-color: #c0392b; }
+.ui-addr2-cancel { flex: none; height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--ui-ink-2); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
+.ui-addr2-cancel:hover { background: var(--ui-hair); }
+.ui-addr2-card { display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 12px; border-radius: 12px; border: 1px solid rgba(47, 166, 106, .35); background: rgba(47, 166, 106, .1); }
+.ui-addr2-card > svg { flex: none; color: #2f8a5a; }
+.ui-addr2-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ui-addr2-main b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-addr2-main small { font-size: 11.5px; color: var(--ui-ink-3); }
+.ui-addr2-change { flex: none; height: 32px; padding: 0 12px; border: 1px solid var(--ui-hair); border-radius: 9px; background: #fff; color: var(--ui-ink); font: 600 12.5px inherit; font-family: inherit; cursor: pointer; }
+.ui-addr2-list button { display: flex; flex-direction: column; gap: 1px; }
+.ui-addr2-list button small { font-size: 11px; color: var(--ui-ink-3); }
+.ui-addr2-list button.is-active { background: rgba(14, 74, 132, .12); }
+
+/* ── 남은 계약: 칩 + 직접 ── */
+.ui-months-row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.ui-months-row .ui-chipselect { flex: 1 1 auto; align-self: center; }
+.ui-months-row .ui-chipselect button { min-height: 36px; padding: 0 12px; }
+.ui-months-input { flex: 0 0 110px; }
+.ui-months-input .ui-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* 사진: 끌어다 놓기·대표 */
+.ui-photos.is-over .ui-photo-grid { outline: 2px dashed #0e4a84; outline-offset: 4px; border-radius: 12px; }
+.ui-photo-badge { position: absolute; left: 4px; bottom: 4px; padding: 1px 7px; border-radius: 999px; background: rgba(14, 74, 132, .88); color: #fff; font-size: 10.5px; font-weight: 700; }
+
+/* ── 내 집 기록 ── */
+.ui-home { display: flex; flex-direction: column; gap: 14px; }
+.ui-home h3 { margin: 0; }
+.ui-home-formtitle { margin: 0; font-size: 16px; }
+.ui-home-h { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--ui-ink); }
+.ui-home-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: rgba(255, 255, 255, .6); border: 1px solid var(--ui-hair); }
+.ui-home-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ui-home-card-head h3 { font-size: 15px; line-height: 1.35; }
+.ui-home-facts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ui-home-facts li { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 10px; background: var(--ui-hair); }
+.ui-home-facts small { font-size: 11px; color: var(--ui-ink-3); }
+.ui-home-facts b { font-size: 14px; font-variant-numeric: tabular-nums; }
+.ui-home-contract { display: flex; flex-direction: column; gap: 6px; }
+.ui-home-contract-top { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+.ui-home-contract-top b { color: var(--ui-ink); }
+.ui-home-contract-top b.is-soon { color: #c0392b; }
+.ui-home-contract-bar { height: 6px; border-radius: 999px; background: var(--ui-hair); overflow: hidden; }
+.ui-home-contract-bar span { display: block; height: 100%; border-radius: inherit; background: #0e4a84; }
+.ui-home-rec { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 14px; background: rgba(255, 255, 255, .6); border: 1px solid var(--ui-hair); }
+.ui-home-rec .ui-home-h { margin: 0; }
+.ui-home-row { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 6px 0 12px; border-radius: 12px; background: rgba(47, 166, 106, .1); font-size: 13.5px; }
+.ui-home-row > svg { flex: none; color: #2f8a5a; }
+.ui-home-row-main { flex: 1; min-width: 0; }
+.ui-home-row-main small { color: var(--ui-ink-3); font-size: 11.5px; }
+.ui-home-pay { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.ui-home-pay > .ui-textlink { align-self: center; }
+.ui-home-paybtn { margin-top: 0; height: 46px; font-size: 15px; }
+.ui-home-payedit, .ui-home-alert-add { display: flex; flex-direction: column; gap: 8px; }
+.ui-home-payedit-btns { display: flex; gap: 8px; }
+.ui-home-payedit-btns .ui-primary { flex: 1; margin-top: 0; height: 44px; }
+.ui-home-util { display: flex; flex-direction: column; gap: 8px; }
+.ui-home-util-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 700; }
+.ui-home-util-head small { font-size: 11.5px; font-weight: 500; color: var(--ui-ink-3); }
+.ui-home-util-grid { gap: 8px; }
+.ui-home-utilsave { height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; background: #0e4a84; color: #fff; font: 700 14px inherit; font-family: inherit; cursor: pointer; }
+.ui-home-utilsave:disabled { background: var(--ui-hair); color: var(--ui-ink-3); cursor: default; }
+.ui-home-utilsave.is-saved:disabled { background: rgba(47, 166, 106, .12); color: #2f8a5a; }
+.ui-home-hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ui-home-hist button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--ui-ink-2); font: 500 12.5px inherit; font-family: inherit; text-align: left; cursor: pointer; }
+.ui-home-hist button:hover { background: var(--ui-hair); }
+.ui-home-hist button.is-on { background: rgba(14, 74, 132, .1); color: var(--ui-ink); }
+.ui-home-hist-m { font-weight: 700; color: var(--ui-ink); font-variant-numeric: tabular-nums; }
+.ui-home-alerts { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.ui-home-alerts button { min-height: 36px; display: inline-flex; align-items: center; gap: 4px; padding: 0 14px; border: 1px solid var(--ui-hair); border-radius: 999px; background: var(--ui-glass-strong); color: var(--ui-ink-2); font: 600 13px inherit; font-family: inherit; cursor: pointer; }
+.ui-home-alerts button:hover:not(:disabled) { border-color: #0e4a84; color: #0e4a84; }
+.ui-home-alerts button.on { border-color: #0e4a84; background: #0e4a84; color: #fff; }
+.ui-home-alerts button:disabled { opacity: .6; cursor: default; }
+.ui-home-alerts .ui-home-alerts-more { border-style: dashed; background: none; }
+@media (max-width: 640px) {
+  .ui-cal { width: min(292px, calc(100vw - 32px)); }
+  .ui-date-btn { font-size: 16px; }
+}

@@ -9,11 +9,13 @@ export function FormSection({ title, hint, grid, children }: { title: string; hi
   );
 }
 
-/** 하단 고정 제출 영역. disabledReason 이 있으면 한 줄로 이유를 보여준다 */
-export function StickyActions({ reason, children }: { reason?: string | null; children: React.ReactNode }) {
+/** 하단 고정 제출 영역. reason 이 있으면 한 줄로 이유를 보여준다. onReason 을 주면 그 줄을 눌러 빈 칸으로 간다 */
+export function StickyActions({ reason, onReason, children }: { reason?: string | null; onReason?: () => void; children: React.ReactNode }) {
   return (
     <div className="ui-sticky">
-      {reason && <p className="ui-sticky-reason" role="status">{reason}</p>}
+      {reason && (onReason
+        ? <p className="ui-sticky-reason" role="status"><button type="button" className="ui-sticky-jump" onClick={onReason}>{reason} · 바로 가기</button></p>
+        : <p className="ui-sticky-reason" role="status">{reason}</p>)}
       {children}
     </div>
   );

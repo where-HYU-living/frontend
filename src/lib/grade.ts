@@ -25,3 +25,17 @@ export function inkFor(bg: string): string {
   const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
   return 1.05 / (L + 0.05) >= 3 ? '#fff' : '#2b2308';
 }
+
+/**
+ * 패널 안 글자·도장·눈금자용 색 (밝은 유리 배경 위에서 대비 4.5 이상). 3D 마커·지도 핀은 GRADE_META.color 를 그대로 쓴다.
+ * 예전 화면은 신호등색 알약 배지를 칠했는데 '색 라벨'만 눈에 띄고 내용(얼마나 비싼지)은 안 읽혔다 → 색은 글자에만, 크기는 4칸 막대로.
+ */
+export const GRADE_INK: Record<Grade, string> = {
+  FAIR: '#1d7048',
+  SLIGHTLY_HIGH: '#8a5a00',
+  HIGH: '#b4400f',
+  CULPRIT: '#b0212b',
+  PENDING: '#5d6878',
+};
+/** 비싼 정도 0~4 (판정 보류 0) */
+export const GRADE_LEVEL: Record<Grade, number> = { PENDING: 0, FAIR: 1, SLIGHTLY_HIGH: 2, HIGH: 3, CULPRIT: 4 };

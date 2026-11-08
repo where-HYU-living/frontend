@@ -77,7 +77,13 @@ export function TopBar() {
   const visit = useVisit();
   const areaId = useWorld((s) => s.areaId);
   const kakaoAll = useKakaoPlaces(q);
-  const kakao = kakaoAll.map((k) => ({ ...k, walkable: serviceTargetFor(k.lat, k.lng, areaId ?? 'campus') != null }));
+  // 카카오 장소 중 우리 캠퍼스 랜드마크·건물과 같은 곳은 뺀다: 이름이 그 이름으로 끝나면 같은 곳으로 본다
+  // (예: '한양대학교 서울캠퍼스 애지문' ≈ 랜드마크 '애지문(한양대역 2번 출구)', '… 사자상' ≈ 건물 '사자상')
+  const core = (n: string) => n.replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+  const ours = [...(api?.landmarks ?? []).filter((l) => l.key !== 'hero').map((l) => core(l.name)), ...found.filter((r) => r.type === 'BUILDING').map((r) => core(r.name))].filter((n) => n.length >= 2);
+  const kakao = kakaoAll
+    .filter((k) => !ours.some((n) => core(k.name).endsWith(n)))
+    .map((k) => ({ ...k, walkable: serviceTargetFor(k.lat, k.lng, areaId ?? 'campus') != null }));
   const onMap = mapMode === '2d';
   const showOnMap = (p: { name: string; address?: string | null; lat: number; lng: number; kind?: string; id?: number | null }) => {
     useMapFocus.getState().focus({ name: p.name, address: p.address ?? null, lat: p.lat, lng: p.lng, kind: p.kind ?? null, id: p.id ?? undefined });
@@ -93,7 +99,9 @@ export function TopBar() {
   // 입력 전에는 우리 서비스의 집 주변 12곳, 입력하면 이름이 맞는 캠퍼스 랜드마크도 같이
   const q1 = q.trim();
   const sites = SITES.filter((s) => !q1 || s.name.includes(q1) || s.address.includes(q1));
-  const landmarks = q1 && !onMap ? (api?.landmarks ?? []).filter((l) => l.key !== 'hero' && l.name.includes(q1)) : [];
+  // 같은 곳이 서버 검색(캠퍼스 건물)과 3D 랜드마크에 둘 다 있으면(예: 사자상) 한 번만 — 서버 결과를 남긴다
+  const shown = new Set([...found.map((r) => r.name.replace(/\s+/g, '')), ...(typed ? kakao.map((k) => k.name.replace(/\s+/g, '')) : [])]);
+  const landmarks = q1 && !onMap ? (api?.landmarks ?? []).filter((l) => l.key !== 'hero' && l.name.includes(q1) && !shown.has(l.name.replace(/\s+/g, ''))) : [];
   const current = TABS.find((t) => t.id === tab)?.label ?? '메뉴';
   const go = (fn: () => void) => () => { pop.setOpen(null); fn(); };
   const mapLabel = onMap ? '3D로 보기' : '지도로 보기';
@@ -163,14 +171,14 @@ export function TopBar() {
         <Heart size={18} aria-hidden="true" />
       </button>
       <button className="iconbtn glass ui-bell ui-tb-desk" type="button" aria-label={unread ? `알림 ${unread}개` : '알림'} aria-pressed={panelOpen && tab === 'inbox'} onClick={() => selectTab('inbox')}>
-        {unread > 0 && <span className="ui-badge-num">{unread}</span>}
+        {unread > 0 && <span className="ui-badge-num" aria-hidden="true">{unread > 9 ? '9+' : unread}</span>}
         <Bell size={18} aria-hidden="true" />
       </button>
 
       {/* 좁은 화면: 탭·지도·찜·알림을 한 메뉴로 */}
       <div className="ui-tb-wrap ui-tb-mob">
         <button className="textbtn glass ui-tb-menubtn" type="button" data-pop="menu" aria-haspopup="true" aria-expanded={pop.open === 'menu'} onClick={() => pop.toggle('menu')}>
-          <Menu size={16} aria-hidden="true" /><span>{current}</span>{unread > 0 && <span className="ui-badge-num">{unread}</span>}
+          <Menu size={16} aria-hidden="true" /><span>{current}</span>{unread > 0 && <span className="ui-badge-num" aria-label={`안 읽은 알림 ${unread}개`}>{unread > 9 ? '9+' : unread}</span>}
         </button>
         {pop.open === 'menu' && (
           <ul className="ui-tb-pop glass" aria-label="메뉴">

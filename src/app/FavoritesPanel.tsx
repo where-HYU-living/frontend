@@ -48,7 +48,7 @@ export function FavoritesPanel() {
 
   /** 3D 에서 그 집 앞으로 가고, 그 종류의 탭을 열어 상세까지 보여 준다 */
   const open = (f: FavoriteItem) => {
-    go(f);
+    if (f.type === 'DORM') go(f); // 기숙사는 상세 화면이 따로 없어 그 자리로. 나머지는 정보만 열고 3D 이동은 상세의 버튼으로
     useUi.setState({ tab: TAB_OF[f.type], panelOpen: true });
     if (f.type === 'LISTING') useListingsUi.getState().select(f.targetId);
     if (f.type === 'HOUSING') useDetailSel.getState().setHousing(f.targetId);

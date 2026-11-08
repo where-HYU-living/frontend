@@ -155,7 +155,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   // 사자상은 역사관 정면 계단 앞에서 광장(서쪽)을 바라봄
   // (lion.js 의 조각 모델은 머리가 진행 방향에서 90° 돌아가 있어, 서쪽을 보게 하려면 남쪽 벡터를 넘김)
   if (!lite) {
-    const lion = await makeLion(lm.lion.p, heightAt, [0.08, 1]);
+    const lion = await makeLion(lm.lion.p, heightAt, [-1, 0.08]); // 서쪽(첫 화면 카메라·광장) 쪽을 바라보게
     mergeStatic(lion, mergeGeometries);
     scene.add(lion);
     { const hp = makeHeroProps(world, heightAt, lm.lion.p); console.log('props merge', mergeStatic(hp, mergeGeometries)); scene.add(hp); }

@@ -144,7 +144,7 @@ test('말풍선 하트는 찜을 누르는 즉시 바뀐다', async () => {
   await waitFor(() => expect(last()).toContain('<svg'));
 });
 
-test('찜 목록: 종류별 개수 필터, 카드에서 바로 취소, 누르면 3D 로 가고 그 탭의 상세가 열린다', async () => {
+test('찜 목록: 종류별 개수 필터, 카드에서 바로 취소, 누르면 그 탭의 상세만 열린다(3D 이동은 상세 버튼으로)', async () => {
   favs = [fav('LISTING', 7, { grade: 'HIGH' }), fav('HOUSING', 2), fav('DORM', 1, { convertedRent: 300000 }), fav('HOUSING', 3)];
   renderWithClient(<FavoritesPanel />);
   const filter = within(await screen.findByRole('group', { name: '종류별로 보기' })); // 카드 이름도 종류로 시작하므로 필터 묶음 안에서만 찾는다
@@ -159,7 +159,7 @@ test('찜 목록: 종류별 개수 필터, 카드에서 바로 취소, 누르면
 
   fireEvent.click(filter.getByRole('button', { name: /^전체/ }));
   fireEvent.click(screen.getByText('HOUSING3'));
-  expect(api.goToPlace).toHaveBeenCalled();
+  expect(api.goToPlace).not.toHaveBeenCalled();
   expect(useUi.getState().tab).toBe('housing');
   expect(useDetailSel.getState().housing).toBe(3);
 

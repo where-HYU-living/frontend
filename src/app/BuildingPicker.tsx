@@ -38,7 +38,8 @@ export function BuildingPicker({ selected, options, onChange }: { selected: numb
 
   return (
     <div className="ui-bld" ref={box}>
-      <div className="ui-bld-title">내 건물 <span className="ui-card-sub">학과를 고르면 자동으로 채워져요. 바꿀 수 있어요</span></div>
+      <div className="ui-bld-title">도보 시간을 잴 건물</div>
+      <p className="ui-bld-hint">학과를 고르면 과 사무실 건물이 채워져요. 수업을 주로 듣는 건물로 바꾸거나 더할 수 있어요. 별을 누르면 그 건물이 대표(도보 시간 기준)가 돼요.</p>
       {selected.length === 0
         ? <p className="ui-card-sub">아직 고른 건물이 없어요.</p>
         : (
@@ -54,7 +55,7 @@ export function BuildingPicker({ selected, options, onChange }: { selected: numb
             ))}
           </ul>
         )}
-      <div className="ui-dept-input">
+      <div className="ui-dept-input ui-bld-add">
         <Plus size={15} aria-hidden="true" />
         <input
           role="combobox" aria-expanded={open} aria-controls={listId} aria-autocomplete="list" aria-label="건물 추가"

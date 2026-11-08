@@ -28,8 +28,8 @@ import { MockBadge } from '../mock/MockBadge';
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 // 점검 스크립트용 (scripts/*-check.mjs): 화면 상태를 숫자로 읽고 바꾼다. 개발 서버에서만
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  void Promise.all([import('./features/listings'), import('./state/detail'), import('../api/client')]).then(([l, d, c]) => {
-    (window as unknown as Record<string, unknown>).__app = { useUi, useListingsUi: l.useListingsUi, useDetailSel: d.useDetailSel, queryClient, api: c.api };
+  void Promise.all([import('./features/listings'), import('./state/detail'), import('../api/client'), import('./state/session')]).then(([l, d, c, s]) => {
+    (window as unknown as Record<string, unknown>).__app = { useUi, useListingsUi: l.useListingsUi, useDetailSel: d.useDetailSel, useSession: s.useSession, queryClient, api: c.api };
   });
 }
 
