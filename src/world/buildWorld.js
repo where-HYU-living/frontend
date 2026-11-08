@@ -16,6 +16,8 @@ import { makeCrowdStudent, lookKey } from './crowdStudent.js';
 import { lightAt, starsAt } from './timeOfDay';
 import { makeExtras } from './worldExtras.js';
 import { pickLabels } from './labelCull';
+import { campusLabelSpots } from './campusLabels';
+import { visiblePlaces } from '../app/data/hiddenBuildings';
 
 // 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: R3F WorldCanvas).
 // 반환값의 frame(dt) 를 매 프레임 부르면 플레이어·태양·LOD·미니맵이 갱신된다.
@@ -248,6 +250,17 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     obj.position.set(l.p[0], top, l.p[1]);
     scene.add(obj);
     labels.push(obj);
+  }
+  // 캠퍼스 건물 이름표 (랜드마크와 같은 모양 "이름 / 번호"). 수가 많아 랜드마크보다 가까이서만, 겹치면 가장 먼저 숨긴다
+  const bLabels = [];
+  const BLABEL_NEAR = 60;
+  for (const s of lite ? [] : campusLabelSpots(visiblePlaces, world.buildings)) {
+    const inf = bInfo.get(s.bid);
+    const obj = makeLabel(s.name, s.sub);
+    // 입구가 있으면 문 위 4.5m (간판처럼, 문 앞에 서도 보이게). 없으면 지붕 위
+    obj.position.set(s.x, s.door ? heightAt(s.x, s.z) + 4.5 : inf ? inf.top + 3 : heightAt(s.x, s.z) + 12, s.z);
+    scene.add(obj);
+    bLabels.push(obj);
   }
 
   // 말풍선 (React 가 setMarkers 로 그룹별 목록을 넘김: 매물/기숙사/단지 …). 클릭하면 onClick, 멀면 숨김
@@ -585,6 +598,7 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
       objs.push(o); cands.push({ d, near, sx, sy, w: o.userData.w || 90, h: o.userData.h || 28, prio });
     };
     for (const l of labels) add(l, LABEL_NEAR, 1);
+    for (const l of bLabels) add(l, BLABEL_NEAR, -1); // 건물 이름표: 말풍선(0)·랜드마크(1)보다 뒤
     for (const [g, list] of markerGroups) for (const o of list) add(o, MARKER_NEAR, GROUP_PRIO[g] ?? 0);
     const show = pickLabels(cands, { w: W, h: H });
     for (let i = 0; i < objs.length; i++) if (objs[i].visible !== show[i]) objs[i].visible = show[i];
