@@ -1,10 +1,10 @@
-import { Bell, Phone } from 'lucide-react';
+import { Bell, ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 import { BackButton } from './icons';
 import { InfoChip, SectionTitle, UnitCard } from './venue';
 import { useState } from 'react';
 import { ApiError } from '../api/client';
 import { manwon } from '../lib/money';
-import { dday, EVENT_LABEL, groupEventsByMonth, STATUS_LABEL, useAnnouncements, useHousingDetail, useHousingList, useSubscribe } from './features/catalog';
+import { addMonths, dday, EVENT_LABEL, groupEventsByMonth, initialMonth, monthCells, STATUS_LABEL, useAnnouncements, useHousingDetail, useHousingList, useSubscribe, ymdOf } from './features/catalog';
 import { useGoTo } from './DormPanel';
 import { useDetailSel } from './state/detail';
 import { useUi } from './state/ui';
@@ -12,7 +12,7 @@ import { useSession } from './state/session';
 import { HeartButton } from './HeartButton';
 import { NeighborhoodButton } from './NeighborhoodButton';
 import { WalkLink } from './route/RouteHud';
-import type { Housing } from '../api/types';
+import type { EventType, Housing } from '../api/types';
 import { useMyHome } from './features/more';
 import { convertedRentWon } from './forms/calc';
 import './dossier/dossier.css';
@@ -61,30 +61,72 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   );
 }
 
+/** 일정 종류별 점 색: 접수(파랑)·마감(빨강)·발표(초록)·그 밖(회색) */
+const EVENT_TONE: Record<EventType, 'apply' | 'due' | 'result' | 'etc'> = {
+  NOTICE: 'etc', APPLY_START: 'apply', APPLY_END: 'due', DOCS_DUE: 'due', RESULT: 'result', CONTRACT: 'etc', MOVE_IN: 'etc',
+};
+const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
+
 function Calendar({ names }: { names: Map<number, string> }) {
   const q = useAnnouncements();
+  const [month, setMonth] = useState<string | null>(null);
+  const [day, setDay] = useState<string | null>(null);
   if (q.isLoading) return <p className="empty">불러오는 중…</p>;
   if (q.isError || !q.data) return <p className="empty">공고 일정을 불러오지 못했어요.</p>;
   const groups = groupEventsByMonth(q.data, (id) => names.get(id) ?? '');
   if (groups.size === 0) return <p className="empty">등록된 공고가 없어요.</p>;
+  const ym = month ?? initialMonth([...groups.keys()]);
+  const evs = groups.get(ym) ?? [];
+  const byDay = new Map<string, typeof evs>();
+  for (const e of evs) byDay.set(e.date, [...(byDay.get(e.date) ?? []), e]);
+  const today = ymdOf(new Date());
+  const shown = day ? byDay.get(day) ?? [] : evs;
+  const move = (n: number) => { setMonth(addMonths(ym, n)); setDay(null); };
+  const [y, m] = ym.split('-');
   return (
-    <div>
-      {[...groups].map(([month, evs]) => (
-        <section key={month}>
-          <h4>{month.replace('-', '년 ')}월</h4>
-          <ol className="ui-timeline">
-            {evs.map((e, i) => {
-              const dd = dday(e.date);
-              return (
-                <li key={i} className={`ui-tl-item${dd.startsWith('D+') ? ' is-past' : ''}$`}>
-                  <span className="ui-tl-main"><span className="ui-tl-date">{e.date.slice(5)}</span><span>{e.housingName} {EVENT_LABEL[e.type]} <span className="ui-card-sub">{STATUS_LABEL[e.status]}</span></span></span>
-                  <strong className="ui-dday">{dd}</strong>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      ))}
+    <div className="ui-cal">
+      <div className="ui-cal-head">
+        <button type="button" className="ui-cal-nav" aria-label="이전 달" onClick={() => move(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
+        <strong>{y}년 {Number(m)}월</strong>
+        <button type="button" className="ui-cal-nav" aria-label="다음 달" onClick={() => move(1)}><ChevronRight size={18} aria-hidden="true" /></button>
+      </div>
+      <div className="ui-cal-grid" role="grid">
+        {WEEK.map((w, i) => <span key={w} className={`ui-cal-wd${i === 0 ? ' is-sun' : i === 6 ? ' is-sat' : ''}`}>{w}</span>)}
+        {monthCells(ym).map((d, i) => {
+          if (!d) return <span key={i} className="ui-cal-cell is-blank" />;
+          const list = byDay.get(d) ?? [];
+          const cls = ['ui-cal-cell', d === today && 'is-today', d < today && 'is-past', d === day && 'is-sel', list.length > 0 && 'has-ev', i % 7 === 0 && 'is-sun', i % 7 === 6 && 'is-sat'].filter(Boolean).join(' ');
+          return (
+            <button key={d} type="button" className={cls} disabled={!list.length} aria-pressed={d === day}
+              aria-label={`${Number(d.slice(8))}일${list.length ? ` 일정 ${list.length}개` : ''}`} onClick={() => setDay(d === day ? null : d)}>
+              <span className="ui-cal-num">{Number(d.slice(8))}</span>
+              {list.length > 0 && (
+                <span className="ui-cal-dots">
+                  {list.slice(0, 3).map((e, k) => <i key={k} className={`ui-cal-dot is-${EVENT_TONE[e.type]}`} />)}
+                  {list.length > 3 && <small>+{list.length - 3}</small>}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <ul className="ui-cal-legend" aria-hidden="true">
+        <li><i className="ui-cal-dot is-apply" />접수</li><li><i className="ui-cal-dot is-due" />마감</li><li><i className="ui-cal-dot is-result" />발표</li><li><i className="ui-cal-dot is-etc" />공고·계약·입주</li>
+      </ul>
+      <h4 className="ui-cal-sub">{day ? `${Number(day.slice(5, 7))}월 ${Number(day.slice(8))}일 일정` : '이달 일정'}{day && <button type="button" className="ui-cal-all" onClick={() => setDay(null)}>이달 전체 보기</button>}</h4>
+      {shown.length === 0 ? <p className="empty">이 달에는 일정이 없어요.</p> : (
+        <ol className="ui-timeline">
+          {shown.map((e, i) => {
+            const dd = dday(e.date);
+            return (
+              <li key={i} className={`ui-tl-item${dd.startsWith('D+') ? ' is-past' : ''}`}>
+                <span className="ui-tl-main"><span className="ui-tl-date">{e.date.slice(5)}</span><span>{e.housingName} {EVENT_LABEL[e.type]} <span className="ui-card-sub">{STATUS_LABEL[e.status]}</span></span></span>
+                <strong className="ui-dday">{dd}</strong>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }

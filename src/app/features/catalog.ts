@@ -70,6 +70,34 @@ export function groupEventsByMonth(anns: Announcement[], housingName: (id: numbe
   return m;
 }
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+export const ymOf = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+export const ymdOf = (d: Date) => `${ymOf(d)}-${pad2(d.getDate())}`;
+
+/** YYYY-MM 에 n달 더하기 */
+export function addMonths(ym: string, n: number): string {
+  const [y, m] = ym.split('-').map(Number);
+  return ymOf(new Date(y, m - 1 + n, 1));
+}
+
+/** 달력 칸: 일요일 시작, 앞뒤 빈칸은 null, 7의 배수 길이 */
+export function monthCells(ym: string): (string | null)[] {
+  const [y, m] = ym.split('-').map(Number);
+  const first = new Date(y, m - 1, 1).getDay();
+  const days = new Date(y, m, 0).getDate();
+  const cells: (string | null)[] = Array(first).fill(null);
+  for (let d = 1; d <= days; d++) cells.push(`${ym}-${pad2(d)}`);
+  while (cells.length % 7) cells.push(null);
+  return cells;
+}
+
+/** 처음 보여줄 달: 이번 달에 일정이 있으면 이번 달, 없으면 다가오는 첫 달, 그것도 없으면 가장 최근 달 */
+export function initialMonth(months: string[], today: Date = new Date()): string {
+  const now = ymOf(today);
+  const sorted = [...months].sort();
+  return sorted.includes(now) ? now : sorted.find((m) => m > now) ?? sorted[sorted.length - 1] ?? now;
+}
+
 /** 오늘 기준 D-day 문구 */
 export function dday(date: string, today: Date = new Date()): string {
   const a = new Date(`${date}T00:00:00`), b = new Date(today.getFullYear(), today.getMonth(), today.getDate());

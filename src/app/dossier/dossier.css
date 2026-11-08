@@ -82,6 +82,33 @@
 .ui-tl-main { display: flex; flex-direction: column; }
 .ui-tl-date { font-size: 11px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
 
+/* 공고 캘린더 (월 달력) */
+.ui-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ui-cal-head strong { font-size: 15px; }
+.ui-cal-nav { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ui-ink); cursor: pointer; }
+.ui-cal-nav:hover { background: var(--ui-glass-strong); }
+.ui-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.ui-cal-wd { text-align: center; font-size: 11px; font-weight: 600; color: var(--ui-ink-2); padding: 2px 0 4px; }
+.ui-cal-wd.is-sun, .ui-cal-cell.is-sun .ui-cal-num { color: #c23b3b; }
+.ui-cal-wd.is-sat, .ui-cal-cell.is-sat .ui-cal-num { color: #2a62b8; }
+.ui-cal-cell { min-height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px; padding: 5px 0 4px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-ink); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ui-cal-cell:disabled { cursor: default; }
+.ui-cal-cell.has-ev { background: var(--ui-glass-strong); cursor: pointer; }
+.ui-cal-cell.has-ev:hover { box-shadow: inset 0 0 0 1px #0e4a84; }
+.ui-cal-cell.is-past { opacity: .45; }
+.ui-cal-cell.is-today .ui-cal-num { min-width: 20px; line-height: 20px; border-radius: 10px; background: var(--ui-ink); color: #fff; }
+.ui-cal-cell.is-sel { box-shadow: inset 0 0 0 2px #0e4a84; opacity: 1; }
+.ui-cal-dots { display: flex; align-items: center; gap: 2px; }
+.ui-cal-dots small { font-size: 9px; color: var(--ui-ink-2); }
+.ui-cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ui-ink-3); }
+.ui-cal-dot.is-apply { background: #2a62b8; }
+.ui-cal-dot.is-due { background: #c23b3b; }
+.ui-cal-dot.is-result { background: #2e8b57; }
+.ui-cal-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 8px 0 0; padding: 0; font-size: 11px; color: var(--ui-ink-2); }
+.ui-cal-legend li { display: flex; align-items: center; gap: 4px; }
+.ui-cal-sub { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 8px; }
+.ui-cal-all { border: 0; background: none; padding: 0; color: #0e4a84; font: inherit; font-size: 12px; cursor: pointer; }
+
 /* 기숙사·알림 */
 .ui-dorm-cost { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .ui-notice-kind { font-size: 11px; font-weight: 700; color: #0e4a84; }
