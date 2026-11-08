@@ -50,15 +50,14 @@ export function AvatarPicker({ look, onChange, deptName }: { look: Appearance; o
         {mineId != null && <button type="button" onClick={() => pickJacket(mineId)}>내 학과 잠바 입기</button>}
         <button type="button" onClick={() => onChange({ ...DEFAULT_APPEARANCE })}>기본으로</button>
       </div>
-      <p className="ui-avatar-note">내 화면의 내 캐릭터에만 보여요. 다른 접속자에게는 아직 보이지 않아요.</p>
+      <p className="ui-avatar-note">같은 월드에 있는 다른 접속자에게도 바로 보여요.</p>
     </div>
   );
 }
 
-/** 상단바 버튼 + 팝오버. 저장된 외형은 월드가 준비되면 자동으로 적용 */
-export function AvatarButton() {
+/** 저장된 외형을 월드가 준비되면 적용하고, 바꾸면 저장·공유한다 (상단바 '⋯' 메뉴가 쓴다) */
+export function useAvatarState() {
   const api = useWorld((s) => s.api);
-  const [open, setOpen] = useState(false);
   const [look, setLook] = useState<Appearance>(() => loadAppearance());
   const profile = useProfile().data;
   const deps = useDepartments().data;
@@ -66,7 +65,13 @@ export function AvatarButton() {
 
   useEffect(() => { api?.setAppearance?.(look); }, [api, look]);
   const change = (a: Appearance) => { setLook(a); saveAppearance(a); useAvatarLook.setState({ look: a }); };
+  return { look, change, deptName };
+}
 
+/** 단독 버튼 + 팝오버 (예전 상단바 방식, 다른 화면에서 재사용) */
+export function AvatarButton() {
+  const [open, setOpen] = useState(false);
+  const { look, change, deptName } = useAvatarState();
   return (
     <div className="ui-avatar-wrap">
       <button className="iconbtn glass" type="button" aria-label="캐릭터 꾸미기" aria-expanded={open} onClick={() => setOpen((v) => !v)}>

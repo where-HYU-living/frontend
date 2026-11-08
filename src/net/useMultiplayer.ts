@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { EMOTE_SVG } from '../app/icons';
+import { useArea } from '../app/state/area';
+import { serviceTargetFor } from '../world/serviceArea';
+import { toLatLng } from '../app/map/geo';
 import { useWorld } from '../app/state/world';
 import { useSession } from '../app/state/session';
 import { useUi } from '../app/state/ui';
@@ -16,35 +19,61 @@ export const useNet = create<NetUi>(() => ({ status: 'closed', selfId: null, cou
 const wsBase = () => ((import.meta.env.VITE_API_BASE as string | undefined) ?? 'http://localhost:8080').replace(/^http/, 'ws').replace(/\/$/, '');
 const guestName = () => { try { const k = 'chatatda.nick'; let n = sessionStorage.getItem(k); if (!n) { n = `손님${Math.floor(1000 + Math.random() * 9000)}`; sessionStorage.setItem(k, n); } return n; } catch { return '손님'; } };
 
-/** 월드가 준비되면 공유 월드에 접속해 다른 사람을 3D 에 그린다. ?invite= 는 접속 뒤 주소에서 지운다 */
+/**
+ * 월드가 처음 준비되면 공유 월드에 접속해 다른 사람을 3D 에 그린다. ?invite= 는 접속 뒤 주소에서 지운다.
+ * 캠퍼스 ↔ 동네 월드를 바꿔도 연결은 그대로 유지한다(좌표계가 같다 — 사자상 원점). 바꾸는 동안(api 없음)은 위치를 보내지 않는다.
+ * (예전엔 api 가 바뀔 때마다 끊고 다시 붙어서 상대에게 퇴장·입장으로 보였고, 동네에서는 아예 끊겼다)
+ */
 export function useMultiplayer() {
   const api = useWorld((s) => s.api);
+  const apiRef = useRef(api);
+  apiRef.current = api;
+  const [ready, setReady] = useState(false);
+  useEffect(() => { if (api) setReady(true); }, [api]);
   const nickname = useSession((s) => s.nickname);
   const model = useRef<WorldModel>(emptyWorld());
-  const [enabled] = useState(() => !/[?&]solo\b/.test(location.search)); // ?solo 로 혼자 보기
+  const [soloFlag] = useState(() => /[?&]solo\b/.test(location.search)); // ?solo 로 혼자 보기
+  const enabled = !soloFlag;
+
+  // 월드가 바뀌면 새 장면에 다른 사람을 다시 그린다 (아래 loop 가 매 프레임 넘기므로 따로 할 일 없음). 옛 장면 것은 장면과 함께 정리됨
 
   useEffect(() => {
-    if (!api || !enabled) return;
+    if (!ready || !enabled) return;
     const q = new URLSearchParams(location.search);
     const invite = q.get('invite');
-    let prev = api.getPose().p, a: 'idle' | 'walk' = 'idle';
+    let prev: number[] | null = null, a: 'idle' | 'walk' = 'idle', lastPose = { p: [0, 0, 0] as [number, number, number], r: 0, a: 'idle' as 'idle' | 'walk' };
     const getPose = () => {
-      const { p, heading } = api.getPose();
-      a = Math.hypot(p[0] - prev[0], p[2] - prev[2]) > 0.02 ? 'walk' : 'idle';
+      const w = apiRef.current;
+      if (!w) return lastPose; // 월드를 바꾸는 중: 같은 값을 돌려 move 를 보내지 않는다
+      const { p, heading } = w.getPose();
+      a = prev && Math.hypot(p[0] - prev[0], p[2] - prev[2]) > 0.02 && Math.hypot(p[0] - prev[0], p[2] - prev[2]) < 30 ? 'walk' : 'idle';
       prev = p;
-      return { p, r: heading, a };
+      lastPose = { p, r: heading, a };
+      return lastPose;
     };
+    let welcomed = false;
     model.current = emptyWorld();
     const handle = (m: ServerMsg) => {
       const before = Object.keys(model.current.players).length;
       model.current = worldReducer(model.current, m, performance.now());
+      if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__mpModel = model.current;
       if (m.t === 'welcome') {
         useNet.setState({ selfId: m.selfId });
-        if (m.spawn && (m.spawn.p[0] !== 0 || m.spawn.p[2] !== 0)) api.teleport(m.spawn.p[0], m.spawn.p[2]);
-        if (m.invited) { useNet.setState({ invited: true }); setTimeout(() => useNet.setState({ invited: false }), 5000); }
+        // 초대 스폰은 처음 접속 때만 (재접속 때 다시 초대한 사람 옆으로 끌려가지 않게)
+        if (!welcomed && m.invited && m.spawn && (m.spawn.p[0] !== 0 || m.spawn.p[2] !== 0)) placeAt(m.spawn.p[0], m.spawn.p[2]);
+        if (!welcomed && m.invited) { useNet.setState({ invited: true }); setTimeout(() => useNet.setState({ invited: false }), 5000); }
+        welcomed = true;
       }
       const count = Object.keys(model.current.players).length;
       if (count !== before || m.t === 'welcome') useNet.setState({ count }); // 10Hz state 마다 스토어를 건드리지 않는다
+    };
+    // 초대한 사람이 동네 월드에 있으면 그 동네로 월드를 바꿔서 옆에 선다 (캠퍼스 월드에서 그 좌표로 가면 월드 밖 들판)
+    const placeAt = (x: number, z: number) => {
+      const cur = useWorld.getState().areaId ?? 'campus';
+      const [lat, lng] = toLatLng(x, z);
+      const t = serviceTargetFor(lat, lng, cur as 'campus');
+      if (t && t.area !== cur) useArea.getState().goTo(t.area, x, z, null, true);
+      else apiRef.current?.teleport(x, z);
     };
     // ?peers=N : 소켓 없이 가짜 접속자 N명 (부하 측정용)
     const peers = peersFromSearch(location.search);
@@ -70,8 +99,9 @@ export function useMultiplayer() {
     let raf = 0;
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      // 실내(동네 장면이 멈춤)나 숨은 탭에서는 보간·갱신을 하지 않는다. 샘플은 계속 쌓이니 돌아오면 바로 따라잡는다
-      if (useUi.getState().indoor || document.hidden) return;
+      // 실내(동네 장면이 멈춤)나 숨은 탭, 월드를 바꾸는 중에는 보간·갱신을 하지 않는다. 샘플은 계속 쌓이니 돌아오면 바로 따라잡는다
+      const api = apiRef.current;
+      if (!api || useUi.getState().indoor || document.hidden) return;
       const now = performance.now();
       const me = model.current.self;
       api.setSelfBubble?.({ chat: me?.chat && me.chat.until > now ? me.chat.m : undefined, emote: me?.emote && me.emote.until > now ? EMOTE_SVG[me.emote.e] : undefined });
@@ -81,8 +111,11 @@ export function useMultiplayer() {
       }));
     };
     raf = requestAnimationFrame(loop);
-    return () => { unsubLook(); cancelAnimationFrame(raf); clearInterval(simTimer); conn?.close(); api.setRemotePlayers([]); useNet.setState({ conn: null, status: 'closed', count: 0, selfId: null }); };
-  }, [api, enabled, nickname]);
+    return () => { unsubLook(); cancelAnimationFrame(raf); clearInterval(simTimer); conn?.close(); apiRef.current?.setRemotePlayers([]); useNet.setState({ conn: null, status: 'closed', count: 0, selfId: null }); };
+  }, [ready, enabled, nickname]);
 }
 
 export { CHAT_MS, EMOTE_MS };
+
+// 점검 스크립트용 (scripts/mp-check.mjs): 접속 상태·받은 상대 위치를 숫자로 읽는다
+if (import.meta.env.DEV && typeof window !== 'undefined') (window as unknown as Record<string, unknown>).__net = useNet;

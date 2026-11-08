@@ -13,7 +13,7 @@ export function loadKakao(key: string | undefined, timeoutMs = 10000): Promise<K
     if (w.kakao?.maps?.Map) return resolve(w.kakao);
     const timer = setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs);
     const s = document.createElement('script');
-    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`;
+    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false&libraries=services`;
     s.async = true;
     s.onload = () => w.kakao.maps.load(() => { clearTimeout(timer); resolve(w.kakao); });
     s.onerror = () => { clearTimeout(timer); reject(new Error('SCRIPT')); };

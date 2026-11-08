@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Bus, GraduationCap, Hand, Heart, PartyPopper, Store, TrainFront, WashingMachine, ChevronLeft } from 'lucide-react';
+import { Bus, GraduationCap, House, Hand, Heart, PartyPopper, Store, TrainFront, WashingMachine, ChevronLeft } from 'lucide-react';
 import type { Nearby } from '../api/types';
 
 /** 3D 말풍선은 React 밖(DOM)이라 아이콘을 SVG 문자열로 만들어 넘긴다 */
@@ -23,6 +23,7 @@ export const EMOTE_SVG: Record<string, string> = Object.fromEntries(Object.entri
 
 export const HEART_SVG = svgOf(<Heart size={12} fill="currentColor" />);
 export const CAMPUS_SVG = svgOf(<GraduationCap size={14} />);
+export const HOUSE_SVG = svgOf(<House size={14} />);
 
 export function BackButton({ onClick, children = '목록' }: { onClick: () => void; children?: string }) {
   return <button type="button" className="ui-back" onClick={onClick}><ChevronLeft size={14} aria-hidden="true" />{children}</button>;

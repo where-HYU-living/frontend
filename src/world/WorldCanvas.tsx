@@ -10,6 +10,9 @@ import { detectQuality, type Quality } from '../quality';
 import { useWorld } from '../app/state/world';
 import { useUi } from '../app/state/ui';
 import { buildWorld, type BuiltWorld } from './buildWorld.js';
+import { useArea, siteOf } from '../app/state/area';
+import { neighborhoodUrl } from './neighborhood';
+import { disposeScene } from './disposeScene';
 import { handleContextLost } from './contextLoss';
 import './world3d.css';
 
@@ -18,6 +21,7 @@ type Built = BuiltWorld;
 /** 장면 내용(건물·나무·플레이어)은 buildWorld 가 R3F 의 scene 안에 만든다. 매 프레임 갱신은 frame(dt). */
 function World({ Q }: { Q: Quality }) {
   const { gl, scene, camera } = useThree();
+  const site = useArea((s) => siteOf(s.area));
   const built = useRef<Built | null>(null);
 
   useEffect(() => {
@@ -27,21 +31,28 @@ function World({ Q }: { Q: Quality }) {
       useWorld.setState({ progress: p });
       if (tag) marks.push([tag, Math.round(performance.now() - T0)]);
     };
-    buildWorld({ Q, renderer: gl, domElement: gl.domElement, scene, camera, marks, progress })
+    useWorld.setState({ status: 'loading', progress: 0, api: null, areaId: null });
+    buildWorld({ Q, renderer: gl, domElement: gl.domElement, scene, camera, marks, progress, worldUrl: site ? neighborhoodUrl(site) : '/world.json' })
       .then((W: Built) => {
         if (dead) { W.player.dispose(); return; }
         built.current = W;
         const w = window as unknown as Record<string, unknown>;
         w.__proto = { Q, marks, zones: W.zones, world: W.world, player: W.player, trees: W.trees, renderer: gl, scene, camera, heroShot: W.heroShot };
-        w.__ready = true;
-        useWorld.setState({ status: 'ready', progress: 1, api: { ...W.api, dispose: () => W.player.dispose() } });
+        w.__ready = true; w.__area = site || 'campus';
+        useWorld.setState({ status: 'ready', progress: 1, areaId: site || 'campus', api: { ...W.api, dispose: () => W.player.dispose() } });
       })
       .catch((e: unknown) => {
         console.error(e);
         useWorld.setState({ status: 'error', error: e instanceof Error ? e.message : String(e) });
       });
-    return () => { dead = true; built.current?.player.dispose(); built.current = null; };
-  }, [Q, gl, scene, camera]);
+    return () => {
+      dead = true;
+      (window as unknown as Record<string, unknown>).__ready = false;
+      // 플레이어가 자기 메쉬를 장면에서 빼 버리기 전에 먼저 훑어서 해제한다 (월드 교체·언마운트 공통)
+      disposeScene(scene);
+      built.current?.player.dispose(); built.current = null;
+    };
+  }, [Q, gl, scene, camera, site]);
 
   useFrame((_, dt) => built.current?.frame(Math.min(0.05, dt)), 0);
   return null;

@@ -5,7 +5,7 @@ import type {
   Payment, Profile, Report, Review, ReviewScores, SearchResult, TransferBody, TransferDetail, TransferSummary, Utility,
 } from '../api/types';
 import { buildPriceCheck, convertedRent, gradeOf } from './pricing';
-import { distanceM, monthOffset, monthsBetween, nowIso, placeholderImage, walkMinutesFor, ym, dayOffset } from './util';
+import { distanceM, monthOffset, monthsBetween, nowIso, placeholderImage, walkRoute, ym, dayOffset } from './util';
 import { DEPARTMENTS, makeBuildings } from './fixtures/buildings';
 import { ADDRESSES, TRANSFERS, makeAlerts, makeHome, makeNotifications, makePayments, makeReviews, makeUtilities, type StoredReview, type StoredTransfer } from './fixtures/community';
 import { DORMS } from './fixtures/dorms';
@@ -57,7 +57,7 @@ type Result = { status?: number; body?: unknown };
 const num = (v: string | null): number | undefined => (v == null || v === '' || Number.isNaN(Number(v)) ? undefined : Number(v));
 const buildingOf = (id: number | undefined) => (id == null ? undefined : db.buildings.find((b) => b.id === id));
 const walkBuilding = (q: URLSearchParams, authed: boolean) => buildingOf(num(q.get('buildingId'))) ?? (authed ? buildingOf(db.profile.buildingIds[0]) : undefined);
-const walkTo = (b: CampusBuilding | undefined, lat: number, lng: number): number | null => (b ? walkMinutesFor(distanceM(lat, lng, b.lat, b.lng)) : null);
+const walkTo = (b: CampusBuilding | undefined, lat: number, lng: number): number | null => (b ? walkRoute(lat, lng, b.lat, b.lng).minutes : null);
 const requireAuth = (c: Ctx) => { if (!c.authed) throw new HttpError(401, 'UNAUTHORIZED', '로그인이 필요해요.'); };
 const pageOf = <T,>(items: T[], q: URLSearchParams) => {
   const page = Math.max(0, num(q.get('page')) ?? 0);
@@ -261,8 +261,7 @@ route('GET', '/listings/:id/nearby', (c) => ok(nearbyFor(listing(idParam(c)), Ma
 route('GET', '/walk', (c) => {
   const lat = num(c.q.get('fromLat')), lng = num(c.q.get('fromLng')), b = buildingOf(num(c.q.get('buildingId')));
   if (lat == null || lng == null || !b) throw bad({ buildingId: '출발 좌표와 건물이 필요해요.' });
-  const d = distanceM(lat, lng, b.lat, b.lng);
-  return ok({ minutes: walkMinutesFor(d), distanceM: Math.round(d * 1.25), path: [[lat, lng], [(lat + b.lat) / 2, (lng + b.lng) / 2 + 0.0002], [b.lat, b.lng]], gateId: null });
+  return ok({ ...walkRoute(lat, lng, b.lat, b.lng), gateId: null });
 });
 
 // 검색·주소

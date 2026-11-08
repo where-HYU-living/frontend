@@ -31,5 +31,9 @@ export type WorldApi = {
   /** B5: 정문·후문 아치 (전체 교체). 길 방향에 맞춰 세운다 */
   setGates?(items: { id: string; name: string; x: number; z: number }[]): void;
   getPose(): { p: [number, number, number]; heading: number };
+  /** 4단계 F6: 도보 경로를 바닥에 그린다(파란 띠+화살표). 구간마다 3D 좌표 목록. null·빈 배열이면 지운다 */
+  setRoute?(segments: { x: number; z: number }[][] | null): { points: number; arrows: number };
+  /** 이 월드의 범위 (m) — 경로를 월드 안 구간만 그리려고 */
+  bounds?: { minX: number; maxX: number; minZ: number; maxZ: number };
   dispose(): void;
 };

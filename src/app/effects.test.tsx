@@ -101,9 +101,10 @@ test('favorited listings get a heart on the 3D marker', async () => {
   expect(items.map((m) => !!m.icon)).toEqual([true, false]); // 찜한 것만 하트 아이콘
 });
 
-test('dragging the time slider moves the 3D lighting and shows the clock', async () => {
+test('dragging the time slider (⋯ menu) moves the 3D lighting and shows the clock', async () => {
   renderWithClient(<><TopBar /><WorldEffects /></>);
   await waitFor(() => expect(api.setTimeOfDay).toHaveBeenCalledWith(0));
+  fireEvent.click(screen.getByRole('button', { name: /더 보기/ })); // 시간대는 상단바 '⋯' 메뉴 안 (3-2)
   expect(screen.getByText('오후 12:00')).toBeTruthy();
   fireEvent.change(screen.getByLabelText(/시간대/), { target: { value: '1000' } });
   await waitFor(() => expect(api.setTimeOfDay).toHaveBeenLastCalledWith(1));

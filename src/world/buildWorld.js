@@ -15,6 +15,7 @@ import { Player } from '../player.js';
 import { makeCrowdStudent, lookKey } from './crowdStudent.js';
 import { lightAt, starsAt } from './timeOfDay';
 import { makeExtras } from './worldExtras.js';
+import { pickLabels } from './labelCull';
 
 // 장면 내용만 만든다 (렌더러 루프·후처리·리사이즈는 호출하는 쪽 몫: R3F WorldCanvas).
 // 반환값의 frame(dt) 를 매 프레임 부르면 플레이어·태양·LOD·미니맵이 갱신된다.
@@ -30,7 +31,7 @@ function flatten(t, [cx, cz], r, fall) {
   }
 }
 
-export async function buildWorld({ Q, renderer, domElement, scene, camera, marks = [], progress = () => {} }) {
+export async function buildWorld({ Q, renderer, domElement, scene, camera, marks = [], progress = () => {}, worldUrl = '/world.json' }) {
   // ---- 안개·빛 (봄 오후 — 해가 서남쪽: 사자상 정면을 비춤)
   scene.fog = new THREE.FogExp2(0xc9d7e4, 0.0026);
   const hemi = new THREE.HemisphereLight(0xdfeaff, 0x56613f, 0.6);
@@ -71,10 +72,12 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
-  const world = await (await fetch('/world.json')).json();
+  const world = await (await fetch(worldUrl)).json();
+  // 동네 모드(집 주변 조각): 캠퍼스 전용 조형(사자상·hero·구역·노천극장·출입구)은 만들지 않는다
+  const lite = !!world.site;
   progress(0.1, 'world');
   // 사자상 앞 잔디밭은 실제로 평평함 → 거친 지형 데이터를 그 주변만 평평하게
-  flatten(world.terrain, world.landmarks.find((l) => l.key === 'lion').p, 10, 14);
+  if (!lite) flatten(world.terrain, world.landmarks.find((l) => l.key === 'lion').p, 10, 14);
   const heightAt = makeHeightFn(world.terrain);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -82,7 +85,11 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     new HDRLoader().loadAsync('/env/sky_1k.hdr'),
     new THREE.TextureLoader().loadAsync('/env/sky_bg.jpg'),
   ]);
-  scene.environment = pmrem.fromEquirectangular(hdr).texture;
+  const envRT = pmrem.fromEquirectangular(hdr);
+  scene.environment = envRT.texture;
+  scene.userData.envRT = envRT; // 렌더 타깃 텍스처는 texture.dispose() 로는 GL 에서 안 지워진다 → disposeScene 이 envRT.dispose()
+  // 환경맵을 만든 뒤 PMREM 생성기(내부 평면 geometry·블러 재질·렌더 타깃)와 원본 HDR 은 더 쓰지 않는다 → 월드 전환마다 쌓이던 누수(3-4)
+  pmrem.dispose(); hdr.dispose();
   scene.environmentIntensity = 0.8;
   bg.mapping = THREE.EquirectangularReflectionMapping;
   bg.colorSpace = THREE.SRGBColorSpace;
@@ -90,23 +97,27 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   scene.backgroundBlurriness = 0.0;
   progress(0.25, 'sky');
 
-  const lm = Object.fromEntries(world.landmarks.map((l) => [l.key, l]));
-  const amphB = world.buildings.find((b) => b.id === lm.amph.bid);
-  const plaza = { p: lm.lion.p, r: 9, kind: 'grass' };
+  // 동네 모드에는 캠퍼스 랜드마크가 없다: 조각 밖 먼 곳에 더미를 두어 반경 판정이 모두 거짓이 되게 한다
+  const FAR = lite ? [world.site.point[0] + 9000, world.site.point[1] + 9000] : null;
+  const lm = lite
+    ? Object.fromEntries(['lion', 'main', 'history', 'aeji', 'amph', 'station'].map((k) => [k, { key: k, name: '', p: FAR, bid: -1 }]))
+    : Object.fromEntries(world.landmarks.map((l) => [l.key, l]));
+  const amphB = lite ? { pts: [] } : world.buildings.find((b) => b.id === lm.amph.bid);
+  const plaza = { p: lm.lion.p, r: lite ? 0 : 9, kind: 'grass' };
 
   // 바닥
   // 사자상 광장 (회색 화강석 블록) — 2026-07 로드뷰 기준: 105 학생복지관 · 104 애지문 · 사자상 화단 · 102 본관 계단 사이
   const plazaPoly = [[-49, -12], [-15, -16], [-14, -30], [-8, -44], [12, -37], [14, -26], [6, -12], [-1, 5], [-9, 16], [-20, 42], [-49, 42]];
-  const splat = makeSplat(world, [plaza], [plazaPoly]);
+  const splat = makeSplat(world, lite ? [] : [plaza], lite ? [] : [plazaPoly]);
   const { mesh: terrain, outer } = await makeTerrain(world, splat.canvas, splat.plaza);
   scene.add(terrain, outer);
   progress(0.45, 'terrain');
 
   // 건물 (노천극장은 별도 조형으로 대체)
   // 주인공 건물(101·102·104·105)은 사진 보고 따로 만든 모델로
-  const hero = await makeHero(world, heightAt, lm.lion.p);
+  const hero = lite ? { ids: [], info: new Map(), group: new THREE.Group(), clear: [] } : await makeHero(world, heightAt, lm.lion.p);
   // ---- 구역 플러그인: src/zones/*.js (구역마다 파일 하나 — docs: src/zones/README.md)
-  const zones = await loadZones({ THREE, world, heightAt, lm, scene, renderer });
+  const zones = lite ? [] : await loadZones({ THREE, world, heightAt, lm, scene, renderer });
   const zoneSkip = zones.flatMap((z) => z.skipIds || []);
   const zoneReplace = new Set(zones.flatMap((z) => z.replace || []));
   const special = { skip: new Set([lm.amph.bid, ...hero.ids, ...zoneSkip]) };
@@ -143,33 +154,35 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   // 랜드마크
   // 사자상은 역사관 정면 계단 앞에서 광장(서쪽)을 바라봄
   // (lion.js 의 조각 모델은 머리가 진행 방향에서 90° 돌아가 있어, 서쪽을 보게 하려면 남쪽 벡터를 넘김)
-  const lion = await makeLion(lm.lion.p, heightAt, [0.08, 1]);
-  progress(0.62, 'lion');
-  const amph = zoneReplace.has('amph') ? { group: new THREE.Group() } : await makeAmphitheater(amphB.pts, heightAt);
-  progress(0.64, 'amph');
-  // 한양대역 2번 출구 = 애지문 (hero.js 에서 캐노피·계단으로 만듦) → 일반 출구 모형에서 뺌
-  const aejiC = lm.aeji.p;
-  const exits = makeStationExits(world.exits.filter((e) => !(e.ref === '2' && Math.hypot(e.p[0] - aejiC[0], e.p[1] - aejiC[1]) < 30)), heightAt, nearestRoadDir);
-  for (const o of [lion, amph.group, exits]) mergeStatic(o, mergeGeometries);
-  scene.add(lion, amph.group, exits);
-  const props = makeProps(world, heightAt, bIndex, plaza);
-  mergeStatic(props, mergeGeometries);
-  scene.add(props);
-  { const hp = makeHeroProps(world, heightAt, lm.lion.p); console.log('props merge', mergeStatic(hp, mergeGeometries)); scene.add(hp); }
-  // 소나무 (사자상 화단·역사관 앞·애지문 옆)
-  { const pn = makePines([[9, 9, 1.15], [13, -9, 1.0], [18, 16, 0.9], [-6, -10, 0.85], [-50, 15, 1.0], [-31, 38, 1.05], [-52, 30, 0.9]], heightAt); mergeStatic(pn, mergeGeometries); scene.add(pn); }
-  // 광장 바닥 글씨 HANYANG UNIVERSITY (화강석 상감)
-  {
-    const c = document.createElement('canvas'); c.width = 2048; c.height = 160;
-    const g = c.getContext('2d'); g.fillStyle = 'rgba(70,72,74,.88)'; g.font = 'bold 140px "Times New Roman", serif'; g.textAlign = 'center';
-    g.fillText('HANYANG UNIVERSITY', 1024, 132);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
-    const geo = new THREE.PlaneGeometry(16, 1.25, 16, 1); geo.rotateX(-Math.PI / 2); geo.rotateY(-Math.PI / 2);
-    const cx = lm.lion.p[0] - 12.5, cz = lm.lion.p[1] - 1;
-    const pa = geo.attributes.position;
-    for (let k = 0; k < pa.count; k++) pa.setY(k, heightAt(cx + pa.getX(k), cz + pa.getZ(k)) + 0.04);
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2 }));
-    m.position.set(cx, 0, cz); m.receiveShadow = true; scene.add(m);
+  if (!lite) {
+    const lion = await makeLion(lm.lion.p, heightAt, [0.08, 1]);
+    progress(0.62, 'lion');
+    const amph = zoneReplace.has('amph') ? { group: new THREE.Group() } : await makeAmphitheater(amphB.pts, heightAt);
+    progress(0.64, 'amph');
+    // 한양대역 2번 출구 = 애지문 (hero.js 에서 캐노피·계단으로 만듦) → 일반 출구 모형에서 뺌
+    const aejiC = lm.aeji.p;
+    const exits = makeStationExits(world.exits.filter((e) => !(e.ref === '2' && Math.hypot(e.p[0] - aejiC[0], e.p[1] - aejiC[1]) < 30)), heightAt, nearestRoadDir);
+    for (const o of [lion, amph.group, exits]) mergeStatic(o, mergeGeometries);
+    scene.add(lion, amph.group, exits);
+    const props = makeProps(world, heightAt, bIndex, plaza);
+    mergeStatic(props, mergeGeometries);
+    scene.add(props);
+    { const hp = makeHeroProps(world, heightAt, lm.lion.p); console.log('props merge', mergeStatic(hp, mergeGeometries)); scene.add(hp); }
+    // 소나무 (사자상 화단·역사관 앞·애지문 옆)
+    { const pn = makePines([[9, 9, 1.15], [13, -9, 1.0], [18, 16, 0.9], [-6, -10, 0.85], [-50, 15, 1.0], [-31, 38, 1.05], [-52, 30, 0.9]], heightAt); mergeStatic(pn, mergeGeometries); scene.add(pn); }
+    // 광장 바닥 글씨 HANYANG UNIVERSITY (화강석 상감)
+    {
+      const c = document.createElement('canvas'); c.width = 2048; c.height = 160;
+      const g = c.getContext('2d'); g.fillStyle = 'rgba(70,72,74,.88)'; g.font = 'bold 140px "Times New Roman", serif'; g.textAlign = 'center';
+      g.fillText('HANYANG UNIVERSITY', 1024, 132);
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+      const geo = new THREE.PlaneGeometry(16, 1.25, 16, 1); geo.rotateX(-Math.PI / 2); geo.rotateY(-Math.PI / 2);
+      const cx = lm.lion.p[0] - 12.5, cz = lm.lion.p[1] - 1;
+      const pa = geo.attributes.position;
+      for (let k = 0; k < pa.count; k++) pa.setY(k, heightAt(cx + pa.getX(k), cz + pa.getZ(k)) + 0.04);
+      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2 }));
+      m.position.set(cx, 0, cz); m.receiveShadow = true; scene.add(m);
+    }
   }
   progress(0.7, 'lion+props');
 
@@ -189,7 +202,8 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     ['amph', '노천극장', '209', 6],
   ];
   const labels = [];
-  for (const [key, name, sub, hOff] of labelInfo) {
+  const LABEL_NEAR = 90; // 랜드마크 이름표는 건물이 커서 조금 더 멀리서도 보인다
+  for (const [key, name, sub, hOff] of lite ? [] : labelInfo) {
     const l = lm[key];
     const top = l.bid && bInfo.get(l.bid) ? bInfo.get(l.bid).top + 3 : heightAt(l.p[0], l.p[1]) + (hOff || 6);
     const obj = makeLabel(name, sub);
@@ -200,7 +214,8 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
 
   // 말풍선 (React 가 setMarkers 로 그룹별 목록을 넘김: 매물/기숙사/단지 …). 클릭하면 onClick, 멀면 숨김
   const markerGroups = new Map();
-  const MARKER_FAR = 380;
+  const MARKER_NEAR = 60; // 플레이어에서 수평 거리 (m). 이보다 멀면 말풍선을 숨긴다
+  const GROUP_PRIO = { home: 3, mybuilding: 3, route: 3, gate: 2 }; // 겹치면 먼저 자리를 차지하는 그룹 (랜드마크 이름표는 1, 나머지 0)
   const setMarkers = (items, group = 'listing') => {
     for (const o of markerGroups.get(group) || []) { scene.remove(o); o.element.remove(); }
     const objs = [];
@@ -286,6 +301,47 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     }
   };
 
+  // 도보 경로 (4단계 F6): 지형을 따라 바닥에 파란 띠 + 흰 화살표. React 가 월드 범위 안 구간만 잘라 넘긴다 (src/app/route)
+  let routeObj = null;
+  const setRoute = (segments) => {
+    if (routeObj) { scene.remove(routeObj); routeObj.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); routeObj = null; }
+    if (!segments || !segments.length) return { points: 0, arrows: 0 };
+    const g = new THREE.Group(); g.name = 'walk-route';
+    const W = 0.7, Y = 0.16; // 반폭(m), 지면 위 높이
+    const pos = [], idx = [], apos = [];
+    let pts = 0, arrows = 0;
+    for (const seg of segments) {
+      const base = pos.length / 3;
+      for (let i = 0; i < seg.length; i++) {
+        const a = seg[Math.max(0, i - 1)], b = seg[Math.min(seg.length - 1, i + 1)];
+        let dx = b.x - a.x, dz = b.z - a.z; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+        const nx = -dz * W, nz = dx * W, p = seg[i];
+        pos.push(p.x + nx, heightAt(p.x + nx, p.z + nz) + Y, p.z + nz, p.x - nx, heightAt(p.x - nx, p.z - nz) + Y, p.z - nz);
+        if (i > 0) { const k = base + (i - 1) * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+        pts++;
+      }
+      // 화살표: 10m 마다 진행 방향 쐐기
+      let acc = 0;
+      for (let i = 1; i < seg.length; i++) {
+        const a = seg[i - 1], b = seg[i], L = Math.hypot(b.x - a.x, b.z - a.z); acc += L;
+        if (acc < 10 || L < 0.01) continue; acc = 0;
+        const dx = (b.x - a.x) / L, dz = (b.z - a.z) / L, y = heightAt(b.x, b.z) + Y + 0.03, s = 0.55;
+        apos.push(b.x + dx * s, y, b.z + dz * s, b.x - dx * s * 0.6 - dz * s, y, b.z - dz * s * 0.6 + dx * s, b.x - dx * s * 0.6 + dz * s, y, b.z - dz * s * 0.6 - dx * s);
+        arrows++;
+      }
+    }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x1c7ed6, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4 });
+    const ribbon = new THREE.Mesh(geo, mat); ribbon.renderOrder = 2; g.add(ribbon);
+    if (apos.length) {
+      const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(apos, 3));
+      const am = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6 });
+      const arrowMesh = new THREE.Mesh(ag, am); arrowMesh.renderOrder = 3; g.add(arrowMesh);
+    }
+    scene.add(g); routeObj = g;
+    return { points: pts, arrows };
+  };
+
   // 플레이어
   const collide = (x, z) => bIndex.hit(x, z, 0.35) || lionHit(x, z);
   const lionHit = (x, z) => Math.hypot(x - lm.lion.p[0], z - lm.lion.p[1]) < 2.1;
@@ -308,11 +364,20 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   extras = makeExtras({ Q, scene, camera, world, heightAt, collide, player, bIndex, host: domElement.parentElement || document.body });
   extras.setNight(lastT);
   { const off = player.dispose.bind(player); player.dispose = () => { extras.dispose(); off(); }; }
-  const spawn = lm.station.p;
-  player.teleport(spawn[0] + 4, spawn[1] - 6, lm.lion.p[0], lm.lion.p[1]);
+  // 동네 모드: 집 앞 길 위에서 시작해 집을 바라봄
+  const homeSpot = () => {
+    const [hx, hz] = world.site.point;
+    for (let r = 7; r < 60; r += 3) for (let a = 0; a < 16; a++) {
+      const ang = Math.PI / 2 + (a / 16) * Math.PI * 2, x = hx + Math.cos(ang) * r, z = hz + Math.sin(ang) * r;
+      if (!collide(x, z) && x > world.bounds.minX + 8 && x < world.bounds.maxX - 8 && z > world.bounds.minZ + 8 && z < world.bounds.maxZ - 8) return [x, z];
+    }
+    return [hx, hz + 12];
+  };
+  if (lite) { const [x, z] = homeSpot(); player.teleport(x, z, world.site.point[0], world.site.point[1]); }
+  else { const spawn = lm.station.p; player.teleport(spawn[0] + 4, spawn[1] - 6, lm.lion.p[0], lm.lion.p[1]); }
 
   // 랜드마크 이동 (메뉴는 React 쪽에서 api.landmarks 로 그림)
-  lm.aeji.name = '애지문 (한양대역 2번 출구)';
+  if (!lite) lm.aeji.name = '애지문 (한양대역 2번 출구)';
   const order = ['aeji', 'lion', 'main', 'history', 'amph'];
   const goToLandmark = (key) => {
     const l = lm[key];
@@ -338,7 +403,10 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
   const attrib = document.getElementById('attrib');
   if (attrib) attrib.textContent = world.attribution;
   // 시작: 사자상 정면 (서쪽 광장에서 동쪽을 봄 — 뒤로 역사관, 오른쪽 뒤로 애지문·한양대역)
-  const heroShot = () => { player.teleport(lm.lion.p[0] - 13, lm.lion.p[1] + 1.5, lm.lion.p[0], lm.lion.p[1]); player.dist = 19; player.pitch = 0.17; };
+  const heroShot = () => {
+    if (lite) { const [x, z] = homeSpot(); player.teleport(x, z, world.site.point[0], world.site.point[1]); player.dist = 12; player.pitch = 0.2; return; }
+    player.teleport(lm.lion.p[0] - 13, lm.lion.p[1] + 1.5, lm.lion.p[0], lm.lion.p[1]); player.dist = 19; player.pitch = 0.17;
+  };
   heroShot();
   // URL 로 카메라 지정 (스크린샷·디버그용): ?cam=x,z,tx,tz[,dist[,pitch]]  또는  ?go=209 (건물 번호)
   {
@@ -399,19 +467,39 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     mg.restore();
   };
 
+  // 이름표·말풍선 거르기: 가까운 것만(거리) · 최대 개수 · 화면 겹침 (src/world/labelCull.ts).
+  // CSS2DRenderer 가 매 프레임 style.display 를 덮어쓰므로 반드시 object.visible 로 숨긴다 (예전 display 방식은 R3F 이식 뒤 무효였음)
+  const cullV = new THREE.Vector3();
+  const cullLabels = (ppx, ppz) => {
+    const W = domElement.clientWidth || innerWidth, H = domElement.clientHeight || innerHeight;
+    const objs = [], cands = [];
+    const add = (o, near, prio) => {
+      const d = Math.hypot(o.position.x - ppx, o.position.z - ppz);
+      let sx = null, sy = null;
+      if (d <= near) {
+        cullV.copy(o.position).project(camera);
+        if (cullV.z >= -1 && cullV.z <= 1) { sx = (cullV.x + 1) / 2 * W; sy = (1 - cullV.y) / 2 * H; }
+      }
+      const el = o.element;
+      if (el.offsetWidth) { o.userData.w = el.offsetWidth; o.userData.h = el.offsetHeight; } // 숨기면 0 이 되므로 보일 때 크기를 기억
+      objs.push(o); cands.push({ d, near, sx, sy, w: o.userData.w || 90, h: o.userData.h || 28, prio });
+    };
+    for (const l of labels) add(l, LABEL_NEAR, 1);
+    for (const [g, list] of markerGroups) for (const o of list) add(o, MARKER_NEAR, GROUP_PRIO[g] ?? 0);
+    const show = pickLabels(cands, { w: W, h: H });
+    for (let i = 0; i < objs.length; i++) if (objs[i].visible !== show[i]) objs[i].visible = show[i];
+  };
+
   progress(1, 'labels+player');
-  let mmTick = 0, lodTick = 1;
+  let mmTick = 0, lodTick = 1, cullTick = 1;
   const frame = (dt) => {
     player.update(dt);
     extras.frame(dt);
     stars.position.copy(camera.position);
     sun.position.copy(player.pos).addScaledVector(sunDir, 160);
     sun.target.position.copy(player.pos);
-    for (const l of labels) {
-      const d = l.position.distanceTo(camera.position);
-      l.element.style.opacity = d < 320 ? 1 : 0;
-    }
-    for (const objs of markerGroups.values()) for (const o of objs) o.element.style.display = o.position.distanceTo(camera.position) < MARKER_FAR ? '' : 'none';
+    const ppx = player.pos.x, ppz = player.pos.z;
+    if ((cullTick += dt) > 0.1) { cullTick = 0; cullLabels(ppx, ppz); }
     if ((lodTick += dt) > 0.25) { lodTick = 0; trees.update(camera.position); }
     if ((mmTick += dt) > 0.1) { mmTick = 0; drawMinimap(); }
   };
@@ -420,10 +508,12 @@ export async function buildWorld({ Q, renderer, domElement, scene, camera, marks
     world, zones, player, trees, labels, sun, sunDir, frame, marks, heroShot,
     // React 메뉴 층이 쓰는 API (dispose 제외, 타입: src/main.d.ts)
     api: {
-      landmarks: [{ key: 'hero', name: '사자상 정면' }, ...order.map((key) => ({ key, name: lm[key].name }))],
+      landmarks: lite ? [{ key: 'hero', name: '집 앞' }] : [{ key: 'hero', name: '사자상 정면' }, ...order.map((key) => ({ key, name: lm[key].name }))],
       goToPlace,
       setMarkers,
       setBeacons,
+      setRoute,
+      bounds: { ...world.bounds },
       setDoors: (items) => extras.setDoors(items),
       setGates: (items) => extras.setGates(items),
       setTimeOfDay,

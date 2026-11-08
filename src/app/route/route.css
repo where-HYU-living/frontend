@@ -1,0 +1,13 @@
+/* 4단계 F6: 집 → 과 건물 도보 길 요약 막대 (3D·지도 공통). 왼쪽 컬러바 없이 */
+.ui-route { position: fixed; z-index: 7; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(520px, calc(100% - 24px)); padding: 12px 14px; border-radius: 14px; color: var(--ui-ink); display: grid; gap: 4px; }
+.ui-route-title { margin: 0; font-size: 13px; color: var(--ui-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-route-main { margin: 0; font-size: 15px; }
+.ui-route-main b { font-variant-numeric: tabular-nums; }
+.ui-route-est { font-size: 12px; color: #b3412b; }
+.ui-route-sub { margin: 0; font-size: 12.5px; color: var(--ui-ink-2); }
+.ui-route-actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ui-route-btn { min-height: 40px; min-width: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border-radius: 10px; border: 0; background: var(--ui-glass-strong); color: var(--ui-ink); font: inherit; font-weight: 600; cursor: pointer; }
+.ui-route-btn.is-primary { background: #0e4a84; color: #fff; }
+.ui-route-btn:focus-visible, .ui-walk-link:focus-visible { outline: 2px solid #0e4a84; outline-offset: 2px; }
+.ui-walk-link { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; font-weight: 600; }
+@media (max-width: 760px) { .ui-route { bottom: auto; top: 112px; } }

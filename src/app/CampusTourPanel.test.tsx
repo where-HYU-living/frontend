@@ -40,3 +40,15 @@ test('shows a message when the player cannot go there', () => {
   fireEvent.click(screen.getByRole('button', { name: /제1공학관/ }));
   expect(screen.getByRole('status').textContent).toContain('갈 수 없어요');
 });
+test('동네 월드에서 누르면 캠퍼스 월드로 바꾸고 도착 후 그 건물로 (3-1 B 회귀)', async () => {
+  const { useArea } = await import('./state/area');
+  useWorld.setState({ areaId: 'h2' });
+  useArea.setState({ area: { site: 'h2' }, pendingGoto: null });
+  render(<CampusTourPanel />);
+  fireEvent.click(screen.getByRole('button', { name: /제1공학관/ }));
+  const p = (places as unknown as { name: string; center: [number, number] }[]).find((x) => x.name === '제1공학관')!;
+  expect(goToPlace).not.toHaveBeenCalled(); // 동네 월드 api 에 캠퍼스 좌표를 넘기지 않는다
+  expect(useArea.getState().area).toBe('campus');
+  expect(useArea.getState().pendingGoto).toMatchObject({ area: 'campus', x: p.center[0], z: p.center[1] });
+  useWorld.setState({ areaId: 'campus' });
+});

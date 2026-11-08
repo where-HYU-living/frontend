@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { convertedRentWon, isPositive, isPositiveInt, missingReason, wonToManText } from './calc';
 
 describe('convertedRentWon', () => {
-  it('월세 + 관리비 + 보증금×0.046÷12', () => {
-    // 보증금 1000만, 월세 50만, 관리비 5만 → 50만 + 5만 + 38,333 = 588,333
+  it('월세 + 관리비 + 보증금×0.046÷12 (서버 전환율과 같음)', () => {
+    // 보증금 1000만, 월세 50만, 관리비 5만 → 50 + 5 + 3.8333 = 58.8333만
     expect(convertedRentWon(10_000_000, 500_000, 50_000)).toBe(588_333);
   });
   it('관리비가 없으면 0 으로 계산', () => {

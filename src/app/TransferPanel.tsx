@@ -2,7 +2,7 @@ import { BackButton } from './icons';
 import { useState } from 'react';
 import { GRADE_META, inkFor } from '../lib/grade';
 import { depositRent, manwon } from '../lib/money';
-import type { AddressResult, RoomType, TransferBody } from '../api/types';
+import type { AddressResult, RoomType, TransferBody, TransferDetail } from '../api/types';
 import { manToWon, uploadPhoto, useTransfer, useTransferActions, useTransfers } from './features/more';
 import { useSession } from './state/session';
 import { VerdictCard } from './VerdictCard';
@@ -14,21 +14,28 @@ import { ChipSelect, Segmented } from './forms/Segmented';
 import { Field, UnitInput } from './forms/Field';
 import { FormSection, LiveSummary, StickyActions } from './forms/FormSection';
 import { PhotoGrid } from './forms/PhotoGrid';
-import { CONVERSION_RATE_TEXT, convertedRentWon, isPositive, isPositiveInt, missingReason, wonToManText } from './forms/calc';
+import { CONVERSION_NOTE, convertedRentWon, isPositive, isPositiveInt, missingReason, wonToManText } from './forms/calc';
 import './forms/forms.css';
 import { useGoTo } from './DormPanel';
+import { WalkLink } from './route/RouteHud';
 
 const ROOMS: [RoomType, string][] = [['OPEN', '오픈형'], ['SEPARATED', '분리형'], ['ONE_HALF', '1.5룸'], ['TWO_ROOM', '투룸'], ['DUPLEX', '복층']];
 
 const MONTH_CHIPS = [6, 12, 18, 24];
 const TITLE_MAX = 40;
 
-function Form({ onDone }: { onDone: () => void }) {
-  const { create } = useTransferActions();
-  const [addr, setAddr] = useState<AddressResult | null>(null);
-  const [f, setF] = useState({ title: '', deposit: '', rent: '', mgmt: '', area: '', floor: '', months: '', from: '', desc: '' });
-  const [room, setRoom] = useState<RoomType>('OPEN');
-  const [photos, setPhotos] = useState<string[]>([]);
+const man = (won: number | null) => (won == null ? '' : String(won / 10000));
+
+/** K2 글쓰기 · K5 수정(initial 이 있으면 PUT) */
+function Form({ onDone, initial }: { onDone: () => void; initial?: TransferDetail }) {
+  const { create, update } = useTransferActions();
+  const save = initial ? update : create;
+  const [addr, setAddr] = useState<AddressResult | null>(initial ? { address: initial.address, roadAddress: null, dong: initial.dong, lat: initial.lat, lng: initial.lng } : null);
+  const [f, setF] = useState(initial
+    ? { title: initial.title, deposit: man(initial.deposit), rent: man(initial.rent), mgmt: man(initial.mgmtFee), area: String(initial.areaM2), floor: initial.floor == null ? '' : String(initial.floor), months: String(initial.remainingMonths), from: initial.availableFrom ?? '', desc: initial.description ?? '' }
+    : { title: '', deposit: '', rent: '', mgmt: '', area: '', floor: '', months: '', from: '', desc: '' });
+  const [room, setRoom] = useState<RoomType>(initial?.roomType ?? 'OPEN');
+  const [photos, setPhotos] = useState<string[]>(initial?.photos ?? []);
   const [upErr, setUpErr] = useState(false);
   const [upBusy, setUpBusy] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -52,7 +59,8 @@ function Form({ onDone }: { onDone: () => void }) {
   const submit = () => {
     if (!valid || !addr) return;
     const body: TransferBody = { title, address: addr.roadAddress ?? addr.address, dong: addr.dong, lat: addr.lat, lng: addr.lng, deposit: deposit!, rent: rent!, mgmtFee: manToWon(f.mgmt), areaM2: Number(f.area), roomType: room, floor: f.floor.trim() === '' ? null : Number(f.floor), remainingMonths: months, availableFrom: f.from || null, description: f.desc, photoUrls: photos };
-    create.mutate(body, { onSuccess: onDone });
+    if (initial) update.mutate({ id: initial.id, body }, { onSuccess: onDone });
+    else create.mutate(body, { onSuccess: onDone });
   };
   const upload = async (files: File[]) => {
     setUpErr(false); setUpBusy(true);
@@ -80,7 +88,7 @@ function Form({ onDone }: { onDone: () => void }) {
         <UnitInput label="보증금" unit="만원" value={f.deposit} onChange={put('deposit')} ariaLabel="보증금(만원)" onBlur={touch('deposit')} error={err('deposit', '숫자로 적어 주세요')} />
         <UnitInput label="월세" unit="만원" value={f.rent} onChange={put('rent')} ariaLabel="월세(만원)" onBlur={touch('rent')} error={err('rent', '숫자로 적어 주세요')} />
         <UnitInput label="관리비" unit="만원" value={f.mgmt} onChange={put('mgmt')} ariaLabel="관리비(만원)" placeholder="선택" hint="모르면 비워 두세요" className="span2" />
-        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : `월세 + 관리비 + 보증금 × ${CONVERSION_RATE_TEXT} ÷ 12`} /></div>
+        <div className="span2"><LiveSummary title="환산 월세" value={live == null ? null : wonToManText(live)} note={live == null ? '보증금과 월세를 넣으면 바로 계산해요' : CONVERSION_NOTE} /></div>
       </FormSection>
 
       <FormSection title="4. 방 정보" grid>
@@ -100,9 +108,9 @@ function Form({ onDone }: { onDone: () => void }) {
         <Field label="설명" hint="옵션, 방향·소음·집주인 동의 여부 등">{(id, d) => <textarea id={id} rows={4} value={f.desc} onChange={(e) => put('desc')(e.target.value)} aria-label="설명" aria-describedby={d} />}</Field>
       </FormSection>
 
-      {create.isError && <p className="ui-field-error" role="alert">글을 올리지 못했어요</p>}
+      {save.isError && <p className="ui-field-error" role="alert">{initial ? '고친 내용을 저장하지 못했어요' : '글을 올리지 못했어요'}</p>}
       <StickyActions reason={reason}>
-        <button type="button" className="ui-primary" disabled={!valid || create.isPending} onClick={submit}>올리기</button>
+        <button type="button" className="ui-primary" disabled={!valid || save.isPending} onClick={submit}>{initial ? '고친 내용 저장' : '올리기'}</button>
       </StickyActions>
     </div>
   );
@@ -113,7 +121,9 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
   const { finish } = useTransferActions();
   const go = useGoTo();
   const token = useSession((s) => s.token);
+  const [editing, setEditing] = useState(false);
   if (q.isLoading) return <p className="empty">불러오는 중…</p>;
+  if (editing && q.data) return <div><BackButton onClick={() => setEditing(false)} /><Form initial={q.data} onDone={() => setEditing(false)} /></div>;
   if (!q.data) return <div><BackButton onClick={onBack} /><p className="empty">양도 글을 불러오지 못했어요.</p></div>;
   const t = q.data;
   return (
@@ -127,11 +137,16 @@ function Detail({ id, onBack }: { id: number; onBack: () => void }) {
         <dt>관리비</dt><dd>{t.mgmtFee == null ? '정보 없음' : manwon(t.mgmtFee)}</dd>
         <dt>남은 계약</dt><dd>{t.remainingMonths}개월</dd>
         <dt>입주 가능</dt><dd>{t.availableFrom ?? '협의'}</dd>
-        <dt>도보</dt><dd>{t.walkMin == null ? '도보 시간 정보 없음' : `과 건물까지 ${t.walkMin}분`}</dd>
+        <dt>도보</dt><dd><WalkLink walkMin={t.walkMin} from={{ lat: t.lat, lng: t.lng, name: t.title }} /></dd>
       </dl>
       {t.description && <p className="ui-desc">{t.description}</p>}
       <button type="button" className="ui-primary" onClick={() => go(t)}>3D로 보기</button>
-      {t.mine && t.status === 'OPEN' && <button type="button" className="ui-mini" onClick={() => finish.mutate(t.id)}>양도 완료</button>}
+      {t.mine && t.status === 'OPEN' && (
+        <div className="ui-inline">
+          <button type="button" className="ui-mini" onClick={() => setEditing(true)}>글 고치기</button>
+          <button type="button" className="ui-mini" onClick={() => finish.mutate(t.id)}>양도 완료</button>
+        </div>
+      )}
     </div>
   );
 }
