@@ -171,7 +171,15 @@ test('profile modal: choosing a department fills its buildings, the user can cha
   });
 });
 
-test('bundled data: 정보시스템학과 maps to IT/BT관 (305)', async () => {
+test('bundled data: 정보시스템학과 maps to IT/BT관 (305) first, 행정팀(206) after', async () => {
   const { default: bundled } = await import('./data/departments.json');
-  expect(bundled.find((d) => d.name === '정보시스템학과')!.defaultBuildingIds).toEqual([305]);
+  expect(bundled.find((d) => d.name === '정보시스템학과')!.defaultBuildingIds).toEqual([305, 206]);
+});
+
+test('bundled data: 대표 건물은 주 활동 건물 (건설환경공학과 → 재성토목관 201, 원자력공학과 → 토건관)', async () => {
+  const { default: bundled } = await import('./data/departments.json');
+  const of = (n: string) => bundled.find((d) => d.name === n)!.defaultBuildingIds;
+  expect(of('건설환경공학과')).toEqual([201, 206]);
+  expect(of('원자력공학과')[0]).toBe(1003);
+  expect(of('산업공학과')).toEqual([206]);
 });

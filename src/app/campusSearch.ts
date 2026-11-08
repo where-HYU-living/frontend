@@ -1,4 +1,8 @@
-export type Place = { id: number; no: string; name: string; en: string; group: 'dorm' | 'etc'; center: [number, number] | null };
+/** entrance: 건물 입구(door, 외곽선 위)와 그 앞에 서는 자리(stand). 없으면 건물이 보이는 빈자리로 간다 */
+export type Place = {
+  id: number; no: string; name: string; en: string; group: 'dorm' | 'etc'; center: [number, number] | null;
+  entrance?: { door: [number, number]; stand: [number, number] };
+};
 
 /** 띄어쓰기·대소문자를 무시해서 비교하려고 정리한다 */
 export const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
